@@ -75,5 +75,5 @@ We'll build, one piece at a time:
 ## Notes
 
 - All emails/notifications are in **English only** (confirmed decision)
-- Country field defaults to Pakistan but is built for future expansion 
+- Country field defaults to Pakistan but is built for future expansion
 - This is Phase 1: Pakistan-focused, free-tier services (Firebase Spark, Cloudinary free, GitHub, Vercel free)
