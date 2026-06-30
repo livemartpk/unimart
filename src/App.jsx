@@ -162,6 +162,8 @@ export default function App() {
           onSwitchToSignUp={() => setAuthMode("buyer-signup")}
           onForgotPassword={() => setAuthMode("forgot-password")}
           onBackToBrowsing={backToBrowsing}
+          onSwitchToSellerSignUp={() => setAuthMode("seller-signup")}
+          onSwitchToAgentSignUp={() => setAuthMode("agent-signup")}
         />
       );
     }

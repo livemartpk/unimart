@@ -11,7 +11,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../config/firebase";
 import "../../styles/theme.css";
 
-export default function Login({ onLoginSuccess, onSwitchToSignUp, onForgotPassword, onBackToBrowsing }) {
+export default function Login({ onLoginSuccess, onSwitchToSignUp, onForgotPassword, onBackToBrowsing, onSwitchToSellerSignUp, onSwitchToAgentSignUp }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -131,6 +131,15 @@ export default function Login({ onLoginSuccess, onSwitchToSignUp, onForgotPasswo
           New to UniMart?{" "}
           <span style={styles.switchLink} onClick={onSwitchToSignUp}>Create an account</span>
         </p>
+
+        <div style={styles.sellerAgentBox}>
+          <p style={styles.sellerAgentText}>Want to sell on UniMart?</p>
+          <div style={styles.sellerAgentLinks}>
+            <span style={styles.sellerAgentLink} onClick={onSwitchToSellerSignUp}>Become a Seller</span>
+            <span style={styles.sellerAgentDivider}>·</span>
+            <span style={styles.sellerAgentLink} onClick={onSwitchToAgentSignUp}>Become an Agent</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -148,5 +157,10 @@ const styles = {
   switchLink: { color: "#0B3D2E", fontWeight: 700, cursor: "pointer" },
   backLink: { fontSize: 12.5, color: "#0B3D2E", fontWeight: 600, cursor: "pointer", marginBottom: 16 },
   passwordWrap: { position: "relative" },
-  eyeIcon: { position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", cursor: "pointer", fontSize: 16, userSelect: "none" }
+  eyeIcon: { position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", cursor: "pointer", fontSize: 16, userSelect: "none" },
+  sellerAgentBox: { marginTop: 28, padding: 16, background: "#F0F5F0", borderRadius: 12, textAlign: "center" },
+  sellerAgentText: { fontSize: 12, color: "#444", marginBottom: 8, fontWeight: 600 },
+  sellerAgentLinks: { display: "flex", justifyContent: "center", alignItems: "center", gap: 10 },
+  sellerAgentLink: { fontSize: 12.5, color: "#0B3D2E", fontWeight: 700, cursor: "pointer" },
+  sellerAgentDivider: { color: "#aaa" }
 };
