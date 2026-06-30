@@ -1,0 +1,188 @@
+// ============================================
+// UniMart - Firestore Security Rules (Phase 1)
+// Copy this into Firebase Console → Firestore
+// Database → Rules. Adjust as your data model
+// evolves — this is a solid starting point, not
+// a final audit.
+// ============================================
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getUserRole() in [
+        'super_admin', 'seller_manager', 'marketing_manager',
+        'support_team', 'finance_team', 'content_team'
+      ];
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && getUserRole() == 'super_admin';
+    }
+
+    // ---------- USERS ----------
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isSignedIn();
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // ---------- BUYERS ----------
+    match /buyers/{buyerId} {
+      allow read, update: if isOwner(buyerId) || isAdmin();
+      allow create: if isOwner(buyerId);
+    }
+
+    // ---------- SELLERS ----------
+    match /sellers/{sellerId} {
+      allow read: if true; // public storefronts
+      allow create: if isOwner(sellerId);
+      allow update: if isOwner(sellerId) || isAdmin();
+    }
+
+    // ---------- AGENTS ----------
+    match /agents/{agentId} {
+      allow read: if isOwner(agentId) || isAdmin();
+      allow create: if isOwner(agentId);
+      allow update: if isOwner(agentId) || isAdmin();
+    }
+
+    // ---------- PRODUCTS ----------
+    match /products/{productId} {
+      allow read: if true; // public catalog
+      allow create: if isSignedIn() && getUserRole() == 'seller';
+      allow update, delete: if isAdmin() ||
+        (isSignedIn() && resource.data.sellerId == request.auth.uid);
+
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn() && getUserRole() == 'buyer';
+      }
+    }
+
+    // ---------- ORDERS ----------
+    match /orders/{orderId} {
+      allow read: if isAdmin() ||
+        (isSignedIn() && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid));
+      allow create: if isSignedIn() && getUserRole() == 'buyer';
+      allow update: if isAdmin() ||
+        (isSignedIn() && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid));
+    }
+
+    // ---------- WALLETS (buyer/seller/agent) ----------
+    match /wallets_buyer/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isAdmin(); // balances change only via server-side / admin logic
+      match /ledger_gross/{entryId} { allow read: if isOwner(uid) || isAdmin(); allow write: if isAdmin(); }
+      match /ledger_net/{entryId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create: if isOwner(uid); // buyer can submit withdrawal requests
+        allow update: if isAdmin(); // only Finance Team marks paid
+      }
+    }
+
+    match /wallets_seller/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isAdmin();
+      match /ledger_gross/{entryId} { allow read: if isOwner(uid) || isAdmin(); allow write: if isAdmin(); }
+      match /ledger_net/{entryId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create: if isOwner(uid);
+        allow update: if isAdmin();
+      }
+    }
+
+    match /wallets_agent/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isAdmin();
+      match /ledger_gross/{entryId} { allow read: if isOwner(uid) || isAdmin(); allow write: if isAdmin(); }
+      match /ledger_net/{entryId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create: if isOwner(uid);
+        allow update: if isAdmin();
+      }
+    }
+
+    // ---------- WEBSITE & TAX WALLETS (internal only) ----------
+    match /wallets_website/{doc} {
+      allow read, write: if isAdmin();
+    }
+    match /wallets_tax/{doc} {
+      allow read, write: if isAdmin();
+    }
+
+    // ---------- POLICIES (Super Admin only) ----------
+    match /policies/{policyId} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
+      match /history/{entryId} {
+        allow read: if isAdmin();
+        allow write: if isSuperAdmin();
+      }
+    }
+
+    // ---------- ADMIN LOGS ----------
+    match /adminLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+    }
+
+    // ---------- NOTIFICATIONS ----------
+    match /notifications/{notifId} {
+      allow read, update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isAdmin() || isSignedIn(); // system + admin generated
+    }
+
+    // ---------- DISPUTES ----------
+    match /disputes/{disputeId} {
+      allow read: if isAdmin() ||
+        (isSignedIn() && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid));
+      allow create: if isSignedIn() && getUserRole() == 'buyer';
+      allow update: if isAdmin();
+    }
+
+    // ---------- COMPLAINTS ----------
+    match /complaints/{complaintId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update: if isAdmin();
+    }
+
+    // ---------- AGENT TAG REQUESTS ----------
+    match /agentTagRequests/{requestId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.agentId == request.auth.uid);
+      allow create: if isSignedIn() && getUserRole() == 'agent';
+      allow update: if isAdmin();
+    }
+
+    // ---------- CATEGORIES, BANNERS, ANNOUNCEMENTS ----------
+    match /categories/{id} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+    match /banners/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    match /announcements/{id} {
+      allow read: if isSignedIn();
+      allow create: if isSuperAdmin();
+    }
+  }
+}
