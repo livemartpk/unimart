@@ -28,7 +28,7 @@ export default function Homepage({ user, onNavigate }) {
   const loadHomepageData = async () => {
     setLoading(true);
     try {
-      // Flash Sale products — boost.type === "flash_sale" and not expired
+      // Flash Sale products
       const flashQuery = query(
         collection(db, "products"),
         where("boost.type", "==", "flash_sale"),
@@ -38,11 +38,10 @@ export default function Homepage({ user, onNavigate }) {
       const flashSnap = await getDocs(flashQuery);
       setFlashSaleProducts(flashSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
 
-      // "Just For You" — for now, latest active products (true personalization is Phase 2)
+      // "Just For You" — latest active products
       const recoQuery = query(
         collection(db, "products"),
         where("status", "==", "active"),
-        orderBy("createdAt", "desc"),
         limit(8)
       );
       const recoSnap = await getDocs(recoQuery);

@@ -37,18 +37,26 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
   };
 
   const uploadImagesToCloudinary = async (files) => {
-    // NOTE: Replace YOUR_CLOUD_NAME and YOUR_UPLOAD_PRESET with your Cloudinary values.
+    // Cloudinary config — create a free account at cloudinary.com
+    // Then Settings > Upload > Add upload preset (Unsigned mode)
+    const CLOUD_NAME = "dt9yspaw7";
+    const UPLOAD_PRESET = "unimart-products"; // create this preset in your Cloudinary dashboard
     const urls = [];
     for (const file of files) {
       const data = new FormData();
       data.append("file", file);
-      data.append("upload_preset", "YOUR_UPLOAD_PRESET");
-      const res = await fetch(`https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload`, {
+      data.append("upload_preset", UPLOAD_PRESET);
+      data.append("folder", "unimart/products");
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
         method: "POST",
         body: data
       });
       const json = await res.json();
-      if (json.secure_url) urls.push(json.secure_url);
+      if (json.secure_url) {
+        urls.push(json.secure_url);
+      } else {
+        throw new Error(json.error?.message || "Image upload failed");
+      }
     }
     return urls;
   };
