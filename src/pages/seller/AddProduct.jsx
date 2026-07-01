@@ -35,7 +35,7 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
     if (images.length === 0) e.images = "Add at least one product image.";
     return e;
   };
-
+ 
   const uploadImagesToCloudinary = async (files) => {
     const CLOUD_NAME = "eez9oojf";
     const UPLOAD_PRESET = "unimart-products";
