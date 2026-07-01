@@ -309,6 +309,8 @@ export default function App() {
         case "points-boost": return <PointsAndBoost user={firebaseUser} onNavigate={navigate} />;
         case "store-settings": return <StoreSettings user={firebaseUser} onNavigate={navigate} />;
         case "settings": return <StoreSettings user={firebaseUser} onNavigate={navigate} />;
+        case "invoice": return <Invoice orderId={pageParam} onNavigate={navigate} />;
+        case "dispatch-slip": return <DispatchSlip orderId={pageParam} onNavigate={navigate} />;
         default: return <SellerDashboard user={firebaseUser} onNavigate={navigate} />;
       }
     };

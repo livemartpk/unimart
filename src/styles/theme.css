@@ -260,3 +260,22 @@ a {
     width: 100% !important;
   }
 }
+
+/* ============================================
+   Print Styles — Invoice & Dispatch Slip
+   ============================================ */
+@media print {
+  /* Hide everything except the printable sheet */
+  .no-print,
+  .admin-sidebar,
+  .admin-main-content > div:first-child {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
