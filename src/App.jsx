@@ -249,6 +249,9 @@ export default function App() {
     if (userData.status === "pending") {
       return <PendingApprovalScreen role="seller" userEmail={firebaseUser.email} />;
     }
+    if (userData.status === "objection") {
+      return <ObjectionScreen role="seller" userEmail={firebaseUser.email} userId={firebaseUser.uid} />;
+    }
     switch (page) {
       case "products": return <MyProducts user={firebaseUser} onNavigate={navigate} />;
       case "add-product": return <AddProduct user={firebaseUser} sellerStoreName={userData.storeName} onSuccess={() => navigate("products")} onNavigate={navigate} />;
@@ -264,6 +267,9 @@ export default function App() {
   if (userData.role === "agent") {
     if (userData.status === "pending") {
       return <PendingApprovalScreen role="agent" userEmail={firebaseUser.email} />;
+    }
+    if (userData.status === "objection") {
+      return <ObjectionScreen role="agent" userEmail={firebaseUser.email} userId={firebaseUser.uid} />;
     }
     switch (page) {
       case "seller-tags": return <SellerTags user={firebaseUser} onNavigate={navigate} />;
@@ -443,5 +449,125 @@ const ps = {
   stepText: { fontSize: 12.5, color: "#444", lineHeight: 1.4, paddingTop: 4 },
   stepLine: { width: 2, height: 12, background: "#eee0c0", marginLeft: 11, marginBottom: 4 },
   noteText: { fontSize: 11.5, color: "#888", lineHeight: 1.5, marginBottom: 20 },
+  logoutBtn: { width: "100%", padding: "13px 0", background: "#FCEAEA", border: "1px solid #f5c6c6", borderRadius: 12, color: "#C0392B", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }
+};
+
+// ============================================
+// ObjectionScreen — shown when admin sends
+// an objection on seller/agent application.
+// Seller can view objection + edit & resubmit.
+// ============================================
+import { useState as useStateObj, useEffect as useEffectObj } from "react";
+import { doc as docObj, getDoc as getDocObj, updateDoc as updateDocObj, serverTimestamp as stObj } from "firebase/firestore";
+
+function ObjectionScreen({ role, userEmail, userId }) {
+  const [objection, setObjection] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [editText, setEditText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleLogout = async () => {
+    const { signOut } = await import("firebase/auth");
+    const { auth } = await import("./config/firebase");
+    await signOut(auth);
+  };
+
+  useEffect(() => {
+    const loadObjection = async () => {
+      try {
+        const collectionName = role === "seller" ? "sellers" : "agents";
+        const snap = await getDoc(doc(db, collectionName, userId));
+        if (snap.exists()) setObjection(snap.data().objection || "");
+      } catch (err) { console.error(err); }
+      setLoading(false);
+    };
+    loadObjection();
+  }, [userId, role]);
+
+  const handleResubmit = async () => {
+    if (!editText.trim()) { alert("Please explain how you resolved the objection."); return; }
+    setSubmitting(true);
+    try {
+      const collectionName = role === "seller" ? "sellers" : "agents";
+      await updateDoc(doc(db, collectionName, userId), {
+        objection: null,
+        objectionStatus: "resubmitted",
+        resubmitNote: editText,
+        resubmittedAt: serverTimestamp()
+      });
+      await updateDoc(doc(db, "users", userId), { status: "pending" });
+      setSubmitting(false);
+    } catch (err) { console.error(err); setSubmitting(false); }
+  };
+
+  if (loading) return <div style={{ padding: 40, textAlign: "center" }}>Loading...</div>;
+
+  return (
+    <div style={os.overlay}>
+      <div style={os.card}>
+        <div style={os.header}>
+          <div style={os.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
+        </div>
+        <div style={os.body}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
+          <h2 style={os.title}>Action Required</h2>
+          <p style={os.subtitle}>Our Seller Manager has an objection on your application.</p>
+
+          <div style={os.objectionCard}>
+            <div style={os.objectionLabel}>📋 Objection from Seller Manager:</div>
+            <div style={os.objectionText}>{objection || "Please contact support for details."}</div>
+          </div>
+
+          {!editMode ? (
+            <button className="btn-primary" style={{ width: "100%", marginBottom: 10 }} onClick={() => setEditMode(true)}>
+              ✏️ Resolve & Resubmit Application
+            </button>
+          ) : (
+            <div style={os.editBox}>
+              <div style={os.editLabel}>Explain how you resolved this objection:</div>
+              <textarea
+                className="input-field"
+                rows={4}
+                value={editText}
+                onChange={e => setEditText(e.target.value)}
+                placeholder="e.g. I have re-uploaded a clearer CNIC document..."
+                style={{ resize: "none", fontFamily: "inherit", marginBottom: 10 }}
+              />
+              <button className="btn-primary" style={{ width: "100%", marginBottom: 8 }} onClick={handleResubmit} disabled={submitting}>
+                {submitting ? "Submitting..." : "✓ Resubmit for Review"}
+              </button>
+              <button className="btn-secondary" style={{ width: "100%" }} onClick={() => setEditMode(false)}>
+                Cancel
+              </button>
+            </div>
+          )}
+
+          <div style={os.emailBox}>
+            <div style={{ fontSize: 10.5, color: "#888" }}>Logged in as:</div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0B3D2E" }}>{userEmail}</div>
+          </div>
+
+          <button style={os.logoutBtn} onClick={handleLogout}>🚪 Logout</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const os = {
+  overlay: { minHeight: "100vh", background: "#FBF9F4", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  card: { background: "#fff", borderRadius: 20, maxWidth: 420, width: "100%", overflow: "hidden", boxShadow: "0 10px 40px rgba(11,61,46,0.12)" },
+  header: { background: "#0B3D2E", padding: "20px 24px", textAlign: "center" },
+  logo: { fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 800, color: "#fff" },
+  body: { padding: 24, textAlign: "center" },
+  title: { fontFamily: "Georgia, serif", fontSize: 20, color: "#C0392B", marginBottom: 8 },
+  subtitle: { fontSize: 13.5, color: "#555", marginBottom: 16, lineHeight: 1.5 },
+  objectionCard: { background: "#FBF1DA", border: "1.5px solid #D4AF37", borderRadius: 12, padding: 14, marginBottom: 16, textAlign: "left" },
+  objectionLabel: { fontSize: 11, fontWeight: 700, color: "#8a6d1f", marginBottom: 6 },
+  objectionText: { fontSize: 13.5, color: "#1a1a1a", lineHeight: 1.5 },
+  editBox: { background: "#F0F5F0", borderRadius: 12, padding: 14, marginBottom: 12, textAlign: "left" },
+  editLabel: { fontSize: 12, fontWeight: 700, color: "#0B3D2E", marginBottom: 8 },
+  emailBox: { background: "#F0F5F0", border: "1px solid #eee0c0", borderRadius: 10, padding: "10px 14px", marginBottom: 12, textAlign: "left" },
   logoutBtn: { width: "100%", padding: "13px 0", background: "#FCEAEA", border: "1px solid #f5c6c6", borderRadius: 12, color: "#C0392B", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }
 };
