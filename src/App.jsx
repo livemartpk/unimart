@@ -100,11 +100,14 @@ export default function App() {
         if (userDoc.exists()) {
           const ud = { uid: fbUser.uid, ...userDoc.data() };
           setUserData(ud);
-          // Auto-redirect admin roles to dashboard on session restore
+          // Admin roles → dashboard page
+          // Seller/Agent → their default (switch default handles it)
+          // Buyer → stays on homepage
           const adminRoles = ["super_admin", "seller_manager", "marketing_manager", "support_team", "finance_team", "content_team"];
           if (adminRoles.includes(ud.role)) {
             setPage("dashboard");
           }
+          // seller, agent, buyer — page stays "home" which hits their default switch case correctly
         }
       } else {
         setUserData(null);
@@ -304,6 +307,7 @@ export default function App() {
       }
       if (userData.role === "seller_manager") {
         switch (page) {
+          case "seller-registrations": return <SellerRegistrations user={firebaseUser} />;
           case "all-sellers": return <AllSellers user={firebaseUser} />;
           case "product-review": return <NewSellerProductReview user={firebaseUser} />;
           case "vacation-requests": return <VacationRequests />;
@@ -313,6 +317,7 @@ export default function App() {
       }
       if (userData.role === "marketing_manager") {
         switch (page) {
+          case "agents": return <AgentManagement user={firebaseUser} />;
           case "performance": return <PerformanceAnalytics />;
           case "fraud-monitor": return <ReferralFraudMonitor />;
           default: return <MarketingManagerDashboard onNavigate={navigate} />;
@@ -320,6 +325,7 @@ export default function App() {
       }
       if (userData.role === "support_team") {
         switch (page) {
+          case "disputes": return <Disputes user={firebaseUser} />;
           case "complaints": return <Complaints user={firebaseUser} />;
           case "returns": return <ReturnRefundTracker />;
           default: return <SupportTeamDashboard onNavigate={navigate} />;
@@ -327,6 +333,7 @@ export default function App() {
       }
       if (userData.role === "finance_team") {
         switch (page) {
+          case "withdrawals": return <WithdrawalRequests user={firebaseUser} />;
           case "reports": return <FinancialReports />;
           case "reconciliation": return <WalletsReconciliation />;
           default: return <FinanceTeamDashboard onNavigate={navigate} />;
@@ -334,6 +341,7 @@ export default function App() {
       }
       if (userData.role === "content_team") {
         switch (page) {
+          case "product-reviews": return <ProductReviews user={firebaseUser} />;
           case "flagged-listings": return <FlaggedListings user={firebaseUser} />;
           case "banners": return <BannerManagement user={firebaseUser} />;
           default: return <ContentTeamDashboard onNavigate={navigate} />;
