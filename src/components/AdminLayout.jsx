@@ -7,7 +7,7 @@
 
 import { signOut } from "firebase/auth";
 import { auth } from "../config/firebase";
-import "../../styles/theme.css";
+import "../styles/theme.css";
 
 const SIDEBAR_ITEMS = {
   super_admin: [
