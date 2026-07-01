@@ -247,7 +247,7 @@ export default function App() {
   // ============ SELLER ROUTES ============
   if (userData.role === "seller") {
     if (userData.status === "pending") {
-      return <PendingApprovalScreen role="seller" />;
+      return <PendingApprovalScreen role="seller" userEmail={firebaseUser.email} />;
     }
     switch (page) {
       case "products": return <MyProducts user={firebaseUser} onNavigate={navigate} />;
@@ -263,7 +263,7 @@ export default function App() {
   // ============ AGENT ROUTES ============
   if (userData.role === "agent") {
     if (userData.status === "pending") {
-      return <PendingApprovalScreen role="agent" />;
+      return <PendingApprovalScreen role="agent" userEmail={firebaseUser.email} />;
     }
     switch (page) {
       case "seller-tags": return <SellerTags user={firebaseUser} onNavigate={navigate} />;
@@ -341,16 +341,107 @@ export default function App() {
   return <div style={{ padding: 40 }}>Unknown role. Please contact support.</div>;
 }
 
-function PendingApprovalScreen({ role }) {
+function PendingApprovalScreen({ role, userEmail }) {
+  const handleLogout = async () => {
+    const { signOut } = await import("firebase/auth");
+    const { auth } = await import("./config/firebase");
+    await signOut(auth);
+  };
+
+  const roleInfo = {
+    seller: {
+      icon: "🏪",
+      title: "Application Under Review",
+      reviewer: "Seller Manager",
+      color: "#D4AF37"
+    },
+    agent: {
+      icon: "🤝",
+      title: "Application Under Review",
+      reviewer: "Marketing Manager",
+      color: "#D4AF37"
+    }
+  };
+
+  const info = roleInfo[role] || { icon: "⏳", title: "Under Review", reviewer: "Admin", color: "#D4AF37" };
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#FBF9F4", padding: 24, textAlign: "center" }}>
-      <div>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>⏳</div>
-        <h2 style={{ fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 8 }}>Application under review</h2>
-        <p style={{ color: "#666", fontSize: 14, maxWidth: 320 }}>
-          Your {role} account is pending approval from our team. We'll notify you by email once it's reviewed.
-        </p>
+    <div style={ps.overlay}>
+      <div style={ps.card}>
+        {/* Header */}
+        <div style={ps.header}>
+          <div style={ps.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
+        </div>
+
+        {/* Content */}
+        <div style={ps.body}>
+          <div style={ps.icon}>{info.icon}</div>
+          <h2 style={ps.title}>{info.title}</h2>
+
+          <div style={ps.statusBadge}>
+            ⏳ Pending Approval
+          </div>
+
+          <p style={ps.text}>
+            Your <strong>{role}</strong> application has been received and is currently being reviewed by our <strong>{info.reviewer}</strong>.
+          </p>
+
+          {userEmail && (
+            <div style={ps.emailBox}>
+              <div style={ps.emailLabel}>Logged in as:</div>
+              <div style={ps.emailValue}>{userEmail}</div>
+            </div>
+          )}
+
+          <div style={ps.stepsBox}>
+            <div style={ps.step}>
+              <div style={ps.stepDot}>✓</div>
+              <div style={ps.stepText}>Application submitted</div>
+            </div>
+            <div style={ps.stepLine} />
+            <div style={ps.step}>
+              <div style={{ ...ps.stepDot, ...ps.stepDotPending }}>2</div>
+              <div style={{ ...ps.stepText, color: "#D4AF37", fontWeight: 700 }}>Under review by {info.reviewer}</div>
+            </div>
+            <div style={ps.stepLine} />
+            <div style={ps.step}>
+              <div style={{ ...ps.stepDot, background: "#eee", color: "#999" }}>3</div>
+              <div style={{ ...ps.stepText, color: "#999" }}>Account approved — full access granted</div>
+            </div>
+          </div>
+
+          <p style={ps.noteText}>
+            You will receive an email notification once your application is approved. This usually takes 1–2 business days.
+          </p>
+
+          <button style={ps.logoutBtn} onClick={handleLogout}>
+            🚪 Logout
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+
+const ps = {
+  overlay: { minHeight: "100vh", background: "#FBF9F4", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  card: { background: "#fff", borderRadius: 20, maxWidth: 420, width: "100%", overflow: "hidden", boxShadow: "0 10px 40px rgba(11,61,46,0.12)" },
+  header: { background: "#0B3D2E", padding: "20px 24px", textAlign: "center" },
+  logo: { fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 800, color: "#fff" },
+  body: { padding: 28, textAlign: "center" },
+  icon: { fontSize: 52, marginBottom: 12 },
+  title: { fontFamily: "Georgia, serif", fontSize: 20, color: "#0B3D2E", marginBottom: 12 },
+  statusBadge: { display: "inline-block", background: "#FBF1DA", color: "#8a6d1f", border: "1.5px solid #D4AF37", borderRadius: 20, padding: "6px 16px", fontSize: 12.5, fontWeight: 700, marginBottom: 16 },
+  text: { fontSize: 13.5, color: "#555", lineHeight: 1.6, marginBottom: 16 },
+  emailBox: { background: "#F0F5F0", border: "1px solid #eee0c0", borderRadius: 10, padding: "10px 14px", marginBottom: 20, textAlign: "left" },
+  emailLabel: { fontSize: 10.5, color: "#888" },
+  emailValue: { fontSize: 13.5, fontWeight: 700, color: "#0B3D2E", marginTop: 2 },
+  stepsBox: { textAlign: "left", marginBottom: 20 },
+  step: { display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 4 },
+  stepDot: { width: 24, height: 24, borderRadius: "50%", background: "#0B3D2E", color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 },
+  stepDotPending: { background: "#D4AF37", color: "#fff" },
+  stepText: { fontSize: 12.5, color: "#444", lineHeight: 1.4, paddingTop: 4 },
+  stepLine: { width: 2, height: 12, background: "#eee0c0", marginLeft: 11, marginBottom: 4 },
+  noteText: { fontSize: 11.5, color: "#888", lineHeight: 1.5, marginBottom: 20 },
+  logoutBtn: { width: "100%", padding: "13px 0", background: "#FCEAEA", border: "1px solid #f5c6c6", borderRadius: 12, color: "#C0392B", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }
+};

@@ -26,6 +26,8 @@ export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrows
   const [errors, setErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [registered, setRegistered] = useState(false); // show login popup after registration
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   const handleChange = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
@@ -94,7 +96,8 @@ export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrows
       });
 
       setLoading(false);
-      if (onSuccess) onSuccess(user);
+      setRegisteredEmail(form.email);
+      setRegistered(true); // show "login now" popup
 
     } catch (err) {
       setLoading(false);
@@ -102,6 +105,36 @@ export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrows
       else setError("Something went wrong. Please try again.");
     }
   };
+
+  // Show "Login Now" popup after successful registration
+  if (registered) {
+    return (
+      <div style={{ minHeight: "100vh", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div style={styles.popup}>
+          <div style={{ fontSize: 48, textAlign: "center", marginBottom: 12 }}>🎉</div>
+          <h2 style={styles.popupTitle}>Registration Successful!</h2>
+          <p style={styles.popupText}>
+            Your seller application has been submitted successfully.
+          </p>
+          <div style={styles.emailBox}>
+            <div style={styles.emailLabel}>Your login email:</div>
+            <div style={styles.emailValue}>{registeredEmail}</div>
+          </div>
+          <p style={styles.popupNote}>
+            Use your email and password to log in. Your account will show "Under Review" until our Seller Manager approves your application.
+          </p>
+          <button className="btn-primary" style={{ width: "100%", marginTop: 16 }} onClick={onSwitchToLogin}>
+            Login with your email and password →
+          </button>
+          {onBackToBrowsing && (
+            <div style={styles.backToHomeBtn} onClick={onBackToBrowsing}>
+              🏠 Back to Shopping
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-shell" style={styles.page}>
@@ -213,6 +246,16 @@ const styles = {
   sellerTag: { fontSize: 11, background: "#D4AF37", color: "#0B3D2E", padding: "2px 8px", borderRadius: 6, fontWeight: 800, marginLeft: 4 },
   formWrap: { paddingTop: 28, paddingBottom: 40 },
   title: { fontSize: 21, marginBottom: 8 },
+
+  // Registration success popup
+  popup: { background: "#fff", borderRadius: 20, padding: 28, maxWidth: 400, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" },
+  popupTitle: { fontFamily: "Georgia, serif", fontSize: 20, color: "#0B3D2E", textAlign: "center", marginBottom: 10 },
+  popupText: { fontSize: 13.5, color: "#444", textAlign: "center", lineHeight: 1.5, marginBottom: 16 },
+  emailBox: { background: "#F0F5F0", border: "1.5px solid #D4AF37", borderRadius: 12, padding: "12px 16px", marginBottom: 12 },
+  emailLabel: { fontSize: 10.5, color: "#888", marginBottom: 4 },
+  emailValue: { fontSize: 14, fontWeight: 700, color: "#0B3D2E" },
+  popupNote: { fontSize: 12, color: "#666", lineHeight: 1.5, textAlign: "center" },
+  backToHomeBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 20px", background: "#F0F5F0", border: "1.5px solid #eee0c0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#0B3D2E", cursor: "pointer", marginTop: 10, textAlign: "center" },
   subtitle: { fontSize: 13.5, color: "#6b6b6b", marginBottom: 22, lineHeight: 1.5 },
   docNote: { background: "#FBF1DA", border: "1px solid #D4AF37", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#5a4419", marginBottom: 16 },
   switchText: { textAlign: "center", marginTop: 20, fontSize: 13, color: "#6b6b6b" },
