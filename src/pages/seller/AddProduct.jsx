@@ -37,10 +37,8 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
   };
 
   const uploadImagesToCloudinary = async (files) => {
-    // Cloudinary config — create a free account at cloudinary.com
-    // Then Settings > Upload > Add upload preset (Unsigned mode)
-    const CLOUD_NAME = "dt9yspaw7";
-    const UPLOAD_PRESET = "unimart-products"; // create this preset in your Cloudinary dashboard
+    const CLOUD_NAME = "eez9oojf";
+    const UPLOAD_PRESET = "unimart-products";
     const urls = [];
     for (const file of files) {
       const data = new FormData();
@@ -52,10 +50,11 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
         body: data
       });
       const json = await res.json();
+      console.log("Cloudinary response:", json); // for debugging
       if (json.secure_url) {
         urls.push(json.secure_url);
       } else {
-        throw new Error(json.error?.message || "Image upload failed");
+        throw new Error(json.error?.message || "Image upload failed — check Cloudinary preset");
       }
     }
     return urls;
@@ -71,10 +70,14 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
     setSubmitting(true);
     try {
       let imageUrls = [];
-      try {
-        imageUrls = await uploadImagesToCloudinary(images);
-      } catch (uploadErr) {
-        console.warn("Cloudinary upload failed (check config) — saving product without images for now.");
+      if (images.length > 0) {
+        try {
+          imageUrls = await uploadImagesToCloudinary(images);
+        } catch (uploadErr) {
+          setSubmitting(false);
+          setSubmitError(`Image upload failed: ${uploadErr.message}. Please try again.`);
+          return;
+        }
       }
 
       await addDoc(collection(db, "products"), {

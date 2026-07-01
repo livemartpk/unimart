@@ -18,7 +18,7 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
   const [form, setForm] = useState({
     fullName: "", email: "", password: "", confirmPassword: "",
     phone: "", country: "Pakistan", nationalId: "", city: "",
-    paymentAccount: "", experience: "", socialHandle: ""
+    paymentAccount: "", experience: "", socialHandle: "", cnicFile: null
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -42,6 +42,22 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
     return e;
   };
 
+  const CLOUD_NAME = "eez9oojf";
+  const UPLOAD_PRESET = "unimart-products";
+
+  const uploadToCloudinary = async (file, folder = "unimart/documents") => {
+    const data = new FormData();
+    data.append("file", file);
+    data.append("upload_preset", UPLOAD_PRESET);
+    data.append("folder", folder);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+      method: "POST", body: data
+    });
+    const json = await res.json();
+    if (json.secure_url) return json.secure_url;
+    throw new Error(json.error?.message || "Upload failed");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -51,6 +67,16 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
 
     setLoading(true);
     try {
+      // Upload CNIC to Cloudinary if selected
+      let cnicUrl = null;
+      if (form.cnicFile) {
+        try {
+          cnicUrl = await uploadToCloudinary(form.cnicFile, "unimart/agent-cnic");
+        } catch (uploadErr) {
+          console.warn("CNIC upload failed:", uploadErr.message);
+        }
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, form.email, form.password);
       const user = userCredential.user;
       await sendEmailVerification(user);
@@ -64,16 +90,21 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
         nationalId: form.nationalId,
         emailVerified: false,
         profileComplete: true,
-        status: "pending", // requires Marketing Manager approval
+        status: "pending",
         createdAt: serverTimestamp()
       });
 
       await setDoc(doc(db, "agents", user.uid), {
+        fullName: form.fullName,
+        email: form.email,
+        phone: form.phone,
         city: form.city,
+        nationalId: form.nationalId,
+        cnicUrl: cnicUrl,
         tier: "bronze",
         status: "pending",
         referralCode: generateReferralCode(form.fullName),
-        monthlyTargets: { newStores: 0, salesAmount: 0, traffic: 0 }, // set later by Marketing Manager
+        monthlyTargets: { newStores: 0, salesAmount: 0, traffic: 0 },
         taggedStores: [],
         missedTargetCount: 0,
         experience: form.experience || null,
@@ -157,6 +188,16 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
           </Field>
           <Field label="National ID" error={errors.nationalId}>
             <input className="input-field" value={form.nationalId} onChange={(e) => handleChange("nationalId", e.target.value)} placeholder="XXXXX-XXXXXXX-X" />
+          </Field>
+
+          <Field label="CNIC Photo Upload (optional but recommended)">
+            <input
+              type="file"
+              className="input-field"
+              accept="image/*,application/pdf"
+              onChange={(e) => handleChange("cnicFile", e.target.files[0])}
+            />
+            <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Upload a clear photo of your CNIC (front side)</div>
           </Field>
           <Field label="City" error={errors.city}>
             <input className="input-field" value={form.city} onChange={(e) => handleChange("city", e.target.value)} />

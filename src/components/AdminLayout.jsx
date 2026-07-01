@@ -25,7 +25,7 @@ const SIDEBAR_ITEMS = {
   ],
   seller_manager: [
     { key: "dashboard", icon: "🏠", label: "Dashboard" },
-    { key: "dashboard", icon: "📋", label: "New Registrations" },
+    { key: "seller-registrations", icon: "📋", label: "New Registrations" },
     { key: "all-sellers", icon: "🏪", label: "All Sellers" },
     { key: "product-review", icon: "📦", label: "Product Reviews" },
     { key: "vacation-requests", icon: "🌴", label: "Vacation Requests" },
@@ -33,23 +33,27 @@ const SIDEBAR_ITEMS = {
   ],
   marketing_manager: [
     { key: "dashboard", icon: "🏠", label: "Dashboard" },
-    { key: "performance", icon: "📊", label: "Performance" },
+    { key: "agents", icon: "🤝", label: "Agent Management" },
+    { key: "performance", icon: "📊", label: "Performance Analytics" },
     { key: "fraud-monitor", icon: "🔍", label: "Fraud Monitor" },
   ],
   support_team: [
     { key: "dashboard", icon: "🏠", label: "Dashboard" },
+    { key: "disputes", icon: "⚔️", label: "Disputes" },
     { key: "complaints", icon: "💬", label: "Complaints" },
-    { key: "returns", icon: "↩️", label: "Returns/Refunds" },
+    { key: "returns", icon: "↩️", label: "Returns & Refunds" },
   ],
   finance_team: [
     { key: "dashboard", icon: "🏠", label: "Dashboard" },
+    { key: "withdrawals", icon: "💸", label: "Withdrawal Requests" },
     { key: "reports", icon: "📈", label: "Financial Reports" },
     { key: "reconciliation", icon: "⚖️", label: "Reconciliation" },
   ],
   content_team: [
     { key: "dashboard", icon: "🏠", label: "Dashboard" },
+    { key: "product-reviews", icon: "📦", label: "Product Reviews" },
     { key: "flagged-listings", icon: "🚩", label: "Flagged Listings" },
-    { key: "banners", icon: "🖼️", label: "Banners" },
+    { key: "banners", icon: "🖼️", label: "Banner Management" },
   ],
 };
 
@@ -130,7 +134,7 @@ export default function AdminLayout({ role, currentPage, onNavigate, children })
 
         {/* Topbar (mobile + desktop) */}
         <div style={s.topbar}>
-          {/* Hamburger — mobile only (hidden on desktop via CSS) */}
+          {/* Hamburger — mobile only */}
           <button
             className="admin-menu-toggle"
             style={s.menuToggle}
@@ -141,8 +145,14 @@ export default function AdminLayout({ role, currentPage, onNavigate, children })
           <div style={s.pageTitle}>
             {items.find(i => i.key === currentPage)?.label || roleLabel}
           </div>
-          <div style={s.adminChip}>
-            <span>👤</span> {roleLabel}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={s.adminChip}>
+              <span>👤</span> {roleLabel}
+            </div>
+            {/* Logout button — visible on both mobile and desktop */}
+            <button style={s.topbarLogoutBtn} onClick={handleLogout} title="Logout">
+              🚪
+            </button>
           </div>
         </div>
 
@@ -281,5 +291,17 @@ const s = {
     padding: "6px 14px", borderRadius: 999,
     fontSize: 13, fontWeight: 600,
     display: "flex", alignItems: "center", gap: 7
+  },
+  topbarLogoutBtn: {
+    background: "#FCEAEA",
+    border: "1px solid #f5c6c6",
+    borderRadius: 10,
+    padding: "8px 12px",
+    fontSize: 16,
+    cursor: "pointer",
+    color: "#C0392B",
+    fontFamily: "inherit",
+    display: "flex",
+    alignItems: "center"
   }
 };

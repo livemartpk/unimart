@@ -101,6 +101,14 @@ export default function AgentManagement({ user }) {
             <DetailRow label="Payment Account" value={selectedAgent.paymentAccount} />
             <DetailRow label="Experience" value={selectedAgent.experience || "Not provided"} />
             <DetailRow label="Social Handle" value={selectedAgent.socialHandle || "Not provided"} />
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10.5, color: "#888", marginBottom: 4 }}>CNIC Document</div>
+              {selectedAgent.cnicUrl ? (
+                <a href={selectedAgent.cnicUrl} target="_blank" rel="noreferrer" style={{ color: "#0B3D2E", fontWeight: 700, fontSize: 13 }}>View CNIC Photo ↗</a>
+              ) : (
+                <div style={{ fontSize: 12, color: "#aaa", fontStyle: "italic" }}>No CNIC uploaded</div>
+              )}
+            </div>
             <DetailRow label="Applied On" value={selectedAgent.createdAt?.toDate ? selectedAgent.createdAt.toDate().toLocaleDateString() : "—"} />
 
             {tab === "pending" && (

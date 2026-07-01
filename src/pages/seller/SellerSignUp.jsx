@@ -46,6 +46,23 @@ export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrows
     return e;
   };
 
+  const CLOUD_NAME = "eez9oojf";
+  const UPLOAD_PRESET = "unimart-products";
+
+  const uploadToCloudinary = async (file, folder = "unimart/documents") => {
+    const data = new FormData();
+    data.append("file", file);
+    data.append("upload_preset", UPLOAD_PRESET);
+    data.append("folder", folder);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+      method: "POST",
+      body: data
+    });
+    const json = await res.json();
+    if (json.secure_url) return json.secure_url;
+    throw new Error(json.error?.message || "Upload failed");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -55,6 +72,17 @@ export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrows
 
     setLoading(true);
     try {
+      // Upload document to Cloudinary first (if selected)
+      let documentUrl = null;
+      if (form.documentFile) {
+        try {
+          documentUrl = await uploadToCloudinary(form.documentFile, "unimart/seller-documents");
+        } catch (uploadErr) {
+          console.warn("Document upload failed:", uploadErr.message);
+          // Continue without document — admin can request resubmission via objection
+        }
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, form.email, form.password);
       const user = userCredential.user;
       await sendEmailVerification(user);
@@ -80,8 +108,8 @@ export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrows
         city: form.city,
         documents: {
           type: CATEGORY_DOCS[form.category],
-          url: null, // file upload to Cloudinary happens client-side, URL saved here
-          status: "pending_review"
+          url: documentUrl,
+          status: documentUrl ? "uploaded" : "missing"
         },
         paymentDetails: { account: form.paymentAccount },
         storeStatus: "pending",
