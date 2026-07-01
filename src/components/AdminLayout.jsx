@@ -1,10 +1,12 @@
 // ============================================
-// UniMart - Admin Layout Wrapper
-// Persistent sidebar for desktop, bottom nav
-// for mobile. Used by all 6 admin portals.
-// Includes: Logout button + View Website link
+// UniMart - Admin Layout
+// Sidebar pattern copied from Rising Hope Society:
+// - Desktop: sidebar always visible (fixed left)
+// - Mobile: hamburger button toggles sidebar
+//   with overlay (same as RHS admin dashboard)
 // ============================================
 
+import { useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../config/firebase";
 import "../styles/theme.css";
@@ -60,16 +62,17 @@ const ROLE_LABELS = {
 };
 
 export default function AdminLayout({ role, currentPage, onNavigate, children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const items = SIDEBAR_ITEMS[role] || [];
   const roleLabel = ROLE_LABELS[role] || "Admin";
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      // App.jsx will detect auth state change and redirect to login
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
+    try { await signOut(auth); } catch (err) { console.error("Logout failed:", err); }
+  };
+
+  const handleNav = (key) => {
+    setSidebarOpen(false); // close sidebar on mobile after click
+    onNavigate && onNavigate(key);
   };
 
   const handleViewWebsite = () => {
@@ -77,76 +80,74 @@ export default function AdminLayout({ role, currentPage, onNavigate, children })
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-bg)", fontFamily: "var(--font-body)" }}>
+    <div style={s.shell}>
 
-      {/* ===== Desktop Sidebar ===== */}
-      <div className="admin-sidebar">
+      {/* ===== Sidebar ===== */}
+      <div className={`admin-sidebar${sidebarOpen ? " open" : ""}`}>
 
-        {/* Logo + Role */}
-        <div style={s.sidebarHeader}>
+        {/* Brand */}
+        <div style={s.brand}>
           <div style={s.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
           <div style={s.roleLabel}>{roleLabel}</div>
         </div>
 
         {/* Nav Links */}
-        <nav style={{ padding: "12px 0", flex: 1 }}>
+        <nav style={s.nav}>
           {items.map((item) => (
-            <div
+            <button
               key={item.key}
-              style={{ ...s.navItem, ...(currentPage === item.key ? s.navItemActive : {}) }}
-              onClick={() => onNavigate && onNavigate(item.key)}
+              style={{
+                ...s.navItem,
+                ...(currentPage === item.key ? s.navItemActive : {})
+              }}
+              onClick={() => handleNav(item.key)}
             >
-              <span style={{ fontSize: 16, minWidth: 20 }}>{item.icon}</span>
+              <span style={s.navIcon}>{item.icon}</span>
               <span>{item.label}</span>
-            </div>
+            </button>
           ))}
         </nav>
 
-        {/* Bottom Actions */}
+        {/* Bottom: View Website + Logout */}
         <div style={s.sidebarBottom}>
-          <div style={s.viewWebsiteBtn} onClick={handleViewWebsite}>
-            🌐 View Website
-          </div>
-          <div style={s.logoutBtn} onClick={handleLogout}>
-            🚪 Logout
-          </div>
+          <button style={s.viewWebsiteBtn} onClick={handleViewWebsite}>
+            🌐 <span>View Website</span>
+          </button>
+          <button style={s.logoutBtn} onClick={handleLogout}>
+            🚪 <span>Logout</span>
+          </button>
         </div>
       </div>
 
-      {/* ===== Main Content ===== */}
-      <div className="admin-content">
+      {/* ===== Mobile Overlay (click to close sidebar) ===== */}
+      {sidebarOpen && (
+        <div style={s.overlay} onClick={() => setSidebarOpen(false)} />
+      )}
 
-        {/* Mobile Header */}
-        <div className="admin-mobile-header">
-          <div style={s.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ fontSize: 11, color: "#D4AF37", fontWeight: 700 }}>{roleLabel}</div>
-            <div style={s.mobileLogoutBtn} onClick={handleLogout}>🚪</div>
+      {/* ===== Main Content ===== */}
+      <div className="admin-main-content" style={s.mainContent}>
+
+        {/* Topbar (mobile + desktop) */}
+        <div style={s.topbar}>
+          {/* Hamburger — mobile only (hidden on desktop via CSS) */}
+          <button
+            className="admin-menu-toggle"
+            style={s.menuToggle}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            ☰
+          </button>
+          <div style={s.pageTitle}>
+            {items.find(i => i.key === currentPage)?.label || roleLabel}
+          </div>
+          <div style={s.adminChip}>
+            <span>👤</span> {roleLabel}
           </div>
         </div>
 
         {/* Page Content */}
-        <div style={{ flex: 1, paddingBottom: 70 }}>
+        <div style={{ flex: 1, paddingBottom: 30 }}>
           {children}
-        </div>
-
-        {/* Mobile Bottom Nav */}
-        <div className="admin-mobile-nav">
-          {items.slice(0, 4).map((item) => (
-            <div
-              key={item.key}
-              style={{ ...s.mobileNavItem, ...(currentPage === item.key ? s.mobileNavActive : {}) }}
-              onClick={() => onNavigate && onNavigate(item.key)}
-            >
-              <span style={{ fontSize: 18 }}>{item.icon}</span>
-              <span style={{ fontSize: 9 }}>{item.label.split(" ")[0]}</span>
-            </div>
-          ))}
-          {/* Logout in mobile bottom nav */}
-          <div style={s.mobileNavItem} onClick={handleLogout}>
-            <span style={{ fontSize: 18 }}>🚪</span>
-            <span style={{ fontSize: 9 }}>Logout</span>
-          </div>
         </div>
 
       </div>
@@ -155,19 +156,129 @@ export default function AdminLayout({ role, currentPage, onNavigate, children })
 }
 
 const s = {
-  sidebarHeader: { padding: "24px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.1)" },
-  logo: { fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 },
-  roleLabel: { fontSize: 11, color: "#D4AF37", fontWeight: 700, letterSpacing: 0.5 },
+  shell: {
+    display: "flex",
+    minHeight: "100vh",
+    background: "#F0F4F3",
+    fontFamily: "var(--font-body)"
+  },
+  brand: {
+    padding: "20px 18px",
+    borderBottom: "1px solid rgba(255,255,255,0.12)",
+    flexShrink: 0
+  },
+  logo: {
+    fontFamily: "Georgia, serif",
+    fontSize: 22,
+    fontWeight: 800,
+    color: "#fff"
+  },
+  roleLabel: {
+    fontSize: 11,
+    color: "#D4AF37",
+    fontWeight: 700,
+    letterSpacing: 0.5,
+    marginTop: 3
+  },
+  nav: {
+    flex: 1,
+    padding: "16px 10px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    overflowY: "auto"
+  },
+  navItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "12px 14px",
+    borderRadius: 10,
+    background: "none",
+    border: "none",
+    color: "rgba(255,255,255,0.75)",
+    fontFamily: "inherit",
+    fontSize: 14,
+    fontWeight: 500,
+    cursor: "pointer",
+    textAlign: "left",
+    width: "100%",
+    transition: "background 0.2s"
+  },
+  navItemActive: {
+    background: "rgba(255,255,255,0.15)",
+    color: "#fff"
+  },
+  navIcon: { width: 20, textAlign: "center", fontSize: 16 },
 
-  navItem: { display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", cursor: "pointer", color: "#9dbfb4", fontSize: 13.5, fontWeight: 500 },
-  navItemActive: { background: "rgba(212,175,55,0.15)", color: "#D4AF37", borderLeft: "3px solid #D4AF37" },
+  sidebarBottom: {
+    padding: "12px 10px",
+    borderTop: "1px solid rgba(255,255,255,0.12)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 4
+  },
+  viewWebsiteBtn: {
+    display: "flex", alignItems: "center", gap: 12,
+    padding: "10px 14px", borderRadius: 10,
+    background: "none", border: "none",
+    color: "rgba(255,255,255,0.65)", fontSize: 13.5,
+    fontWeight: 500, cursor: "pointer", fontFamily: "inherit", width: "100%"
+  },
+  logoutBtn: {
+    display: "flex", alignItems: "center", gap: 12,
+    padding: "10px 14px", borderRadius: 10,
+    background: "rgba(255,80,80,0.13)",
+    border: "1px solid rgba(255,100,100,0.2)",
+    color: "rgba(255,180,180,0.9)", fontSize: 13.5,
+    fontWeight: 600, cursor: "pointer", fontFamily: "inherit", width: "100%"
+  },
 
-  sidebarBottom: { borderTop: "1px solid rgba(255,255,255,0.1)", padding: "12px 0" },
-  viewWebsiteBtn: { display: "flex", alignItems: "center", gap: 10, padding: "10px 20px", cursor: "pointer", color: "#9dbfb4", fontSize: 13, fontWeight: 500 },
-  logoutBtn: { display: "flex", alignItems: "center", gap: 10, padding: "10px 20px", cursor: "pointer", color: "#ff7b7b", fontSize: 13, fontWeight: 600 },
+  overlay: {
+    position: "fixed", inset: 0,
+    background: "rgba(0,0,0,0.5)",
+    zIndex: 99
+  },
 
-  mobileLogoutBtn: { background: "rgba(255,255,255,0.1)", borderRadius: 8, padding: "6px 10px", color: "#ff7b7b", cursor: "pointer", fontSize: 16 },
+  mainContent: {
+    marginLeft: 240,
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    minHeight: "100vh",
+    width: "calc(100% - 240px)",
+    overflowX: "hidden"
+  },
 
-  mobileNavItem: { display: "flex", flexDirection: "column", alignItems: "center", gap: 3, color: "#9dbfb4", fontWeight: 600, cursor: "pointer", minWidth: 48 },
-  mobileNavActive: { color: "#D4AF37" }
+  topbar: {
+    background: "#fff",
+    padding: "0 24px",
+    height: 62,
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+    borderBottom: "1px solid #E7DFD2",
+    position: "sticky",
+    top: 0,
+    zIndex: 40
+  },
+  menuToggle: {
+    background: "none", border: "none",
+    fontSize: 20, cursor: "pointer",
+    color: "#1F2E2B", display: "none"
+  },
+  pageTitle: {
+    fontFamily: "Georgia, serif",
+    fontSize: 18,
+    color: "#0B3D2E",
+    flex: 1,
+    fontWeight: 700
+  },
+  adminChip: {
+    background: "#EEF8F1", color: "#1F7A45",
+    border: "1px solid #BFE3CC",
+    padding: "6px 14px", borderRadius: 999,
+    fontSize: 13, fontWeight: 600,
+    display: "flex", alignItems: "center", gap: 7
+  }
 };
