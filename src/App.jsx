@@ -83,6 +83,7 @@ import DispatchSlip from "./pages/shared/DispatchSlip";
 import Notifications from "./pages/shared/Notifications";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import AdminLayout from "./components/AdminLayout";
+import SellerLayout from "./components/SellerLayout";
 
 export default function App() {
   const [firebaseUser, setFirebaseUser] = useState(null);
@@ -260,15 +261,32 @@ export default function App() {
     if (userData.status === "objection") {
       return <ObjectionScreen role="seller" userEmail={firebaseUser.email} userId={firebaseUser.uid} />;
     }
-    switch (page) {
-      case "products": return <MyProducts user={firebaseUser} onNavigate={navigate} />;
-      case "add-product": return <AddProduct user={firebaseUser} sellerStoreName={userData.storeName} onSuccess={() => navigate("products")} onNavigate={navigate} />;
-      case "orders": return <IncomingOrders user={firebaseUser} onNavigate={navigate} />;
-      case "wallet": return <SellerWallet user={firebaseUser} onNavigate={navigate} />;
-      case "points-boost": return <PointsAndBoost user={firebaseUser} onNavigate={navigate} />;
-      case "settings": return <StoreSettings user={firebaseUser} onNavigate={navigate} />;
-      default: return <SellerDashboard user={firebaseUser} onNavigate={navigate} />;
-    }
+
+    const getSellerPage = () => {
+      switch (page) {
+        case "my-products": return <MyProducts user={firebaseUser} onNavigate={navigate} />;
+        case "products": return <MyProducts user={firebaseUser} onNavigate={navigate} />;
+        case "add-product": return <AddProduct user={firebaseUser} sellerStoreName={userData.storeName} onSuccess={() => navigate("my-products")} onNavigate={navigate} />;
+        case "incoming-orders": return <IncomingOrders user={firebaseUser} onNavigate={navigate} />;
+        case "orders": return <IncomingOrders user={firebaseUser} onNavigate={navigate} />;
+        case "seller-wallet": return <SellerWallet user={firebaseUser} onNavigate={navigate} />;
+        case "wallet": return <SellerWallet user={firebaseUser} onNavigate={navigate} />;
+        case "points-boost": return <PointsAndBoost user={firebaseUser} onNavigate={navigate} />;
+        case "store-settings": return <StoreSettings user={firebaseUser} onNavigate={navigate} />;
+        case "settings": return <StoreSettings user={firebaseUser} onNavigate={navigate} />;
+        default: return <SellerDashboard user={firebaseUser} onNavigate={navigate} />;
+      }
+    };
+
+    return (
+      <SellerLayout
+        currentPage={page}
+        onNavigate={navigate}
+        storeName={userData.storeName}
+      >
+        {getSellerPage()}
+      </SellerLayout>
+    );
   }
 
   // ============ AGENT ROUTES ============
