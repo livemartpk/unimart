@@ -11,7 +11,7 @@ import { signOut } from "firebase/auth";
 import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
 
-export default function Homepage({ user, onNavigate }) {
+export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 }) {
   const [flashSaleProducts, setFlashSaleProducts] = useState([]);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
 
@@ -86,7 +86,10 @@ export default function Homepage({ user, onNavigate }) {
             {user ? (
               <>
                 <IconButton icon="🔔" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
-                <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
+                <div style={{ position: "relative" }}>
+                  <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
+                  {cartCount > 0 && <div style={styles.cartBadge}>{cartCount}</div>}
+                </div>
                 <div style={styles.logoutIconBtn} onClick={handleLogout}>🚪</div>
               </>
             ) : (
@@ -94,7 +97,10 @@ export default function Homepage({ user, onNavigate }) {
                 <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
                   👤 Login
                 </div>
-                <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
+                <div style={{ position: "relative" }}>
+                  <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
+                  {cartCount > 0 && <div style={styles.cartBadge}>{cartCount}</div>}
+                </div>
               </>
             )}
           </div>
@@ -236,7 +242,14 @@ export default function Homepage({ user, onNavigate }) {
                   <span style={styles.pprice}>Rs {p.price}</span>
                   <span style={styles.prating}>⭐{p.rating || "New"}</span>
                 </div>
-                <div style={styles.quickAdd} onClick={() => onNavigate && onNavigate("add-to-cart", p.id)}>+ Add to Cart</div>
+                <div style={styles.quickAdd} onClick={() => {
+                  if (onAddToCart) {
+                    onAddToCart(p);
+                    // If guest, redirect to login
+                    if (!user) { onNavigate && onNavigate("login"); return; }
+                  }
+                  onNavigate && onNavigate("cart");
+                }}>+ Add to Cart</div>
               </div>
             </div>
           ))}
@@ -282,6 +295,7 @@ const styles = {
   topIcons: { display: "flex", gap: 14, alignItems: "center" },
   loginIconBtn: { display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 12.5, padding: "8px 14px", borderRadius: 20, cursor: "pointer" },
   logoutIconBtn: { background: "rgba(255,80,80,0.2)", color: "#fff", fontSize: 16, width: 38, height: 38, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
+  cartBadge: { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, background: "#D4AF37", color: "#0B3D2E", borderRadius: 999, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" },
   iconBtn: { width: 38, height: 38, borderRadius: 12, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#fff", position: "relative", cursor: "pointer" },
   badgeDot: { position: "absolute", top: -3, right: -3, width: 9, height: 9, background: "#D4AF37", borderRadius: "50%", border: "2px solid #0B3D2E" },
   searchBar: { background: "rgba(255,255,255,0.95)", borderRadius: 14, padding: "13px 16px", color: "#6b6b6b", fontSize: 13, fontWeight: 500, cursor: "pointer" },

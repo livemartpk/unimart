@@ -91,7 +91,42 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [page, setPage] = useState("home");
   const [pageParam, setPageParam] = useState(null);
-  const [authMode, setAuthMode] = useState("browse"); // browse | login | buyer-signup | seller-signup | agent-signup | forgot-password
+  const [authMode, setAuthMode] = useState("browse");
+
+  // ===== CART STATE =====
+  const [cartItems, setCartItems] = useState([]);
+
+  const addToCart = (product, qty = 1) => {
+    setCartItems(prev => {
+      const existing = prev.find(i => i.productId === product.id);
+      if (existing) {
+        return prev.map(i => i.productId === product.id ? { ...i, qty: i.qty + qty } : i);
+      }
+      return [...prev, {
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.images?.[0] || null,
+        sellerId: product.sellerId,
+        sellerName: product.sellerName || "Seller",
+        qty
+      }];
+    });
+  };
+
+  const updateCartQty = (productId, newQty) => {
+    if (newQty <= 0) {
+      setCartItems(prev => prev.filter(i => i.productId !== productId));
+    } else {
+      setCartItems(prev => prev.map(i => i.productId === productId ? { ...i, qty: newQty } : i));
+    }
+  };
+
+  const removeFromCart = (productId) => {
+    setCartItems(prev => prev.filter(i => i.productId !== productId));
+  };
+
+  const clearCart = () => setCartItems([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
@@ -200,8 +235,8 @@ export default function App() {
     }
 
     switch (page) {
-      case "product": return <ProductDetail productId={pageParam} user={null} onNavigate={navigate} />;
-      default: return <Homepage user={null} onNavigate={navigate} />;
+      case "product": return <ProductDetail productId={pageParam} user={null} onNavigate={navigate} onAddToCart={addToCart} />;
+      default: return <Homepage user={null} onNavigate={navigate} onAddToCart={addToCart} cartCount={cartItems.length} />;
     }
   }
 
@@ -244,12 +279,12 @@ export default function App() {
       );
     }
     switch (page) {
-      case "product": return <ProductDetail productId={pageParam} user={firebaseUser} onNavigate={navigate} />;
-      case "cart": return <Cart user={firebaseUser} onNavigate={navigate} />;
-      case "checkout": return <Checkout user={userData} onNavigate={navigate} />;
+      case "product": return <ProductDetail productId={pageParam} user={firebaseUser} onNavigate={navigate} onAddToCart={addToCart} />;
+      case "cart": return <Cart cartItems={cartItems} onUpdateQty={updateCartQty} onRemoveItem={removeFromCart} onNavigate={navigate} onCheckout={() => navigate("checkout")} />;
+      case "checkout": return <Checkout user={userData} cartItems={cartItems} onNavigate={navigate} onOrderPlaced={clearCart} />;
       case "orders": return <MyOrders user={firebaseUser} onNavigate={navigate} />;
       case "wallet": return <BuyerWallet user={firebaseUser} onNavigate={navigate} />;
-      default: return <Homepage user={userData} onNavigate={navigate} />;
+      default: return <Homepage user={userData} onNavigate={navigate} onAddToCart={addToCart} cartCount={cartItems.length} />;
     }
   }
 
