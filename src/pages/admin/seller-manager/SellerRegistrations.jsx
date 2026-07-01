@@ -1,6 +1,7 @@
 // ============================================
-// UniMart - New Registrations (Seller Manager)
-// Reviews seller applications + category documents.
+// UniMart - Seller Registrations (Seller Manager)
+// Pending seller applications with full View
+// Details modal before Approve/Reject.
 // ============================================
 
 import { useState, useEffect } from "react";
@@ -10,137 +11,115 @@ import "../../../styles/theme.css";
 
 export default function SellerRegistrations({ user }) {
   const [sellers, setSellers] = useState([]);
+  const [tab, setTab] = useState("pending");
   const [loading, setLoading] = useState(true);
   const [selectedSeller, setSelectedSeller] = useState(null);
-  const [rejectReason, setRejectReason] = useState("");
-  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    loadPendingSellers();
-  }, []);
+  useEffect(() => { loadSellers(); }, [tab]);
 
-  const loadPendingSellers = async () => {
+  const loadSellers = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, "sellers"), where("storeStatus", "==", "pending"));
+      const q = query(collection(db, "sellers"), where("status", "==", tab));
       const snap = await getDocs(q);
-      setSellers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    } catch (err) {
-      console.error("Failed to load pending sellers:", err);
-    }
+      setSellers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) { console.error(err); }
     setLoading(false);
   };
 
-  const handleApprove = async (sellerId) => {
+  const handleApprove = async (seller) => {
+    setActionLoading(true);
     try {
-      await updateDoc(doc(db, "sellers", sellerId), {
-        storeStatus: "approved",
-        "documents.status": "verified"
-      });
-      await updateDoc(doc(db, "users", sellerId), { status: "active" });
-
-      await addDoc(collection(db, "adminLogs"), {
-        adminId: user.uid,
-        adminRole: "seller_manager",
-        action: "approved_seller",
-        targetId: sellerId,
-        timestamp: serverTimestamp()
-      });
-
-      setSellers((ss) => ss.filter((s) => s.id !== sellerId));
-    } catch (err) {
-      console.error("Failed to approve seller:", err);
-    }
+      await updateDoc(doc(db, "sellers", seller.id), { status: "approved", storeStatus: "approved", approvedAt: serverTimestamp(), approvedBy: user.uid });
+      await updateDoc(doc(db, "users", seller.id), { status: "active" });
+      await addDoc(collection(db, "adminLogs"), { adminId: user.uid, adminRole: "seller_manager", action: "approved_seller", targetId: seller.id, timestamp: serverTimestamp() });
+      await addDoc(collection(db, "notifications"), { userId: seller.id, type: "tag_status", message: "Your seller application has been approved! You can now log in and add products.", read: false, createdAt: serverTimestamp() });
+      setSelectedSeller(null);
+      loadSellers();
+    } catch (err) { console.error(err); }
+    setActionLoading(false);
   };
 
-  const openRejectModal = (seller) => {
-    setSelectedSeller(seller);
-    setRejectReason("");
-    setShowRejectModal(true);
-  };
-
-  const handleReject = async () => {
-    if (!rejectReason.trim()) {
-      alert("Please provide a rejection reason.");
-      return;
-    }
+  const handleReject = async (seller) => {
+    const reason = window.prompt("Reason for rejection (will be sent to applicant):");
+    if (!reason) return;
+    setActionLoading(true);
     try {
-      await updateDoc(doc(db, "sellers", selectedSeller.id), {
-        storeStatus: "rejected",
-        rejectionReason: rejectReason,
-        "documents.status": "rejected"
-      });
-
-      await addDoc(collection(db, "adminLogs"), {
-        adminId: user.uid,
-        adminRole: "seller_manager",
-        action: "rejected_seller",
-        targetId: selectedSeller.id,
-        timestamp: serverTimestamp()
-      });
-
-      setSellers((ss) => ss.filter((s) => s.id !== selectedSeller.id));
-      setShowRejectModal(false);
-    } catch (err) {
-      console.error("Failed to reject seller:", err);
-    }
+      await updateDoc(doc(db, "sellers", seller.id), { status: "rejected", rejectionReason: reason });
+      await updateDoc(doc(db, "users", seller.id), { status: "rejected" });
+      await addDoc(collection(db, "notifications"), { userId: seller.id, type: "tag_status", message: `Your seller application was not approved. Reason: ${reason}`, read: false, createdAt: serverTimestamp() });
+      setSelectedSeller(null);
+      loadSellers();
+    } catch (err) { console.error(err); }
+    setActionLoading(false);
   };
 
   return (
-    <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>New Seller Registrations</div>
-        <div style={styles.headerSub}>{sellers.length} pending review</div>
+    <div style={s.page}>
+      <div style={s.header}>
+        <div style={s.headerTitle}>Seller Registrations</div>
       </div>
 
-      <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
-        {loading ? (
-          <p style={styles.emptyText}>Loading...</p>
-        ) : sellers.length === 0 ? (
-          <p style={styles.emptyText}>No pending registrations. All caught up!</p>
-        ) : (
-          sellers.map((s) => (
-            <div key={s.id} style={styles.sellerCard}>
-              <div style={styles.sellerTop}>
-                <div style={styles.storeName}>{s.storeName}</div>
-                <div style={styles.categoryTag}>{s.businessCategory}</div>
-              </div>
-              <div style={styles.metaRow}>City: {s.city} · Type: {s.businessType}</div>
+      <div style={s.tabRow}>
+        {["pending", "approved", "rejected"].map(t => (
+          <div key={t} style={{ ...s.tab, ...(tab === t ? s.tabActive : {}) }} onClick={() => setTab(t)}>
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+          </div>
+        ))}
+      </div>
 
-              <div style={styles.docChecklist}>
-                <div style={styles.docRow}>📄 Required document: <b>{s.documents?.type}</b></div>
-                <div style={styles.docRow}>
-                  Status: {s.documents?.url ? "✅ Uploaded" : "❌ Missing"}
-                </div>
+      <div style={{ padding: "0 16px 100px" }}>
+        {loading ? <p style={s.empty}>Loading...</p>
+          : sellers.length === 0 ? <p style={s.empty}>No {tab} sellers.</p>
+          : sellers.map(seller => (
+            <div key={seller.id} style={s.card}>
+              <div>
+                <div style={s.cardName}>{seller.storeName || "Unnamed Store"}</div>
+                <div style={s.cardMeta}>{seller.city} · {seller.businessCategory}</div>
               </div>
-
-              <div style={styles.actionsRow}>
-                <button className="btn-secondary" style={styles.smallBtn} onClick={() => openRejectModal(s)}>Reject</button>
-                <button className="btn-primary" style={styles.smallBtn} onClick={() => handleApprove(s.id)}>Approve</button>
-              </div>
+              <div style={s.viewBtn} onClick={() => setSelectedSeller(seller)}>View Details</div>
             </div>
           ))
-        )}
+        }
       </div>
 
-      {showRejectModal && (
-        <div style={styles.modalOverlay} onClick={() => setShowRejectModal(false)}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 style={styles.modalTitle}>Reject Application</h3>
-            <p style={{ fontSize: 12.5, color: "#666", marginBottom: 12 }}>{selectedSeller?.storeName}</p>
-            <label className="input-label">Reason for rejection</label>
-            <textarea
-              className="input-field"
-              rows={3}
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              style={{ resize: "none", fontFamily: "inherit", marginBottom: 16 }}
-              placeholder="e.g. Document unclear, please re-upload a clearer copy"
-            />
-            <div style={{ display: "flex", gap: 10 }}>
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowRejectModal(false)}>Cancel</button>
-              <button className="btn-primary" style={{ flex: 1, background: "#C0392B" }} onClick={handleReject}>Reject</button>
-            </div>
+      {/* Detail Modal */}
+      {selectedSeller && (
+        <div style={s.overlay} onClick={() => setSelectedSeller(null)}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <div style={s.modalTitle}>Seller Application</div>
+
+            <DetailRow label="Store Name" value={selectedSeller.storeName} />
+            <DetailRow label="Owner Name" value={selectedSeller.ownerName} />
+            <DetailRow label="Email" value={selectedSeller.email} />
+            <DetailRow label="Phone" value={selectedSeller.phone} />
+            <DetailRow label="City" value={selectedSeller.city} />
+            <DetailRow label="National ID (CNIC)" value={selectedSeller.nationalId} />
+            <DetailRow label="Business Category" value={selectedSeller.businessCategory} />
+            <DetailRow label="Business Type" value={selectedSeller.businessType} />
+            <DetailRow label="Monthly Volume" value={selectedSeller.monthlyVolume} />
+            <DetailRow label="Payment Account" value={selectedSeller.paymentAccount} />
+
+            {selectedSeller.categoryDocument && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 10.5, color: "#888", marginBottom: 4 }}>Category Document</div>
+                <a href={selectedSeller.categoryDocument} target="_blank" rel="noreferrer" style={{ color: "#0B3D2E", fontWeight: 700, fontSize: 13 }}>View Document ↗</a>
+              </div>
+            )}
+
+            <DetailRow label="Applied On" value={selectedSeller.createdAt?.toDate ? selectedSeller.createdAt.toDate().toLocaleDateString() : "—"} />
+
+            {tab === "pending" && (
+              <div style={s.modalActions}>
+                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => handleReject(selectedSeller)} disabled={actionLoading}>Reject</button>
+                <button className="btn-primary" style={{ flex: 1 }} onClick={() => handleApprove(selectedSeller)} disabled={actionLoading}>
+                  {actionLoading ? "Processing..." : "Approve Seller"}
+                </button>
+              </div>
+            )}
+
+            <div style={s.closeBtn} onClick={() => setSelectedSeller(null)}>Close</div>
           </div>
         </div>
       )}
@@ -148,27 +127,30 @@ export default function SellerRegistrations({ user }) {
   );
 }
 
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)", margin: "0 auto" },
+function DetailRow({ label, value }) {
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ fontSize: 10.5, color: "#888", marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 13.5, color: "#1a1a1a", fontWeight: 500 }}>{value || "—"}</div>
+    </div>
+  );
+}
+
+const s = {
+  page: { minHeight: "100vh", background: "var(--color-bg)" },
   header: { background: "#0B3D2E", padding: "18px 16px" },
   headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700 },
-  headerSub: { color: "#cfe0d4", fontSize: 12, marginTop: 2 },
-
-  emptyText: { fontSize: 13, color: "#888", padding: "20px 0" },
-
-  sellerCard: { background: "#fff", border: "1px solid #eee0c0", borderRadius: 14, padding: 16, marginBottom: 12 },
-  sellerTop: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
-  storeName: { fontSize: 14.5, fontWeight: 700, color: "#1a1a1a" },
-  categoryTag: { fontSize: 10, fontWeight: 700, background: "#F0F5F0", color: "#0B3D2E", padding: "4px 10px", borderRadius: 10 },
-  metaRow: { fontSize: 11.5, color: "#888", marginBottom: 10 },
-
-  docChecklist: { background: "#F0F5F0", borderRadius: 10, padding: 12, marginBottom: 12 },
-  docRow: { fontSize: 12, color: "#444", marginBottom: 4 },
-
-  actionsRow: { display: "flex", gap: 10 },
-  smallBtn: { flex: 1, fontSize: 12.5, padding: "9px 0" },
-
-  modalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end", zIndex: 50 },
-  modal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", margin: "0 auto" },
-  modalTitle: { fontSize: 17, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 8 }
+  tabRow: { display: "flex", gap: 8, padding: "14px 16px" },
+  tab: { flex: 1, textAlign: "center", padding: "10px 0", borderRadius: 10, border: "1.5px solid #eee0c0", fontSize: 12, fontWeight: 700, color: "#0B3D2E", cursor: "pointer", background: "#fff" },
+  tabActive: { background: "#0B3D2E", color: "#fff", borderColor: "#0B3D2E" },
+  empty: { fontSize: 13, color: "#888", padding: "20px 0" },
+  card: { display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", border: "1px solid #eee0c0", borderRadius: 12, padding: 14, marginBottom: 10 },
+  cardName: { fontSize: 13.5, fontWeight: 700, color: "#1a1a1a" },
+  cardMeta: { fontSize: 11, color: "#888", marginTop: 3 },
+  viewBtn: { background: "#0B3D2E", color: "#D4AF37", fontWeight: 700, fontSize: 11.5, padding: "8px 14px", borderRadius: 20, cursor: "pointer" },
+  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "flex-end" },
+  modal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", maxHeight: "85vh", overflowY: "auto" },
+  modalTitle: { fontSize: 17, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 16, fontWeight: 700 },
+  modalActions: { display: "flex", gap: 10, marginTop: 20, marginBottom: 12 },
+  closeBtn: { textAlign: "center", fontSize: 13, color: "#888", cursor: "pointer", padding: "8px 0" }
 };

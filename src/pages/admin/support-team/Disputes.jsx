@@ -1,8 +1,7 @@
 // ============================================
 // UniMart - Disputes (Support Team)
-// Final decision authority rests with Support Team
-// (per our decision — no Super Admin approval needed
-// for each case).
+// Full dispute detail + resolution modal.
+// Support Team has final authority.
 // ============================================
 
 import { useState, useEffect } from "react";
@@ -12,109 +11,98 @@ import "../../../styles/theme.css";
 
 export default function Disputes({ user }) {
   const [disputes, setDisputes] = useState([]);
+  const [tab, setTab] = useState("open");
   const [loading, setLoading] = useState(true);
-  const [selectedDispute, setSelectedDispute] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [resolution, setResolution] = useState("");
+  const [favor, setFavor] = useState("buyer");
+  const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    loadDisputes();
-  }, []);
+  useEffect(() => { loadDisputes(); }, [tab]);
 
   const loadDisputes = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, "disputes"), where("status", "==", "open"));
+      const q = query(collection(db, "disputes"), where("status", "==", tab));
       const snap = await getDocs(q);
-      setDisputes(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    } catch (err) {
-      console.error("Failed to load disputes:", err);
-    }
+      setDisputes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) { console.error(err); }
     setLoading(false);
   };
 
-  const handleResolve = async (decision) => {
+  const handleResolve = async () => {
+    if (!resolution.trim()) { alert("Write a resolution note."); return; }
+    setActionLoading(true);
     try {
-      await updateDoc(doc(db, "disputes", selectedDispute.id), {
-        status: decision === "buyer" ? "resolved_buyer" : decision === "seller" ? "resolved_seller" : "partial",
-        resolvedBy: user.uid,
-        resolvedAt: serverTimestamp()
-      });
-
-      await addDoc(collection(db, "adminLogs"), {
-        adminId: user.uid,
-        adminRole: "support_team",
-        action: `resolved_dispute_${decision}`,
-        targetId: selectedDispute.id,
-        timestamp: serverTimestamp()
-      });
-
-      // NOTE: In production, this is also where the refund (to Buyer Wallet,
-      // per our decision — instant credit) or order release would be triggered.
-
-      setDisputes((ds) => ds.filter((d) => d.id !== selectedDispute.id));
-      setSelectedDispute(null);
-
-    } catch (err) {
-      console.error("Failed to resolve dispute:", err);
-    }
-  };
-
-  const categoryLabels = {
-    not_received: "Not Received",
-    defective: "Defective Item",
-    wrong_item: "Wrong Item",
-    fake: "Fake / Counterfeit",
-    other: "Other"
+      const newStatus = favor === "buyer" ? "resolved_buyer" : "resolved_seller";
+      await updateDoc(doc(db, "disputes", selected.id), { status: newStatus, resolution, resolvedBy: user.uid, resolvedAt: serverTimestamp() });
+      await addDoc(collection(db, "notifications"), { userId: selected.buyerId, type: "order_update", message: `Your dispute for Order #${selected.orderId?.slice(0, 8)} has been resolved. ${resolution}`, read: false, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "notifications"), { userId: selected.sellerId, type: "order_update", message: `Dispute for Order #${selected.orderId?.slice(0, 8)} has been resolved. ${resolution}`, read: false, createdAt: serverTimestamp() });
+      setSelected(null);
+      setResolution("");
+      loadDisputes();
+    } catch (err) { console.error(err); }
+    setActionLoading(false);
   };
 
   return (
-    <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Open Disputes</div>
-        <div style={styles.headerSub}>{disputes.length} awaiting resolution</div>
+    <div style={s.page}>
+      <div style={s.header}>
+        <div style={s.headerTitle}>Disputes</div>
       </div>
 
-      <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
-        {loading ? (
-          <p style={styles.emptyText}>Loading disputes...</p>
-        ) : disputes.length === 0 ? (
-          <p style={styles.emptyText}>No open disputes. Great job staying on top of things!</p>
-        ) : (
-          disputes.map((d) => (
-            <div key={d.id} style={styles.disputeCard} onClick={() => setSelectedDispute(d)}>
-              <div style={styles.disputeTop}>
-                <div style={styles.orderId}>Order #{d.orderId?.slice(0, 8)}</div>
-                <div style={styles.categoryTag}>{categoryLabels[d.category] || d.category}</div>
+      <div style={s.tabRow}>
+        {["open", "resolved_buyer", "resolved_seller"].map(t => (
+          <div key={t} style={{ ...s.tab, ...(tab === t ? s.tabActive : {}) }} onClick={() => setTab(t)}>
+            {t === "open" ? "Open" : t === "resolved_buyer" ? "Buyer Won" : "Seller Won"}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ padding: "0 16px 100px" }}>
+        {loading ? <p style={s.empty}>Loading...</p>
+          : disputes.length === 0 ? <p style={s.empty}>No {tab} disputes.</p>
+          : disputes.map(d => (
+            <div key={d.id} style={s.card}>
+              <div>
+                <div style={s.cardName}>Order #{d.orderId?.slice(0, 8)}</div>
+                <div style={s.cardMeta}>{d.reason?.slice(0, 40)}...</div>
               </div>
-              <div style={styles.disputeReason}>{d.buyerReason}</div>
+              <div style={s.viewBtn} onClick={() => setSelected(d)}>View Details</div>
             </div>
           ))
-        )}
+        }
       </div>
 
-      {selectedDispute && (
-        <div style={styles.modalOverlay} onClick={() => setSelectedDispute(null)}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 style={styles.modalTitle}>Dispute — Order #{selectedDispute.orderId?.slice(0, 8)}</h3>
+      {selected && (
+        <div style={s.overlay} onClick={() => setSelected(null)}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <div style={s.modalTitle}>Dispute Details</div>
+            <DetailRow label="Order ID" value={selected.orderId?.slice(0, 12)} />
+            <DetailRow label="Reason" value={selected.reason} />
+            <DetailRow label="Description" value={selected.description} />
+            <DetailRow label="Buyer ID" value={selected.buyerId?.slice(0, 12)} />
+            <DetailRow label="Seller ID" value={selected.sellerId?.slice(0, 12)} />
+            <DetailRow label="Opened On" value={selected.createdAt?.toDate ? selected.createdAt.toDate().toLocaleString() : "—"} />
 
-            <div style={styles.evidenceBox}>
-              <div style={styles.evidenceLabel}>Buyer's Claim</div>
-              <div style={styles.evidenceText}>{selectedDispute.buyerReason}</div>
-              {selectedDispute.buyerProof?.length > 0 && (
-                <div style={styles.proofRow}>{selectedDispute.buyerProof.length} photo(s)/video(s) attached</div>
-              )}
-            </div>
-
-            <div style={styles.evidenceBox}>
-              <div style={styles.evidenceLabel}>Seller's Response</div>
-              <div style={styles.evidenceText}>{selectedDispute.sellerResponse || "No response yet."}</div>
-            </div>
-
-            <p style={styles.decisionPrompt}>Make a final decision:</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <button className="btn-primary" onClick={() => handleResolve("buyer")}>Refund Buyer (in favor of buyer)</button>
-              <button className="btn-secondary" onClick={() => handleResolve("seller")}>Favor Seller (release payment)</button>
-              <button className="btn-secondary" onClick={() => handleResolve("partial")}>Partial Refund</button>
-            </div>
+            {tab === "open" && (
+              <>
+                <div style={{ marginTop: 16, marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: "#888", marginBottom: 6 }}>Resolve in favor of:</div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <div style={{ ...s.favorBtn, ...(favor === "buyer" ? s.favorActive : {}) }} onClick={() => setFavor("buyer")}>Buyer</div>
+                    <div style={{ ...s.favorBtn, ...(favor === "seller" ? s.favorActive : {}) }} onClick={() => setFavor("seller")}>Seller</div>
+                  </div>
+                </div>
+                <textarea className="input-field" rows={3} value={resolution} onChange={e => setResolution(e.target.value)} placeholder="Write resolution note (will be sent to both parties)..." style={{ resize: "none", fontFamily: "inherit", marginBottom: 12 }} />
+                <div style={s.modalActions}>
+                  <button className="btn-primary" style={{ flex: 1 }} onClick={handleResolve} disabled={actionLoading}>
+                    {actionLoading ? "Resolving..." : "Resolve Dispute"}
+                  </button>
+                </div>
+              </>
+            )}
+            <div style={s.closeBtn} onClick={() => setSelected(null)}>Close</div>
           </div>
         </div>
       )}
@@ -122,28 +110,32 @@ export default function Disputes({ user }) {
   );
 }
 
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)", margin: "0 auto" },
+function DetailRow({ label, value }) {
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ fontSize: 10.5, color: "#888", marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 13, color: "#1a1a1a", fontWeight: 500, lineHeight: 1.4 }}>{value || "—"}</div>
+    </div>
+  );
+}
+
+const s = {
+  page: { minHeight: "100vh", background: "var(--color-bg)" },
   header: { background: "#0B3D2E", padding: "18px 16px" },
   headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700 },
-  headerSub: { color: "#cfe0d4", fontSize: 12, marginTop: 2 },
-
-  emptyText: { fontSize: 13, color: "#888", padding: "20px 0" },
-
-  disputeCard: { background: "#fff", border: "1px solid #eee0c0", borderRadius: 12, padding: 14, marginBottom: 10, cursor: "pointer" },
-  disputeTop: { display: "flex", justifyContent: "space-between", marginBottom: 6 },
-  orderId: { fontSize: 13, fontWeight: 700, color: "#1a1a1a" },
-  categoryTag: { fontSize: 10, fontWeight: 700, background: "#FCEAEA", color: "#C0392B", padding: "4px 10px", borderRadius: 10 },
-  disputeReason: { fontSize: 12, color: "#666" },
-
-  modalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end", zIndex: 50 },
-  modal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", margin: "0 auto", maxHeight: "80vh", overflowY: "auto" },
-  modalTitle: { fontSize: 16, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 16 },
-
-  evidenceBox: { background: "#F0F5F0", borderRadius: 10, padding: 12, marginBottom: 12 },
-  evidenceLabel: { fontSize: 11, fontWeight: 700, color: "#0B3D2E", marginBottom: 6, textTransform: "uppercase" },
-  evidenceText: { fontSize: 12.5, color: "#444", lineHeight: 1.5 },
-  proofRow: { fontSize: 11, color: "#0B3D2E", marginTop: 8, fontWeight: 600 },
-
-  decisionPrompt: { fontSize: 12.5, fontWeight: 700, color: "#0B3D2E", margin: "16px 0 10px" }
+  tabRow: { display: "flex", gap: 6, padding: "14px 16px" },
+  tab: { flex: 1, textAlign: "center", padding: "10px 0", borderRadius: 10, border: "1.5px solid #eee0c0", fontSize: 11, fontWeight: 700, color: "#0B3D2E", cursor: "pointer", background: "#fff" },
+  tabActive: { background: "#0B3D2E", color: "#fff", borderColor: "#0B3D2E" },
+  empty: { fontSize: 13, color: "#888", padding: "20px 0" },
+  card: { display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", border: "1px solid #eee0c0", borderRadius: 12, padding: 14, marginBottom: 10 },
+  cardName: { fontSize: 13.5, fontWeight: 700, color: "#1a1a1a" },
+  cardMeta: { fontSize: 11, color: "#888", marginTop: 3 },
+  viewBtn: { background: "#0B3D2E", color: "#D4AF37", fontWeight: 700, fontSize: 11.5, padding: "8px 14px", borderRadius: 20, cursor: "pointer" },
+  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "flex-end" },
+  modal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", maxHeight: "85vh", overflowY: "auto" },
+  modalTitle: { fontSize: 17, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 16, fontWeight: 700 },
+  favorBtn: { flex: 1, textAlign: "center", padding: "10px 0", borderRadius: 10, border: "1.5px solid #eee0c0", fontSize: 13, fontWeight: 700, color: "#0B3D2E", cursor: "pointer" },
+  favorActive: { background: "#0B3D2E", color: "#D4AF37", borderColor: "#0B3D2E" },
+  modalActions: { display: "flex", gap: 10, marginBottom: 12 },
+  closeBtn: { textAlign: "center", fontSize: 13, color: "#888", cursor: "pointer", padding: "8px 0" }
 };

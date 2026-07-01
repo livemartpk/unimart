@@ -110,7 +110,7 @@ export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrows
       </div>
 
       <div className="container" style={styles.formWrap}>
-        {onBackToBrowsing && <p style={{fontSize:12.5,color:"#0B3D2E",fontWeight:600,cursor:"pointer",marginBottom:16}} onClick={onBackToBrowsing}>← Back to browsing</p>}
+        {onBackToBrowsing && <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px 20px",background:"#F0F5F0",border:"1.5px solid #eee0c0",borderRadius:12,fontSize:13.5,fontWeight:700,color:"#0B3D2E",cursor:"pointer",marginBottom:20}} onClick={onBackToBrowsing}>🏠 Back to Shopping</div>}
         <h2 style={styles.title}>Start selling on UniMart</h2>
         <p style={styles.subtitle}>Tell us about your store. Our team reviews every application within a few business days.</p>
 

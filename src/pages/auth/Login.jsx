@@ -82,7 +82,9 @@ export default function Login({ onLoginSuccess, onSwitchToSignUp, onForgotPasswo
 
       <div className="container" style={styles.formWrap}>
         {onBackToBrowsing && (
-          <p style={styles.backLink} onClick={onBackToBrowsing}>← Back to browsing</p>
+          <div style={styles.backToHomeBtn} onClick={onBackToBrowsing}>
+            🏠 Back to Shopping
+          </div>
         )}
         <h2 style={styles.title}>Welcome back</h2>
         <p style={styles.subtitle}>Log in to continue to your account.</p>
@@ -156,6 +158,7 @@ const styles = {
   switchText: { textAlign: "center", marginTop: 20, fontSize: 13, color: "#6b6b6b" },
   switchLink: { color: "#0B3D2E", fontWeight: 700, cursor: "pointer" },
   backLink: { fontSize: 12.5, color: "#0B3D2E", fontWeight: 600, cursor: "pointer", marginBottom: 16 },
+  backToHomeBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 20px", background: "#F0F5F0", border: "1.5px solid #eee0c0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#0B3D2E", cursor: "pointer", marginBottom: 20, textAlign: "center" },
   passwordWrap: { position: "relative" },
   eyeIcon: { position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", cursor: "pointer", fontSize: 16, userSelect: "none" },
   sellerAgentBox: { marginTop: 28, padding: 16, background: "#F0F5F0", borderRadius: 12, textAlign: "center" },

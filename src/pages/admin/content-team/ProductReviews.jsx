@@ -1,7 +1,7 @@
 // ============================================
 // UniMart - Product Reviews (Content Team)
-// Reviews new sellers' first 10 products for
-// quality/fake listing checks.
+// New seller first-10 products with full detail
+// View before Approve/Reject.
 // ============================================
 
 import { useState, useEffect } from "react";
@@ -9,116 +9,91 @@ import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimest
 import { db } from "../../../config/firebase";
 import "../../../styles/theme.css";
 
-const REJECT_REASONS = [
-  "Poor image quality",
-  "Misleading description",
-  "Price seems incorrect",
-  "Possible copyright/brand issue",
-  "Category mismatch"
-];
-
 export default function ProductReviews({ user }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [rejectReason, setRejectReason] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  useEffect(() => { loadProducts(); }, []);
 
   const loadProducts = async () => {
     setLoading(true);
     try {
       const q = query(collection(db, "products"), where("status", "==", "pending_review"));
       const snap = await getDocs(q);
-      setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    } catch (err) {
-      console.error("Failed to load products for review:", err);
-    }
+      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) { console.error(err); }
     setLoading(false);
   };
 
-  const handleApprove = async (productId) => {
+  const handleApprove = async (product) => {
+    setActionLoading(true);
     try {
-      await updateDoc(doc(db, "products", productId), { status: "active" });
-      await addDoc(collection(db, "adminLogs"), {
-        adminId: user.uid,
-        adminRole: "content_team",
-        action: "approved_product",
-        targetId: productId,
-        timestamp: serverTimestamp()
-      });
-      setProducts((ps) => ps.filter((p) => p.id !== productId));
-    } catch (err) {
-      console.error("Failed to approve product:", err);
-    }
+      await updateDoc(doc(db, "products", product.id), { status: "active", reviewedBy: user.uid, reviewedAt: serverTimestamp() });
+      await addDoc(collection(db, "adminLogs"), { adminId: user.uid, adminRole: "content_team", action: "approved_product", targetId: product.id, timestamp: serverTimestamp() });
+      setSelected(null);
+      loadProducts();
+    } catch (err) { console.error(err); }
+    setActionLoading(false);
   };
 
-  const handleReject = async () => {
-    if (!rejectReason) { alert("Select a rejection reason."); return; }
+  const handleReject = async (product) => {
+    const reason = window.prompt("Reason for rejection:");
+    if (!reason) return;
+    setActionLoading(true);
     try {
-      await updateDoc(doc(db, "products", selectedProduct.id), { status: "rejected", rejectionReason: rejectReason });
-      await addDoc(collection(db, "adminLogs"), {
-        adminId: user.uid,
-        adminRole: "content_team",
-        action: "rejected_product",
-        targetId: selectedProduct.id,
-        timestamp: serverTimestamp()
-      });
-      setProducts((ps) => ps.filter((p) => p.id !== selectedProduct.id));
-      setSelectedProduct(null);
-      setRejectReason("");
-    } catch (err) {
-      console.error("Failed to reject product:", err);
-    }
+      await updateDoc(doc(db, "products", product.id), { status: "rejected", rejectionReason: reason });
+      setSelected(null);
+      loadProducts();
+    } catch (err) { console.error(err); }
+    setActionLoading(false);
   };
 
   return (
-    <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Product Reviews</div>
-        <div style={styles.headerSub}>{products.length} pending</div>
+    <div style={s.page}>
+      <div style={s.header}>
+        <div style={s.headerTitle}>Product Reviews</div>
+        <div style={s.headerSub}>First-batch products from new sellers</div>
       </div>
 
-      <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
-        {loading ? (
-          <p style={styles.emptyText}>Loading...</p>
-        ) : products.length === 0 ? (
-          <p style={styles.emptyText}>No products awaiting review.</p>
-        ) : (
-          products.map((p) => (
-            <div key={p.id} style={styles.productCard}>
-              <div style={styles.productImg}>
-                {p.images?.[0] ? <img src={p.images[0]} alt={p.name} style={styles.imgFit} /> : "🛍️"}
+      <div style={{ padding: "16px 16px 100px" }}>
+        {loading ? <p style={s.empty}>Loading...</p>
+          : products.length === 0 ? <p style={s.empty}>No products awaiting review.</p>
+          : products.map(p => (
+            <div key={p.id} style={s.card}>
+              <div style={s.productImg}>
+                {p.images?.[0] ? <img src={p.images[0]} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 10 }} /> : "🛍️"}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={styles.productName}>{p.name}</div>
-                <div style={styles.productMeta}>{p.category} · Rs {p.price} · {p.sellerName}</div>
-                <div style={styles.actionsRow}>
-                  <button className="btn-secondary" style={styles.smallBtn} onClick={() => setSelectedProduct(p)}>Reject</button>
-                  <button className="btn-primary" style={styles.smallBtn} onClick={() => handleApprove(p.id)}>Approve</button>
-                </div>
+                <div style={s.cardName}>{p.name}</div>
+                <div style={s.cardMeta}>{p.sellerName} · Rs {p.price}</div>
               </div>
+              <div style={s.viewBtn} onClick={() => setSelected(p)}>View</div>
             </div>
           ))
-        )}
+        }
       </div>
 
-      {selectedProduct && (
-        <div style={styles.modalOverlay} onClick={() => setSelectedProduct(null)}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 style={styles.modalTitle}>Reject Product</h3>
-            <p style={{ fontSize: 12.5, color: "#666", marginBottom: 14 }}>{selectedProduct.name}</p>
-            {REJECT_REASONS.map((r) => (
-              <div key={r} style={{ ...styles.reasonOption, ...(rejectReason === r ? styles.reasonOptionActive : {}) }} onClick={() => setRejectReason(r)}>
-                {r}
-              </div>
-            ))}
-            <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setSelectedProduct(null)}>Cancel</button>
-              <button className="btn-primary" style={{ flex: 1, background: "#C0392B" }} onClick={handleReject}>Reject Product</button>
+      {selected && (
+        <div style={s.overlay} onClick={() => setSelected(null)}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <div style={s.modalTitle}>Product Detail</div>
+            {selected.images?.[0] && <img src={selected.images[0]} alt={selected.name} style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 12, marginBottom: 14 }} />}
+            <DetailRow label="Product Name" value={selected.name} />
+            <DetailRow label="Price" value={`Rs ${selected.price}`} />
+            <DetailRow label="Seller" value={selected.sellerName} />
+            <DetailRow label="Category" value={selected.category} />
+            <DetailRow label="Description" value={selected.description} />
+            <DetailRow label="Stock" value={selected.stock} />
+
+            <div style={s.modalActions}>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => handleReject(selected)} disabled={actionLoading}>Reject</button>
+              <button className="btn-primary" style={{ flex: 1 }} onClick={() => handleApprove(selected)} disabled={actionLoading}>
+                {actionLoading ? "Processing..." : "Approve"}
+              </button>
             </div>
+            <div style={s.closeBtn} onClick={() => setSelected(null)}>Close</div>
           </div>
         </div>
       )}
@@ -126,26 +101,29 @@ export default function ProductReviews({ user }) {
   );
 }
 
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)", margin: "0 auto" },
+function DetailRow({ label, value }) {
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ fontSize: 10.5, color: "#888", marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 13, color: "#1a1a1a", fontWeight: 500, lineHeight: 1.4 }}>{value || "—"}</div>
+    </div>
+  );
+}
+
+const s = {
+  page: { minHeight: "100vh", background: "var(--color-bg)" },
   header: { background: "#0B3D2E", padding: "18px 16px" },
   headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700 },
-  headerSub: { color: "#cfe0d4", fontSize: 12, marginTop: 2 },
-
-  emptyText: { fontSize: 13, color: "#888", padding: "20px 0" },
-
-  productCard: { display: "flex", gap: 12, background: "#fff", border: "1px solid #eee0c0", borderRadius: 14, padding: 12, marginBottom: 10 },
-  productImg: { width: 64, height: 64, background: "#F0F5F0", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 },
-  imgFit: { width: "100%", height: "100%", objectFit: "cover", borderRadius: 10 },
-  productName: { fontSize: 13, fontWeight: 700, color: "#1a1a1a" },
-  productMeta: { fontSize: 11, color: "#888", marginTop: 3 },
-  actionsRow: { display: "flex", gap: 8, marginTop: 8 },
-  smallBtn: { flex: 1, fontSize: 11.5, padding: "8px 0" },
-
-  modalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end", zIndex: 50 },
-  modal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", margin: "0 auto" },
-  modalTitle: { fontSize: 17, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 8 },
-
-  reasonOption: { padding: "10px 14px", borderRadius: 10, border: "1.5px solid #eee0c0", fontSize: 12.5, color: "#444", marginBottom: 8, cursor: "pointer" },
-  reasonOptionActive: { borderColor: "#C0392B", background: "#FCEAEA", color: "#C0392B", fontWeight: 600 }
+  headerSub: { color: "#cfe0d4", fontSize: 11.5, marginTop: 2 },
+  empty: { fontSize: 13, color: "#888", padding: "20px 0" },
+  card: { display: "flex", alignItems: "center", gap: 12, background: "#fff", border: "1px solid #eee0c0", borderRadius: 12, padding: 12, marginBottom: 10 },
+  productImg: { width: 56, height: 56, background: "#F0F5F0", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 },
+  cardName: { fontSize: 13, fontWeight: 700, color: "#1a1a1a" },
+  cardMeta: { fontSize: 11, color: "#888", marginTop: 3 },
+  viewBtn: { background: "#0B3D2E", color: "#D4AF37", fontWeight: 700, fontSize: 11.5, padding: "8px 14px", borderRadius: 20, cursor: "pointer", whiteSpace: "nowrap" },
+  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "flex-end" },
+  modal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", maxHeight: "90vh", overflowY: "auto" },
+  modalTitle: { fontSize: 17, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 16, fontWeight: 700 },
+  modalActions: { display: "flex", gap: 10, marginTop: 16, marginBottom: 12 },
+  closeBtn: { textAlign: "center", fontSize: 13, color: "#888", cursor: "pointer", padding: "8px 0" }
 };
