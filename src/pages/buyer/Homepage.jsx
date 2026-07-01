@@ -7,12 +7,17 @@
 
 import { useState, useEffect } from "react";
 import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
-import { db } from "../../config/firebase";
+import { signOut } from "firebase/auth";
+import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
 
 export default function Homepage({ user, onNavigate }) {
   const [flashSaleProducts, setFlashSaleProducts] = useState([]);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
+
+  const handleLogout = async () => {
+    try { await signOut(auth); } catch (err) { console.error(err); }
+  };
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
 
@@ -83,7 +88,7 @@ export default function Homepage({ user, onNavigate }) {
               <>
                 <IconButton icon="🔔" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
                 <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
-                <IconButton icon="👤" onClick={() => onNavigate && onNavigate("account")} />
+                <div style={styles.logoutIconBtn} onClick={handleLogout}>🚪</div>
               </>
             ) : (
               <>
@@ -277,6 +282,7 @@ const styles = {
   logo: { color: "#FBF9F4", fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 900 },
   topIcons: { display: "flex", gap: 14, alignItems: "center" },
   loginIconBtn: { display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 12.5, padding: "8px 14px", borderRadius: 20, cursor: "pointer" },
+  logoutIconBtn: { background: "rgba(255,80,80,0.2)", color: "#fff", fontSize: 16, width: 38, height: 38, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
   iconBtn: { width: 38, height: 38, borderRadius: 12, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#fff", position: "relative", cursor: "pointer" },
   badgeDot: { position: "absolute", top: -3, right: -3, width: 9, height: 9, background: "#D4AF37", borderRadius: "50%", border: "2px solid #0B3D2E" },
   searchBar: { background: "rgba(255,255,255,0.95)", borderRadius: 14, padding: "13px 16px", color: "#6b6b6b", fontSize: 13, fontWeight: 500, cursor: "pointer" },
