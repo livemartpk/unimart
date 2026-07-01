@@ -79,8 +79,20 @@ export default function Homepage({ user, onNavigate }) {
         <div style={styles.topRow}>
           <div style={styles.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
           <div style={styles.topIcons}>
-            <IconButton icon="🔔" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
-            <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
+            {user ? (
+              <>
+                <IconButton icon="🔔" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
+                <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
+                <IconButton icon="👤" onClick={() => onNavigate && onNavigate("account")} />
+              </>
+            ) : (
+              <>
+                <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
+                  👤 Login
+                </div>
+                <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
+              </>
+            )}
           </div>
         </div>
         <div style={styles.searchBar} onClick={() => onNavigate && onNavigate("search")}>
@@ -263,7 +275,8 @@ const styles = {
   header: { background: "#0B3D2E", padding: "18px 16px 26px", position: "relative" },
   topRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
   logo: { color: "#FBF9F4", fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 900 },
-  topIcons: { display: "flex", gap: 14 },
+  topIcons: { display: "flex", gap: 14, alignItems: "center" },
+  loginIconBtn: { display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 12.5, padding: "8px 14px", borderRadius: 20, cursor: "pointer" },
   iconBtn: { width: 38, height: 38, borderRadius: 12, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#fff", position: "relative", cursor: "pointer" },
   badgeDot: { position: "absolute", top: -3, right: -3, width: 9, height: 9, background: "#D4AF37", borderRadius: "50%", border: "2px solid #0B3D2E" },
   searchBar: { background: "rgba(255,255,255,0.95)", borderRadius: 14, padding: "13px 16px", color: "#6b6b6b", fontSize: 13, fontWeight: 500, cursor: "pointer" },

@@ -93,7 +93,13 @@ export default function App() {
       if (fbUser) {
         const userDoc = await getDoc(doc(db, "users", fbUser.uid));
         if (userDoc.exists()) {
-          setUserData({ uid: fbUser.uid, ...userDoc.data() });
+          const ud = { uid: fbUser.uid, ...userDoc.data() };
+          setUserData(ud);
+          // Auto-redirect admin roles to dashboard on session restore
+          const adminRoles = ["super_admin", "seller_manager", "marketing_manager", "support_team", "finance_team", "content_team"];
+          if (adminRoles.includes(ud.role)) {
+            setPage("dashboard");
+          }
         }
       } else {
         setUserData(null);
@@ -115,6 +121,14 @@ export default function App() {
     if (target === "login") {
       setAuthMode("login");
       window.scrollTo(0, 0);
+      return;
+    }
+    if (target === "logout") {
+      import("firebase/auth").then(({ signOut }) => {
+        import("./config/firebase").then(({ auth }) => {
+          signOut(auth);
+        });
+      });
       return;
     }
     setPage(target);
