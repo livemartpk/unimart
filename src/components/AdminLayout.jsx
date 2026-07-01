@@ -25,6 +25,7 @@ const SIDEBAR_ITEMS = {
   ],
   seller_manager: [
     { key: "dashboard", icon: "🏠", label: "Dashboard" },
+    { key: "dashboard", icon: "📋", label: "New Registrations" },
     { key: "all-sellers", icon: "🏪", label: "All Sellers" },
     { key: "product-review", icon: "📦", label: "Product Reviews" },
     { key: "vacation-requests", icon: "🌴", label: "Vacation Requests" },

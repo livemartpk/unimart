@@ -43,6 +43,11 @@ import Leaderboard from "./pages/agent/Leaderboard";
 
 // Admin pages
 import SuperAdminDashboard from "./pages/admin/super-admin/SuperAdminDashboard";
+import SellerManagerDashboard from "./pages/admin/seller-manager/SellerManagerDashboard";
+import MarketingManagerDashboard from "./pages/admin/marketing-manager/MarketingManagerDashboard";
+import SupportTeamDashboard from "./pages/admin/support-team/SupportTeamDashboard";
+import FinanceTeamDashboard from "./pages/admin/finance-team/FinanceTeamDashboard";
+import ContentTeamDashboard from "./pages/admin/content-team/ContentTeamDashboard";
 import PolicyEngine from "./pages/admin/super-admin/PolicyEngine";
 import AdminManagement from "./pages/admin/super-admin/AdminManagement";
 import WalletsOverview from "./pages/admin/super-admin/WalletsOverview";
@@ -303,35 +308,35 @@ export default function App() {
           case "product-review": return <NewSellerProductReview user={firebaseUser} />;
           case "vacation-requests": return <VacationRequests />;
           case "flagged-sellers": return <FlaggedSellers />;
-          default: return <SellerRegistrations user={firebaseUser} />;
+          default: return <SellerManagerDashboard onNavigate={navigate} />;
         }
       }
       if (userData.role === "marketing_manager") {
         switch (page) {
           case "performance": return <PerformanceAnalytics />;
           case "fraud-monitor": return <ReferralFraudMonitor />;
-          default: return <AgentManagement user={firebaseUser} />;
+          default: return <MarketingManagerDashboard onNavigate={navigate} />;
         }
       }
       if (userData.role === "support_team") {
         switch (page) {
           case "complaints": return <Complaints user={firebaseUser} />;
           case "returns": return <ReturnRefundTracker />;
-          default: return <Disputes user={firebaseUser} />;
+          default: return <SupportTeamDashboard onNavigate={navigate} />;
         }
       }
       if (userData.role === "finance_team") {
         switch (page) {
           case "reports": return <FinancialReports />;
           case "reconciliation": return <WalletsReconciliation />;
-          default: return <WithdrawalRequests user={firebaseUser} />;
+          default: return <FinanceTeamDashboard onNavigate={navigate} />;
         }
       }
       if (userData.role === "content_team") {
         switch (page) {
           case "flagged-listings": return <FlaggedListings user={firebaseUser} />;
           case "banners": return <BannerManagement user={firebaseUser} />;
-          default: return <ProductReviews user={firebaseUser} />;
+          default: return <ContentTeamDashboard onNavigate={navigate} />;
         }
       }
       return <div style={{ padding: 40 }}>Unknown admin role.</div>;
