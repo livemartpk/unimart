@@ -31,8 +31,8 @@ export default function SellerRegistrations({ user }) {
     setLoading(false);
   };
 
-  // Filter by status — use both "status" and "storeStatus" fields for compatibility
   const getStatus = (s) => {
+    if (s.status === "objection" || s.objectionStatus === "pending_edit") return "objection";
     if (s.status === "approved" || s.storeStatus === "approved") return "approved";
     if (s.status === "rejected" || s.storeStatus === "rejected") return "rejected";
     return "pending";
@@ -42,6 +42,7 @@ export default function SellerRegistrations({ user }) {
     pending: allSellers.filter(s => getStatus(s) === "pending").length,
     approved: allSellers.filter(s => getStatus(s) === "approved").length,
     rejected: allSellers.filter(s => getStatus(s) === "rejected").length,
+    objection: allSellers.filter(s => getStatus(s) === "objection").length,
   };
 
   const filtered = allSellers.filter(s => getStatus(s) === tab);
@@ -125,6 +126,7 @@ export default function SellerRegistrations({ user }) {
     { key: "pending", label: "Pending", color: "#D4AF37" },
     { key: "approved", label: "Approved", color: "#2E7D32" },
     { key: "rejected", label: "Rejected", color: "#C0392B" },
+    { key: "objection", label: "Objection", color: "#8a6d1f" },
   ];
 
   return (
@@ -174,6 +176,16 @@ export default function SellerRegistrations({ user }) {
                 {seller.objectionStatus === "pending_edit" && (
                   <div style={s.objBadge}>⚠️ Objection sent — awaiting seller response</div>
                 )}
+                {seller.objectionStatus === "resubmitted" && (
+                  <div style={{ ...s.objBadge, background: "#E3F2E1", color: "#2E7D32", borderColor: "#BFE3CC" }}>
+                    ✅ Seller resubmitted — ready for review
+                  </div>
+                )}
+                {seller.resubmitNote && (
+                  <div style={{ fontSize: 11, color: "#555", marginTop: 4, fontStyle: "italic" }}>
+                    Seller note: "{seller.resubmitNote?.slice(0, 60)}"
+                  </div>
+                )}
                 {seller.rejectionReason && (
                   <div style={{ ...s.objBadge, background: "#FCEAEA", color: "#C0392B", borderColor: "#f5c6c6" }}>
                     ❌ Rejected: {seller.rejectionReason}
@@ -200,9 +212,9 @@ export default function SellerRegistrations({ user }) {
             </div>
 
             {/* Status Banner */}
-            <div style={{ ...s.statusBanner, background: getStatus(selected) === "approved" ? "#E3F2E1" : getStatus(selected) === "rejected" ? "#FCEAEA" : "#FBF1DA" }}>
-              <span style={{ fontWeight: 700, color: getStatus(selected) === "approved" ? "#2E7D32" : getStatus(selected) === "rejected" ? "#C0392B" : "#8a6d1f" }}>
-                {getStatus(selected) === "approved" ? "✅ Approved" : getStatus(selected) === "rejected" ? "❌ Rejected" : "⏳ Pending Review"}
+            <div style={{ ...s.statusBanner, background: getStatus(selected) === "approved" ? "#E3F2E1" : getStatus(selected) === "rejected" ? "#FCEAEA" : getStatus(selected) === "objection" ? "#FEF3E2" : "#FBF1DA" }}>
+              <span style={{ fontWeight: 700, color: getStatus(selected) === "approved" ? "#2E7D32" : getStatus(selected) === "rejected" ? "#C0392B" : getStatus(selected) === "objection" ? "#E67E22" : "#8a6d1f" }}>
+                {getStatus(selected) === "approved" ? "✅ Approved" : getStatus(selected) === "rejected" ? "❌ Rejected" : getStatus(selected) === "objection" ? "⚠️ Objection Sent — Awaiting Seller Response" : "⏳ Pending Review"}
               </span>
             </div>
 
@@ -231,6 +243,35 @@ export default function SellerRegistrations({ user }) {
                 <div style={s.docMissing}>No document uploaded yet (Cloudinary not configured)</div>
               )}
             </div>
+
+            {/* Objection tab — show seller resubmit note + approve option */}
+            {getStatus(selected) === "objection" && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ background: "#FEF3E2", border: "1.5px solid #E67E22", borderRadius: 12, padding: 14, marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#E67E22", marginBottom: 6 }}>📋 Objection Sent:</div>
+                  <div style={{ fontSize: 13, color: "#1a1a1a" }}>{selected.objection}</div>
+                </div>
+                {selected.resubmitNote && (
+                  <div style={{ background: "#F0F5F0", border: "1px solid #eee0c0", borderRadius: 12, padding: 14, marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#0B3D2E", marginBottom: 6 }}>✏️ Seller Response:</div>
+                    <div style={{ fontSize: 13, color: "#1a1a1a" }}>{selected.resubmitNote}</div>
+                  </div>
+                )}
+                {!activeAction && (
+                  <div style={s.actionsRow}>
+                    <button style={s.approveBtn} onClick={handleApprove} disabled={actionLoading}>
+                      {actionLoading ? "..." : "✅ Approve Now"}
+                    </button>
+                    <button style={s.objectionBtn} onClick={() => setActiveAction("objection")}>
+                      📝 New Objection
+                    </button>
+                    <button style={s.rejectBtn} onClick={() => setActiveAction("reject")}>
+                      ❌ Reject
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Action Buttons — only for pending */}
             {getStatus(selected) === "pending" && !activeAction && (

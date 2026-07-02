@@ -528,12 +528,18 @@ const ps = {
 import { useState as useStateObj, useEffect as useEffectObj } from "react";
 import { doc as docObj, getDoc as getDocObj, updateDoc as updateDocObj, serverTimestamp as stObj } from "firebase/firestore";
 
+
 function ObjectionScreen({ role, userEmail, userId }) {
-  const [objection, setObjection] = useState("");
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
-  const [editText, setEditText] = useState("");
+  const [form, setForm] = useState({});
+  const [cnicFile, setCnicFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const CLOUD_NAME = "eez9oojf";
+  const UPLOAD_PRESET = "unimart-products";
 
   const handleLogout = async () => {
     const { signOut } = await import("firebase/auth");
@@ -542,72 +548,132 @@ function ObjectionScreen({ role, userEmail, userId }) {
   };
 
   useEffect(() => {
-    const loadObjection = async () => {
+    const load = async () => {
       try {
-        const collectionName = role === "seller" ? "sellers" : "agents";
-        const snap = await getDoc(doc(db, collectionName, userId));
-        if (snap.exists()) setObjection(snap.data().objection || "");
+        const colName = role === "seller" ? "sellers" : "agents";
+        const snap = await getDoc(doc(db, colName, userId));
+        if (snap.exists()) {
+          setData(snap.data());
+          setForm(snap.data());
+        }
       } catch (err) { console.error(err); }
       setLoading(false);
     };
-    loadObjection();
+    load();
   }, [userId, role]);
 
+  const uploadToCloudinary = async (file, folder) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", UPLOAD_PRESET);
+    fd.append("folder", folder);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: "POST", body: fd });
+    const json = await res.json();
+    if (json.secure_url) return json.secure_url;
+    throw new Error(json.error?.message || "Upload failed");
+  };
+
   const handleResubmit = async () => {
-    if (!editText.trim()) { alert("Please explain how you resolved the objection."); return; }
     setSubmitting(true);
     try {
-      const collectionName = role === "seller" ? "sellers" : "agents";
-      await updateDoc(doc(db, collectionName, userId), {
-        objection: null,
-        objectionStatus: "resubmitted",
-        resubmitNote: editText,
-        resubmittedAt: serverTimestamp()
-      });
+      const colName = role === "seller" ? "sellers" : "agents";
+      let updateData = { ...form, objection: null, objectionStatus: "resubmitted", resubmittedAt: serverTimestamp() };
+
+      // Upload new CNIC if selected
+      if (cnicFile) {
+        const url = await uploadToCloudinary(cnicFile, "unimart/seller-documents");
+        if (role === "seller") {
+          updateData.documents = { ...form.documents, url, status: "uploaded" };
+        } else {
+          updateData.cnicUrl = url;
+        }
+      }
+
+      await updateDoc(doc(db, colName, userId), updateData);
       await updateDoc(doc(db, "users", userId), { status: "pending" });
-      setSubmitting(false);
-    } catch (err) { console.error(err); setSubmitting(false); }
+      setSubmitted(true);
+    } catch (err) { console.error(err); alert("Failed: " + err.message); }
+    setSubmitting(false);
   };
 
   if (loading) return <div style={{ padding: 40, textAlign: "center" }}>Loading...</div>;
 
+  if (submitted) {
+    return (
+      <div style={os.overlay}>
+        <div style={os.card}>
+          <div style={os.header}><div style={os.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div></div>
+          <div style={os.body}>
+            <div style={{ fontSize: 52, textAlign: "center", marginBottom: 12 }}>✅</div>
+            <h2 style={{ ...os.title, color: "#2E7D32" }}>Resubmitted!</h2>
+            <p style={os.subtitle}>Your application has been resubmitted for review. We will notify you once it is approved.</p>
+            <button style={os.logoutBtn} onClick={handleLogout}>🚪 Logout</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={os.overlay}>
       <div style={os.card}>
-        <div style={os.header}>
-          <div style={os.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
-        </div>
+        <div style={os.header}><div style={os.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div></div>
         <div style={os.body}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
+          <div style={{ fontSize: 48, textAlign: "center", marginBottom: 12 }}>⚠️</div>
           <h2 style={os.title}>Action Required</h2>
-          <p style={os.subtitle}>Our Seller Manager has an objection on your application.</p>
+          <p style={os.subtitle}>Our {role === "seller" ? "Seller Manager" : "Marketing Manager"} has an objection on your application.</p>
 
           <div style={os.objectionCard}>
-            <div style={os.objectionLabel}>📋 Objection from Seller Manager:</div>
-            <div style={os.objectionText}>{objection || "Please contact support for details."}</div>
+            <div style={os.objectionLabel}>📋 Objection:</div>
+            <div style={os.objectionText}>{data?.objection || "Please contact support."}</div>
           </div>
 
           {!editMode ? (
             <button className="btn-primary" style={{ width: "100%", marginBottom: 10 }} onClick={() => setEditMode(true)}>
-              ✏️ Resolve & Resubmit Application
+              ✏️ Edit Application & Resubmit
             </button>
           ) : (
             <div style={os.editBox}>
-              <div style={os.editLabel}>Explain how you resolved this objection:</div>
-              <textarea
-                className="input-field"
-                rows={4}
-                value={editText}
-                onChange={e => setEditText(e.target.value)}
-                placeholder="e.g. I have re-uploaded a clearer CNIC document..."
-                style={{ resize: "none", fontFamily: "inherit", marginBottom: 10 }}
-              />
+              <div style={os.editLabel}>Update your application details:</div>
+
+              {role === "seller" && (
+                <>
+                  <label className="input-label">Store Name</label>
+                  <input className="input-field" style={{ marginBottom: 8 }} value={form.storeName || ""} onChange={e => setForm(f => ({ ...f, storeName: e.target.value }))} />
+                  <label className="input-label">Owner Name</label>
+                  <input className="input-field" style={{ marginBottom: 8 }} value={form.ownerName || ""} onChange={e => setForm(f => ({ ...f, ownerName: e.target.value }))} />
+                  <label className="input-label">Phone</label>
+                  <input className="input-field" style={{ marginBottom: 8 }} value={form.phone || ""} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                  <label className="input-label">City</label>
+                  <input className="input-field" style={{ marginBottom: 8 }} value={form.city || ""} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} />
+                  <label className="input-label">National ID (CNIC)</label>
+                  <input className="input-field" style={{ marginBottom: 8 }} value={form.nationalId || ""} onChange={e => setForm(f => ({ ...f, nationalId: e.target.value }))} />
+                  <label className="input-label">Payment Account</label>
+                  <input className="input-field" style={{ marginBottom: 8 }} value={form.paymentDetails?.account || ""} onChange={e => setForm(f => ({ ...f, paymentDetails: { ...f.paymentDetails, account: e.target.value } }))} />
+                  <label className="input-label">📎 Re-upload Document ({data?.documents?.type || "CNIC/NTN"})</label>
+                  <input type="file" className="input-field" accept="image/*,application/pdf" onChange={e => setCnicFile(e.target.files[0])} style={{ marginBottom: 4 }} />
+                  {data?.documents?.url && <a href={data.documents.url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#0B3D2E", display: "block", marginBottom: 10 }}>View current document ↗</a>}
+                </>
+              )}
+
+              {role === "agent" && (
+                <>
+                  <label className="input-label">Full Name</label>
+                  <input className="input-field" style={{ marginBottom: 8 }} value={form.fullName || ""} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} />
+                  <label className="input-label">Phone</label>
+                  <input className="input-field" style={{ marginBottom: 8 }} value={form.phone || ""} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                  <label className="input-label">National ID (CNIC)</label>
+                  <input className="input-field" style={{ marginBottom: 8 }} value={form.nationalId || ""} onChange={e => setForm(f => ({ ...f, nationalId: e.target.value }))} />
+                  <label className="input-label">📎 Re-upload CNIC Photo</label>
+                  <input type="file" className="input-field" accept="image/*" onChange={e => setCnicFile(e.target.files[0])} style={{ marginBottom: 4 }} />
+                  {data?.cnicUrl && <a href={data.cnicUrl} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#0B3D2E", display: "block", marginBottom: 10 }}>View current CNIC ↗</a>}
+                </>
+              )}
+
               <button className="btn-primary" style={{ width: "100%", marginBottom: 8 }} onClick={handleResubmit} disabled={submitting}>
                 {submitting ? "Submitting..." : "✓ Resubmit for Review"}
               </button>
-              <button className="btn-secondary" style={{ width: "100%" }} onClick={() => setEditMode(false)}>
-                Cancel
-              </button>
+              <button className="btn-secondary" style={{ width: "100%" }} onClick={() => setEditMode(false)}>Cancel</button>
             </div>
           )}
 
@@ -615,7 +681,6 @@ function ObjectionScreen({ role, userEmail, userId }) {
             <div style={{ fontSize: 10.5, color: "#888" }}>Logged in as:</div>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0B3D2E" }}>{userEmail}</div>
           </div>
-
           <button style={os.logoutBtn} onClick={handleLogout}>🚪 Logout</button>
         </div>
       </div>
@@ -625,17 +690,17 @@ function ObjectionScreen({ role, userEmail, userId }) {
 
 const os = {
   overlay: { minHeight: "100vh", background: "#FBF9F4", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
-  card: { background: "#fff", borderRadius: 20, maxWidth: 420, width: "100%", overflow: "hidden", boxShadow: "0 10px 40px rgba(11,61,46,0.12)" },
+  card: { background: "#fff", borderRadius: 20, maxWidth: 480, width: "100%", overflow: "hidden", boxShadow: "0 10px 40px rgba(11,61,46,0.12)" },
   header: { background: "#0B3D2E", padding: "20px 24px", textAlign: "center" },
   logo: { fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 800, color: "#fff" },
-  body: { padding: 24, textAlign: "center" },
-  title: { fontFamily: "Georgia, serif", fontSize: 20, color: "#C0392B", marginBottom: 8 },
-  subtitle: { fontSize: 13.5, color: "#555", marginBottom: 16, lineHeight: 1.5 },
-  objectionCard: { background: "#FBF1DA", border: "1.5px solid #D4AF37", borderRadius: 12, padding: 14, marginBottom: 16, textAlign: "left" },
+  body: { padding: "24px 20px", maxHeight: "85vh", overflowY: "auto" },
+  title: { fontFamily: "Georgia, serif", fontSize: 20, color: "#C0392B", marginBottom: 8, textAlign: "center" },
+  subtitle: { fontSize: 13.5, color: "#555", marginBottom: 16, lineHeight: 1.5, textAlign: "center" },
+  objectionCard: { background: "#FBF1DA", border: "1.5px solid #D4AF37", borderRadius: 12, padding: 14, marginBottom: 16 },
   objectionLabel: { fontSize: 11, fontWeight: 700, color: "#8a6d1f", marginBottom: 6 },
   objectionText: { fontSize: 13.5, color: "#1a1a1a", lineHeight: 1.5 },
-  editBox: { background: "#F0F5F0", borderRadius: 12, padding: 14, marginBottom: 12, textAlign: "left" },
-  editLabel: { fontSize: 12, fontWeight: 700, color: "#0B3D2E", marginBottom: 8 },
-  emailBox: { background: "#F0F5F0", border: "1px solid #eee0c0", borderRadius: 10, padding: "10px 14px", marginBottom: 12, textAlign: "left" },
+  editBox: { background: "#F0F5F0", borderRadius: 12, padding: 14, marginBottom: 12 },
+  editLabel: { fontSize: 12.5, fontWeight: 700, color: "#0B3D2E", marginBottom: 10 },
+  emailBox: { background: "#F0F5F0", border: "1px solid #eee0c0", borderRadius: 10, padding: "10px 14px", marginBottom: 12 },
   logoutBtn: { width: "100%", padding: "13px 0", background: "#FCEAEA", border: "1px solid #f5c6c6", borderRadius: 12, color: "#C0392B", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }
 };
