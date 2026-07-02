@@ -44,8 +44,15 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   }, []);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", handleScroll);
+    const handleScroll = () => {
+      const y = window.scrollY;
+      setIsScrolled(prev => {
+        if (!prev && y > 60) return true;
+        if (prev && y < 30) return false;
+        return prev;
+      });
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -111,14 +118,14 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
           transition: "padding 0.25s ease"
         }}
       >
-        {/* Top info row: line 1 = Salam + icons, line 2 = centered greeting — stacked so it never overlaps on mobile */}
+        {/* Top info row: Salam (left) + icons (right) — single clean line, collapses on scroll */}
         <div
           style={{
             ...styles.topInfoRow,
-            maxHeight: isScrolled ? 0 : 92,
+            maxHeight: isScrolled ? 0 : 46,
             opacity: isScrolled ? 0 : 1,
             overflow: "hidden",
-            marginBottom: isScrolled ? 0 : 12,
+            marginBottom: isScrolled ? 0 : 14,
             transition: "max-height 0.25s ease, opacity 0.2s ease, margin-bottom 0.25s ease"
           }}
         >
@@ -143,7 +150,6 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
               )}
             </div>
           </div>
-          <div style={styles.greetingTextCentered}>What are we hunting today?</div>
         </div>
 
         {/* Main row: logo (left) + search bar + cart (right) — same row, like Daraz */}
@@ -342,7 +348,6 @@ const styles = {
   header: { background: "linear-gradient(135deg, #0B3D2E 0%, #0f4d3a 100%)", padding: "18px 16px 18px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 6px 24px rgba(11,61,46,0.28)", borderRadius: "0 0 18px 18px" },
   topInfoRow: { display: "flex", flexDirection: "column", gap: 6 },
   topInfoLine: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
-  greetingTextCentered: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 14, fontWeight: 600, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
   topIconsInline: { display: "flex", gap: 10, alignItems: "center", flexShrink: 0 },
   topUtilityRow: { display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 14 },
   mainRow: { display: "flex", alignItems: "center", gap: 12 },
@@ -361,7 +366,7 @@ const styles = {
   searchBar: { flex: 1, minWidth: 0, background: "transparent", padding: "13px 4px 13px 16px", color: "#1a1a1a", fontSize: 13, fontWeight: 500, border: "none", outline: "none", fontFamily: "inherit" },
   searchBtn: { width: 46, height: 46, flexShrink: 0, background: "#D4AF37", color: "#0B3D2E", fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, borderRadius: 12, margin: 2 },
   greeting: { marginTop: 14 },
-  greetingEyebrow: { color: "#D4AF37", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" },
+  greetingEyebrow: { color: "#FBF9F4", fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700, letterSpacing: 0.3 },
   greetingText: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 600, marginTop: 4 },
 
   storiesBar: { display: "flex", gap: 14, padding: "16px 16px 6px", overflowX: "auto" },
