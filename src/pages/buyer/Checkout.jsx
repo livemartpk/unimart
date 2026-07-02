@@ -119,20 +119,44 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
   if (orderSuccess) {
     return (
       <div style={s.page}>
-        <div style={s.successBox}>
-          <div style={{ fontSize: 60, marginBottom: 16 }}>🎉</div>
-          <h2 style={s.successTitle}>Order Placed!</h2>
-          <p style={s.successText}>Your order has been placed successfully. The seller will confirm within 24 hours.</p>
-          <div style={s.orderIdBox}>
-            <div style={{ fontSize: 11, color: "#888" }}>Order Group ID</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0B3D2E" }}>{orderSuccess.orderGroupId}</div>
+        <div style={s.successOverlay}>
+          <div style={s.successModal}>
+            {/* Header */}
+            <div style={s.successHeader}>
+              <div style={s.successIcon}>🎉</div>
+              <div style={s.successTitle}>Order Placed!</div>
+            </div>
+
+            {/* Body */}
+            <div style={s.successBody}>
+              <p style={s.successText}>
+                Your order has been placed successfully. The seller will confirm within 24 hours.
+              </p>
+
+              {/* Order Group ID */}
+              <div style={s.orderIdCard}>
+                <div style={s.orderIdLabel}>Order Group ID</div>
+                <div style={s.orderIdValue}>{orderSuccess.orderGroupId}</div>
+                <div style={s.orderIdHint}>Save this ID to track your order</div>
+              </div>
+
+              {/* Address Summary */}
+              <div style={s.deliverySummary}>
+                <div style={s.deliverySummaryTitle}>📍 Delivering to:</div>
+                <div style={s.deliverySummaryRow}><span style={s.deliverySummaryLabel}>Name</span><span style={s.deliverySummaryValue}>{address.fullName}</span></div>
+                <div style={s.deliverySummaryRow}><span style={s.deliverySummaryLabel}>Phone</span><span style={s.deliverySummaryValue}>{address.phone}</span></div>
+                <div style={s.deliverySummaryRow}><span style={s.deliverySummaryLabel}>Address</span><span style={s.deliverySummaryValue}>{address.fullAddress}, {address.city}</span></div>
+              </div>
+
+              {/* Buttons */}
+              <button className="btn-primary" style={{ width: "100%", marginBottom: 10, fontSize: 14 }} onClick={() => onNavigate && onNavigate("orders")}>
+                📦 Track My Orders
+              </button>
+              <button className="btn-secondary" style={{ width: "100%", fontSize: 14 }} onClick={() => onNavigate && onNavigate("home")}>
+                🛍️ Continue Shopping
+              </button>
+            </div>
           </div>
-          <button className="btn-primary" style={{ width: "100%", marginBottom: 10 }} onClick={() => onNavigate && onNavigate("orders")}>
-            Track My Orders
-          </button>
-          <button className="btn-secondary" style={{ width: "100%" }} onClick={() => onNavigate && onNavigate("home")}>
-            Continue Shopping
-          </button>
         </div>
       </div>
     );
@@ -292,7 +316,23 @@ const s = {
   summaryDivider: { height: 1, background: "#eee0c0", margin: "8px 0" },
   summaryTotal: { display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 800, color: "#0B3D2E" },
 
-  bottomBar: { position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: "1px solid #eee0c0", padding: 14 },
+  // Success screen styles
+  successOverlay: { minHeight: "100vh", background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  successModal: { background: "#fff", borderRadius: 20, width: "100%", maxWidth: 440, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" },
+  successHeader: { background: "#0B3D2E", padding: "28px 24px 20px", textAlign: "center" },
+  successIcon: { fontSize: 52, marginBottom: 10 },
+  successTitle: { color: "#D4AF37", fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 800 },
+  successBody: { padding: "20px 24px 24px" },
+  successText: { fontSize: 13.5, color: "#555", textAlign: "center", lineHeight: 1.6, marginBottom: 16 },
+  orderIdCard: { background: "#F0F5F0", border: "1.5px solid #D4AF37", borderRadius: 12, padding: "12px 16px", marginBottom: 16, textAlign: "center" },
+  orderIdLabel: { fontSize: 10.5, color: "#888", marginBottom: 4 },
+  orderIdValue: { fontSize: 15, fontWeight: 800, color: "#0B3D2E", letterSpacing: 0.5 },
+  orderIdHint: { fontSize: 10, color: "#aaa", marginTop: 4 },
+  deliverySummary: { background: "#FBF9F4", border: "1px solid #eee0c0", borderRadius: 12, padding: 14, marginBottom: 16 },
+  deliverySummaryTitle: { fontSize: 12, fontWeight: 700, color: "#0B3D2E", marginBottom: 10 },
+  deliverySummaryRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, gap: 10 },
+  deliverySummaryLabel: { fontSize: 11, color: "#888", minWidth: 55 },
+  deliverySummaryValue: { fontSize: 12.5, color: "#1a1a1a", fontWeight: 500, textAlign: "right", flex: 1 },
 
   // Custom confirmation modal
   modalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },

@@ -105,6 +105,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
                   <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
                   {cartCount > 0 && <div style={styles.cartBadge}>{cartCount}</div>}
                 </div>
+                <IconButton icon="📦" onClick={() => onNavigate && onNavigate("orders")} />
                 <div style={styles.logoutIconBtn} onClick={handleLogout}>🚪</div>
               </>
             ) : (
@@ -120,14 +121,17 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
             )}
           </div>
         </div>
-        <input
-          style={styles.searchBar}
-          placeholder="🔍 Search products, stores, brands..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleSearch()}
-          autoComplete="off"
-        />
+        <div style={styles.searchWrap}>
+          <input
+            style={styles.searchBar}
+            placeholder="Search products, stores, brands..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleSearch()}
+            autoComplete="off"
+          />
+          <div style={styles.searchBtn} onClick={handleSearch}>🔍</div>
+        </div>
         <div style={styles.greeting}>
           <div style={styles.greetingEyebrow}>
             {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"} 👋
@@ -281,7 +285,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
         <NavItem icon="🏠" label="Home" active onClick={() => onNavigate && onNavigate("home")} />
         <NavItem icon="📂" label="Shop" onClick={() => onNavigate && onNavigate("shop")} />
         <NavItem icon="🛒" label="Cart" onClick={() => onNavigate && onNavigate("cart")} />
-        <NavItem icon="❤️" label="Saved" onClick={() => onNavigate && onNavigate("wishlist")} />
+        <NavItem icon="📦" label="Orders" onClick={() => onNavigate && onNavigate("orders")} />
         <NavItem icon="👤" label="You" onClick={() => onNavigate && onNavigate("account")} />
       </div>
     </div>
@@ -318,7 +322,9 @@ const styles = {
   cartBadge: { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, background: "#D4AF37", color: "#0B3D2E", borderRadius: 999, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" },
   iconBtn: { width: 38, height: 38, borderRadius: 12, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#fff", position: "relative", cursor: "pointer" },
   badgeDot: { position: "absolute", top: -3, right: -3, width: 9, height: 9, background: "#D4AF37", borderRadius: "50%", border: "2px solid #0B3D2E" },
-  searchBar: { background: "rgba(255,255,255,0.95)", borderRadius: 14, padding: "13px 16px", color: "#1a1a1a", fontSize: 13, fontWeight: 500, border: "none", outline: "none", width: "100%", boxSizing: "border-box", fontFamily: "inherit" },
+  searchWrap: { display: "flex", alignItems: "center", background: "rgba(255,255,255,0.95)", borderRadius: 14, overflow: "hidden" },
+  searchBar: { flex: 1, background: "transparent", padding: "13px 16px", color: "#1a1a1a", fontSize: 13, fontWeight: 500, border: "none", outline: "none", fontFamily: "inherit" },
+  searchBtn: { padding: "13px 16px", background: "#D4AF37", color: "#0B3D2E", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 },
   greeting: { marginTop: 14 },
   greetingEyebrow: { color: "#D4AF37", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" },
   greetingText: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 600, marginTop: 4 },
