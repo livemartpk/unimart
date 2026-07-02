@@ -135,15 +135,38 @@ export default function App() {
         const userDoc = await getDoc(doc(db, "users", fbUser.uid));
         if (userDoc.exists()) {
           const ud = { uid: fbUser.uid, ...userDoc.data() };
+
+          // Cross-check seller status with sellers collection
+          // Fixes cases where users.status was not updated on approval
+          if (ud.role === "seller" && (ud.status === "pending" || ud.status === "objection")) {
+            try {
+              const sellerSnap = await getDoc(doc(db, "sellers", fbUser.uid));
+              if (sellerSnap.exists()) {
+                const sd = sellerSnap.data();
+                if (sd.status === "approved" || sd.storeStatus === "approved") {
+                  await updateDoc(doc(db, "users", fbUser.uid), { status: "active" });
+                  ud.status = "active";
+                }
+              }
+            } catch (e) { console.error("Seller cross-check:", e); }
+          }
+
+          // Cross-check agent status with agents collection
+          if (ud.role === "agent" && ud.status === "pending") {
+            try {
+              const agentSnap = await getDoc(doc(db, "agents", fbUser.uid));
+              if (agentSnap.exists() && agentSnap.data().status === "active") {
+                await updateDoc(doc(db, "users", fbUser.uid), { status: "active" });
+                ud.status = "active";
+              }
+            } catch (e) { console.error("Agent cross-check:", e); }
+          }
+
           setUserData(ud);
-          // Admin roles → dashboard page
-          // Seller/Agent → their default (switch default handles it)
-          // Buyer → stays on homepage
           const adminRoles = ["super_admin", "seller_manager", "marketing_manager", "support_team", "finance_team", "content_team"];
           if (adminRoles.includes(ud.role)) {
             setPage("dashboard");
           }
-          // seller, agent, buyer — page stays "home" which hits their default switch case correctly
         }
       } else {
         setUserData(null);
@@ -290,6 +313,26 @@ export default function App() {
 
   // ============ SELLER ROUTES ============
   if (userData.role === "seller") {
+    // Double-check: if users.status is still "pending" but sellers.storeStatus is "approved",
+    // auto-fix the users collection and allow access
+    if (userData.status === "pending" || userData.status === "objection") {
+      // Check sellers collection for actual approval status
+      const sellerCheck = async () => {
+        try {
+          const sellerSnap = await getDoc(doc(db, "sellers", firebaseUser.uid));
+          if (sellerSnap.exists()) {
+            const sellerData = sellerSnap.data();
+            if (sellerData.status === "approved" || sellerData.storeStatus === "approved") {
+              // Auto-fix: update users collection
+              await updateDoc(doc(db, "users", firebaseUser.uid), { status: "active" });
+              setUserData(ud => ({ ...ud, status: "active" }));
+            }
+          }
+        } catch (err) { console.error("Seller status check failed:", err); }
+      };
+      sellerCheck();
+    }
+
     if (userData.status === "pending") {
       return <PendingApprovalScreen role="seller" userEmail={firebaseUser.email} />;
     }
