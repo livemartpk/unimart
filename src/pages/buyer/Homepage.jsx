@@ -37,9 +37,16 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
     : recommendedProducts;
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     loadHomepageData();
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const loadHomepageData = async () => {
@@ -96,7 +103,14 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   return (
     <div className="page-shell" style={styles.page}>
       {/* Header */}
-      <div className="header-responsive" style={styles.header}>
+      <div
+        className="header-responsive"
+        style={{
+          ...styles.header,
+          padding: isScrolled ? "12px 16px 12px" : "18px 16px 26px",
+          transition: "padding 0.25s ease"
+        }}
+      >
         <div style={styles.topRow}>
           <div style={styles.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
           <div style={styles.topIcons}>
@@ -134,7 +148,16 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
           />
           <div style={styles.searchBtn} onClick={handleSearch}>🔍</div>
         </div>
-        <div style={styles.greeting}>
+        <div
+          style={{
+            ...styles.greeting,
+            maxHeight: isScrolled ? 0 : 60,
+            marginTop: isScrolled ? 0 : styles.greeting.marginTop,
+            opacity: isScrolled ? 0 : 1,
+            overflow: "hidden",
+            transition: "max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease"
+          }}
+        >
           <div style={styles.greetingEyebrow}>
             {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"} 👋
           </div>
