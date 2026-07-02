@@ -115,7 +115,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
         <div
           style={{
             ...styles.topInfoRow,
-            maxHeight: isScrolled ? 0 : 40,
+            maxHeight: isScrolled ? 0 : 52,
             opacity: isScrolled ? 0 : 1,
             overflow: "hidden",
             marginBottom: isScrolled ? 0 : 12,
@@ -129,9 +129,12 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
           <div style={styles.topIconsInline}>
             {user ? (
               <>
-                <IconButton icon="🔔" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
-                <IconButton icon="📦" onClick={() => onNavigate && onNavigate("orders")} />
-                <div style={styles.logoutIconBtn} onClick={handleLogout}>🚪</div>
+                <IconButton icon="🔔" label="Notification" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
+                <IconButton icon="📦" label="Track Order" onClick={() => onNavigate && onNavigate("orders")} />
+                <div style={styles.iconBtnWrap} onClick={handleLogout}>
+                  <div style={styles.logoutIconBtn}>🚪</div>
+                  <div style={styles.iconBtnLabel}>Logout</div>
+                </div>
               </>
             ) : (
               <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
@@ -156,7 +159,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
             <div style={styles.searchBtn} onClick={handleSearch}>🔍</div>
           </div>
           <div style={{ position: "relative" }}>
-            <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
+            <div style={styles.cartIconMain} onClick={() => onNavigate && onNavigate("cart")}>🛒</div>
             {cartCount > 0 && <div style={styles.cartBadge}>{cartCount}</div>}
           </div>
         </div>
@@ -310,11 +313,14 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   );
 }
 
-function IconButton({ icon, onClick, hasBadge }) {
+function IconButton({ icon, label, onClick, hasBadge }) {
   return (
-    <div style={styles.iconBtn} onClick={onClick}>
-      {icon}
-      {hasBadge && <div style={styles.badgeDot} />}
+    <div style={styles.iconBtnWrap} onClick={onClick}>
+      <div style={styles.iconBtn}>
+        {icon}
+        {hasBadge && <div style={styles.badgeDot} />}
+      </div>
+      {label && <div style={styles.iconBtnLabel}>{label}</div>}
     </div>
   );
 }
@@ -331,7 +337,7 @@ function NavItem({ icon, label, active, onClick }) {
 const styles = {
   page: { minHeight: "100vh", background: "var(--color-bg)", paddingBottom: 20, margin: "0 auto", fontFamily: "var(--font-body)" },
 
-  header: { background: "#0B3D2E", padding: "18px 16px 26px", position: "sticky", top: 0, zIndex: 100 },
+  header: { background: "linear-gradient(135deg, #0B3D2E 0%, #0f4d3a 100%)", padding: "18px 16px 18px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 6px 24px rgba(11,61,46,0.28)", borderRadius: "0 0 18px 18px" },
   topInfoRow: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
   greetingTextCentered: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 15, fontWeight: 600, flex: 1, textAlign: "center" },
   topIconsInline: { display: "flex", gap: 10, alignItems: "center", flexShrink: 0 },
@@ -341,11 +347,14 @@ const styles = {
   logo: { color: "#FBF9F4", fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 900 },
   topIcons: { display: "flex", gap: 14, alignItems: "center" },
   loginIconBtn: { display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 12.5, padding: "8px 14px", borderRadius: 20, cursor: "pointer" },
-  logoutIconBtn: { background: "rgba(255,80,80,0.2)", color: "#fff", fontSize: 16, width: 38, height: 38, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
-  cartBadge: { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, background: "#D4AF37", color: "#0B3D2E", borderRadius: 999, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" },
-  iconBtn: { width: 38, height: 38, borderRadius: 12, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#fff", position: "relative", cursor: "pointer" },
+  logoutIconBtn: { background: "rgba(255,90,90,0.18)", border: "1px solid rgba(255,90,90,0.3)", color: "#fff", fontSize: 15, width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
+  cartBadge: { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, background: "#D4AF37", color: "#0B3D2E", borderRadius: 999, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", border: "1.5px solid #0B3D2E" },
+  iconBtnWrap: { display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer" },
+  iconBtn: { width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.14)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: "#fff", position: "relative" },
+  cartIconMain: { width: 44, height: 44, borderRadius: 12, background: "#D4AF37", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, cursor: "pointer", boxShadow: "0 3px 10px rgba(212,175,55,0.4)", flexShrink: 0 },
+  iconBtnLabel: { fontSize: 8.5, fontWeight: 700, color: "rgba(255,255,255,0.75)", letterSpacing: 0.2, whiteSpace: "nowrap" },
   badgeDot: { position: "absolute", top: -3, right: -3, width: 9, height: 9, background: "#D4AF37", borderRadius: "50%", border: "2px solid #0B3D2E" },
-  searchWrap: { display: "flex", alignItems: "center", background: "rgba(255,255,255,0.95)", borderRadius: 14, overflow: "hidden", flex: 1, minWidth: 0 },
+  searchWrap: { display: "flex", alignItems: "center", background: "rgba(255,255,255,0.97)", borderRadius: 14, overflow: "hidden", flex: 1, minWidth: 0, boxShadow: "0 3px 10px rgba(0,0,0,0.12)" },
   searchBar: { flex: 1, background: "transparent", padding: "13px 16px", color: "#1a1a1a", fontSize: 13, fontWeight: 500, border: "none", outline: "none", fontFamily: "inherit" },
   searchBtn: { padding: "13px 16px", background: "#D4AF37", color: "#0B3D2E", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 },
   greeting: { marginTop: 14 },
