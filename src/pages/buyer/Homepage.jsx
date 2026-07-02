@@ -107,14 +107,14 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
         className="header-responsive"
         style={{
           ...styles.header,
-          padding: isScrolled ? "12px 16px 12px" : "18px 16px 26px",
+          padding: isScrolled ? "12px 16px 12px" : "16px 16px 16px",
           transition: "padding 0.25s ease"
         }}
       >
-        {/* Utility row: bell/orders/profile — collapses on scroll like Daraz's top links bar */}
+        {/* Top info row: Salam (left) — greeting (center) — icons (right), above search bar */}
         <div
           style={{
-            ...styles.topUtilityRow,
+            ...styles.topInfoRow,
             maxHeight: isScrolled ? 0 : 40,
             opacity: isScrolled ? 0 : 1,
             overflow: "hidden",
@@ -122,17 +122,23 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
             transition: "max-height 0.25s ease, opacity 0.2s ease, margin-bottom 0.25s ease"
           }}
         >
-          {user ? (
-            <>
-              <IconButton icon="🔔" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
-              <IconButton icon="📦" onClick={() => onNavigate && onNavigate("orders")} />
-              <div style={styles.logoutIconBtn} onClick={handleLogout}>🚪</div>
-            </>
-          ) : (
-            <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
-              👤 Login
-            </div>
-          )}
+          <div style={styles.greetingEyebrow}>
+            {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"} 👋
+          </div>
+          <div style={styles.greetingTextCentered}>What are we hunting today?</div>
+          <div style={styles.topIconsInline}>
+            {user ? (
+              <>
+                <IconButton icon="🔔" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
+                <IconButton icon="📦" onClick={() => onNavigate && onNavigate("orders")} />
+                <div style={styles.logoutIconBtn} onClick={handleLogout}>🚪</div>
+              </>
+            ) : (
+              <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
+                👤 Login
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Main row: logo (left) + search bar + cart (right) — same row, like Daraz */}
@@ -153,21 +159,6 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
             <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
             {cartCount > 0 && <div style={styles.cartBadge}>{cartCount}</div>}
           </div>
-        </div>
-        <div
-          style={{
-            ...styles.greeting,
-            maxHeight: isScrolled ? 0 : 60,
-            marginTop: isScrolled ? 0 : styles.greeting.marginTop,
-            opacity: isScrolled ? 0 : 1,
-            overflow: "hidden",
-            transition: "max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease"
-          }}
-        >
-          <div style={styles.greetingEyebrow}>
-            {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"} 👋
-          </div>
-          <div style={styles.greetingText}>What are we hunting today?</div>
         </div>
       </div>
 
@@ -341,6 +332,9 @@ const styles = {
   page: { minHeight: "100vh", background: "var(--color-bg)", paddingBottom: 20, margin: "0 auto", fontFamily: "var(--font-body)" },
 
   header: { background: "#0B3D2E", padding: "18px 16px 26px", position: "sticky", top: 0, zIndex: 100 },
+  topInfoRow: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
+  greetingTextCentered: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 15, fontWeight: 600, flex: 1, textAlign: "center" },
+  topIconsInline: { display: "flex", gap: 10, alignItems: "center", flexShrink: 0 },
   topUtilityRow: { display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 14 },
   mainRow: { display: "flex", alignItems: "center", gap: 12 },
   topRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
