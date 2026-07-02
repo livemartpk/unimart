@@ -10,7 +10,8 @@ import "../../styles/theme.css";
 export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigate }) {
   const [form, setForm] = useState({
     name: "", category: "", price: "", mrp: "", stock: "",
-    description: "", deliveryTime: "", colors: "", sizes: ""
+    description: "", deliveryTime: "", colors: "", sizes: "",
+    brand: "", highlights: "", material: "", weight: "", warranty: ""
   });
   const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
@@ -32,6 +33,8 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
     if (form.mrp && Number(form.mrp) < Number(form.price)) e.mrp = "MRP should not be less than price.";
     if (form.stock === "" || Number(form.stock) < 0) e.stock = "Enter a valid stock quantity.";
     if (!form.description.trim()) e.description = "Add a short description.";
+    const highlightLines = form.highlights.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (highlightLines.length < 2) e.highlights = "Add at least 2 key details (one per line) — e.g. material, capacity, what makes it special.";
     if (images.length === 0) e.images = "Add at least one product image.";
     return e;
   };
@@ -91,6 +94,11 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
         description: form.description,
         deliveryTime: form.deliveryTime || "3-5 days",
         images: imageUrls,
+        brand: form.brand.trim() || null,
+        material: form.material.trim() || null,
+        weight: form.weight.trim() || null,
+        warranty: form.warranty.trim() || null,
+        highlights: form.highlights.split("\n").map((l) => l.trim()).filter(Boolean),
         variants: {
           colors: form.colors ? form.colors.split(",").map((c) => c.trim()).filter(Boolean) : [],
           sizes: form.sizes ? form.sizes.split(",").map((s) => s.trim()).filter(Boolean) : []
@@ -172,6 +180,39 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
             <textarea className="input-field" rows={4} value={form.description} onChange={(e) => handleChange("description", e.target.value)} style={{ resize: "none", fontFamily: "inherit" }} />
           </Field>
 
+          <Field label="Brand (optional)">
+            <input className="input-field" value={form.brand} onChange={(e) => handleChange("brand", e.target.value)} placeholder="e.g. No Brand, Sony, Khaadi" />
+          </Field>
+
+          <Field label="Key Product Details" error={errors.highlights}>
+            <textarea
+              className="input-field"
+              rows={5}
+              value={form.highlights}
+              onChange={(e) => handleChange("highlights", e.target.value)}
+              placeholder={"One detail per line — buyers see these as bullet points.\ne.g.\nPremium metal build, rust-resistant\n100% imported material\nIdeal for daily use and gifting\nHandcrafted with fine finishing"}
+              style={{ resize: "none", fontFamily: "inherit" }}
+            />
+            <p style={styles.helperText}>Write one detail per line. The more specific, the more buyers trust your product.</p>
+          </Field>
+
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <Field label="Material (optional)">
+                <input className="input-field" value={form.material} onChange={(e) => handleChange("material", e.target.value)} placeholder="e.g. Stainless Steel" />
+              </Field>
+            </div>
+            <div style={{ flex: 1 }}>
+              <Field label="Weight / Size (optional)">
+                <input className="input-field" value={form.weight} onChange={(e) => handleChange("weight", e.target.value)} placeholder="e.g. 450g, 30x20cm" />
+              </Field>
+            </div>
+          </div>
+
+          <Field label="Warranty (optional)">
+            <input className="input-field" value={form.warranty} onChange={(e) => handleChange("warranty", e.target.value)} placeholder="e.g. 6 months seller warranty" />
+          </Field>
+
           <Field label="Product Images (up to 5)" error={errors.images}>
             <input type="file" className="input-field" multiple accept="image/*" onChange={handleImageSelect} />
             {images.length > 0 && <p style={styles.imgCount}>{images.length} image(s) selected</p>}
@@ -203,5 +244,6 @@ const styles = {
   header: { background: "#0B3D2E", padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between" },
   backBtn: { color: "#fff", fontSize: 18, cursor: "pointer", width: 36 },
   headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 },
-  imgCount: { fontSize: 11.5, color: "#0B3D2E", marginTop: 6, fontWeight: 600 }
+  imgCount: { fontSize: 11.5, color: "#0B3D2E", marginTop: 6, fontWeight: 600 },
+  helperText: { fontSize: 11, color: "#888", marginTop: 5 }
 };
