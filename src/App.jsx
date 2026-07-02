@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "./config/firebase";
 
 // Auth pages
@@ -526,7 +526,7 @@ const ps = {
 // Seller can view objection + edit & resubmit.
 // ============================================
 import { useState as useStateObj, useEffect as useEffectObj } from "react";
-import { doc as docObj, getDoc as getDocObj, updateDoc as updateDocObj, serverTimestamp as stObj } from "firebase/firestore";
+// ObjectionScreen firebase imports handled by top-level imports
 
 
 function ObjectionScreen({ role, userEmail, userId }) {
