@@ -9,11 +9,11 @@ import "../../styles/theme.css";
 
 const SHIPPING_PER_SELLER = 150;
 
-export default function Checkout({ user, cartItems = [], onNavigate, onOrderPlaced }) {
+export default function Checkout({ user, firebaseUser, cartItems = [], onNavigate, onOrderPlaced }) {
   const [address, setAddress] = useState({
     fullName: user?.fullName || "",
-    phone: "",
-    city: "",
+    phone: user?.phone || "",
+    city: user?.city || "",
     fullAddress: ""
   });
   const [addingAddress, setAddingAddress] = useState(false);
@@ -44,17 +44,30 @@ export default function Checkout({ user, cartItems = [], onNavigate, onOrderPlac
       setError("Please add and save your delivery address first.");
       return;
     }
+
+    // Confirmation warning before placing order
+    const confirmed = window.confirm(
+      `📍 Delivery Address:\n\n` +
+      `Name: ${address.fullName}\n` +
+      `Phone: ${address.phone}\n` +
+      `City: ${address.city}\n` +
+      `Address: ${address.fullAddress}\n\n` +
+      `Is this address correct? Press OK to place order, or Cancel to change address.`
+    );
+    if (!confirmed) return;
+
     setPlacing(true);
     try {
       const orderGroupId = `OG-${Date.now()}`;
       const placedOrderIds = [];
+      const buyerUid = firebaseUser?.uid || user?.uid;
 
       for (const group of groupedBySeller) {
         const sellerSubtotal = group.items.reduce((s, i) => s + i.price * i.qty, 0);
         const orderRef = await addDoc(collection(db, "orders"), {
           orderGroupId,
-          buyerId: user.uid,
-          buyerName: address.fullName || user.displayName || "",
+          buyerId: buyerUid,
+          buyerName: address.fullName || user?.fullName || "",
           buyerPhone: address.phone,
           sellerId: group.sellerId,
           sellerName: group.sellerName,
@@ -76,11 +89,21 @@ export default function Checkout({ user, cartItems = [], onNavigate, onOrderPlac
         });
         placedOrderIds.push(orderRef.id);
 
-        // Notify seller
         await addDoc(collection(db, "notifications"), {
           userId: group.sellerId,
           type: "order_update",
           message: `New order received! Order #${orderRef.id.slice(0,8)} — Rs ${sellerSubtotal + SHIPPING_PER_SELLER}`,
+          orderId: orderRef.id,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+
+        // Notify buyer too
+        await addDoc(collection(db, "notifications"), {
+          userId: buyerUid,
+          type: "order_update",
+          message: `Order placed successfully! Order #${orderRef.id.slice(0,8)} from ${group.sellerName}`,
+          orderId: orderRef.id,
           read: false,
           createdAt: serverTimestamp()
         });

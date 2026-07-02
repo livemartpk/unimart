@@ -281,7 +281,7 @@ export default function App() {
     switch (page) {
       case "product": return <ProductDetail productId={pageParam} user={firebaseUser} onNavigate={navigate} onAddToCart={addToCart} />;
       case "cart": return <Cart cartItems={cartItems} onUpdateQty={updateCartQty} onRemoveItem={removeFromCart} onNavigate={navigate} onCheckout={() => navigate("checkout")} />;
-      case "checkout": return <Checkout user={userData} cartItems={cartItems} onNavigate={navigate} onOrderPlaced={clearCart} />;
+      case "checkout": return <Checkout user={userData} firebaseUser={firebaseUser} cartItems={cartItems} onNavigate={navigate} onOrderPlaced={clearCart} />;
       case "orders": return <MyOrders user={firebaseUser} onNavigate={navigate} />;
       case "wallet": return <BuyerWallet user={firebaseUser} onNavigate={navigate} />;
       default: return <Homepage user={userData} onNavigate={navigate} onAddToCart={addToCart} cartCount={cartItems.length} />;
