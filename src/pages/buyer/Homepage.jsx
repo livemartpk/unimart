@@ -14,10 +14,25 @@ import "../../styles/theme.css";
 export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 }) {
   const [flashSaleProducts, setFlashSaleProducts] = useState([]);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleLogout = async () => {
     try { await signOut(auth); } catch (err) { console.error(err); }
   };
+
+  const handleSearch = () => {
+    if (!searchQuery.trim()) return;
+    onNavigate && onNavigate("search", searchQuery.trim());
+  };
+
+  // Filter recommended products by search query
+  const displayedProducts = searchQuery.trim()
+    ? recommendedProducts.filter(p =>
+        p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.sellerName?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : recommendedProducts;
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
 
@@ -105,9 +120,14 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
             )}
           </div>
         </div>
-        <div style={styles.searchBar} onClick={() => onNavigate && onNavigate("search")}>
-          🔍 Search products, stores, brands...
-        </div>
+        <input
+          style={styles.searchBar}
+          placeholder="🔍 Search products, stores, brands..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && handleSearch()}
+          autoComplete="off"
+        />
         <div style={styles.greeting}>
           <div style={styles.greetingEyebrow}>
             {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"} 👋
@@ -223,11 +243,11 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
 
       {loading ? (
         <p style={{ ...styles.loadingText, padding: "0 16px" }}>Loading products...</p>
-      ) : recommendedProducts.length === 0 ? (
-        <p style={{ ...styles.emptyText, padding: "0 16px" }}>No products yet — be the first seller to add one!</p>
+      ) : displayedProducts.length === 0 ? (
+        <p style={{ ...styles.emptyText, padding: "0 16px" }}>{searchQuery ? "No products found for your search." : "No products yet — be the first seller to add one!"}</p>
       ) : (
         <div className="product-grid-responsive" style={styles.productGrid}>
-          {recommendedProducts.map((p) => (
+          {displayedProducts.map((p) => (
             <div key={p.id} style={styles.pcard}>
               <div style={styles.pimg} onClick={() => onNavigate && onNavigate("product", p.id)}>
                 {p.images?.[0] ? <img src={p.images[0]} alt={p.name} style={styles.imgFit} /> : "🛍️"}
@@ -298,7 +318,7 @@ const styles = {
   cartBadge: { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, background: "#D4AF37", color: "#0B3D2E", borderRadius: 999, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" },
   iconBtn: { width: 38, height: 38, borderRadius: 12, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#fff", position: "relative", cursor: "pointer" },
   badgeDot: { position: "absolute", top: -3, right: -3, width: 9, height: 9, background: "#D4AF37", borderRadius: "50%", border: "2px solid #0B3D2E" },
-  searchBar: { background: "rgba(255,255,255,0.95)", borderRadius: 14, padding: "13px 16px", color: "#6b6b6b", fontSize: 13, fontWeight: 500, cursor: "pointer" },
+  searchBar: { background: "rgba(255,255,255,0.95)", borderRadius: 14, padding: "13px 16px", color: "#1a1a1a", fontSize: 13, fontWeight: 500, border: "none", outline: "none", width: "100%", boxSizing: "border-box", fontFamily: "inherit" },
   greeting: { marginTop: 14 },
   greetingEyebrow: { color: "#D4AF37", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" },
   greetingText: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 600, marginTop: 4 },

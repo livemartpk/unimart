@@ -19,6 +19,7 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
   const [addingAddress, setAddingAddress] = useState(false);
   const [addressSaved, setAddressSaved] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [showConfirm, setShowConfirm] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(null);
@@ -44,18 +45,12 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
       setError("Please add and save your delivery address first.");
       return;
     }
+    // Show custom confirmation modal instead of browser alert
+    setShowConfirm(true);
+  };
 
-    // Confirmation warning before placing order
-    const confirmed = window.confirm(
-      `📍 Delivery Address:\n\n` +
-      `Name: ${address.fullName}\n` +
-      `Phone: ${address.phone}\n` +
-      `City: ${address.city}\n` +
-      `Address: ${address.fullAddress}\n\n` +
-      `Is this address correct? Press OK to place order, or Cancel to change address.`
-    );
-    if (!confirmed) return;
-
+  const confirmAndPlaceOrder = async () => {
+    setShowConfirm(false);
     setPlacing(true);
     try {
       const orderGroupId = `OG-${Date.now()}`;
@@ -236,6 +231,36 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
           {placing ? "Placing order..." : `🛒 Place Order — Rs ${grandTotal.toLocaleString()}`}
         </button>
       </div>
+
+      {/* ===== Custom Address Confirmation Modal ===== */}
+      {showConfirm && (
+        <div style={s.modalOverlay}>
+          <div style={s.confirmModal}>
+            <div style={s.confirmHeader}>
+              <div style={s.confirmIcon}>📍</div>
+              <div style={s.confirmTitle}>Confirm Delivery Address</div>
+            </div>
+            <div style={s.confirmBody}>
+              <p style={s.confirmQuestion}>Please verify your delivery address before placing the order:</p>
+              <div style={s.addressConfirmCard}>
+                <div style={s.addressConfirmRow}><span style={s.addressConfirmLabel}>Name</span><span style={s.addressConfirmValue}>{address.fullName}</span></div>
+                <div style={s.addressConfirmRow}><span style={s.addressConfirmLabel}>Phone</span><span style={s.addressConfirmValue}>{address.phone}</span></div>
+                <div style={s.addressConfirmRow}><span style={s.addressConfirmLabel}>City</span><span style={s.addressConfirmValue}>{address.city}</span></div>
+                <div style={s.addressConfirmRow}><span style={s.addressConfirmLabel}>Address</span><span style={s.addressConfirmValue}>{address.fullAddress}</span></div>
+              </div>
+              <p style={s.confirmNote}>Is this address correct? Once order is placed, address cannot be changed.</p>
+            </div>
+            <div style={s.confirmActions}>
+              <button style={s.changeAddressBtn} onClick={() => { setShowConfirm(false); setAddressSaved(false); }}>
+                ✏️ Change Address
+              </button>
+              <button style={s.proceedBtn} onClick={confirmAndPlaceOrder} disabled={placing}>
+                {placing ? "Placing..." : "✓ Yes, Place Order"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -268,6 +293,23 @@ const s = {
   summaryTotal: { display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 800, color: "#0B3D2E" },
 
   bottomBar: { position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: "1px solid #eee0c0", padding: 14 },
+
+  // Custom confirmation modal
+  modalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  confirmModal: { background: "#fff", borderRadius: 20, width: "100%", maxWidth: 420, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" },
+  confirmHeader: { background: "#0B3D2E", padding: "20px 24px", textAlign: "center" },
+  confirmIcon: { fontSize: 36, marginBottom: 6 },
+  confirmTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700 },
+  confirmBody: { padding: "20px 24px" },
+  confirmQuestion: { fontSize: 13, color: "#555", marginBottom: 14, lineHeight: 1.5 },
+  addressConfirmCard: { background: "#F0F5F0", border: "1px solid #eee0c0", borderRadius: 12, padding: 14, marginBottom: 14 },
+  addressConfirmRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8, gap: 10 },
+  addressConfirmLabel: { fontSize: 11, color: "#888", fontWeight: 600, minWidth: 60, marginTop: 1 },
+  addressConfirmValue: { fontSize: 13, color: "#1a1a1a", fontWeight: 500, textAlign: "right", flex: 1 },
+  confirmNote: { fontSize: 11.5, color: "#C0392B", lineHeight: 1.5 },
+  confirmActions: { display: "flex", gap: 10, padding: "0 24px 20px" },
+  changeAddressBtn: { flex: 1, padding: "13px 0", background: "#F0F5F0", border: "1px solid #eee0c0", borderRadius: 12, color: "#0B3D2E", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+  proceedBtn: { flex: 1, padding: "13px 0", background: "#0B3D2E", border: "none", borderRadius: 12, color: "#D4AF37", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
 
   successBox: { minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" },
   successTitle: { fontFamily: "Georgia, serif", fontSize: 24, color: "#0B3D2E", marginBottom: 8 },
