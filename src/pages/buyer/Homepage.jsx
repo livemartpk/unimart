@@ -311,7 +311,7 @@ function NavItem({ icon, label, active, onClick }) {
 const styles = {
   page: { minHeight: "100vh", background: "var(--color-bg)", paddingBottom: 20, margin: "0 auto", fontFamily: "var(--font-body)" },
 
-  header: { background: "#0B3D2E", padding: "18px 16px 26px", position: "relative" },
+  header: { background: "#0B3D2E", padding: "18px 16px 26px", position: "sticky", top: 0, zIndex: 100 },
   topRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
   logo: { color: "#FBF9F4", fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 900 },
   topIcons: { display: "flex", gap: 14, alignItems: "center" },
