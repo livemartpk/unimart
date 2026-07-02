@@ -26,7 +26,9 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   };
 
   // Filter recommended products by search query
-  const displayedProducts = searchQuery.trim()
+  const isSearching = searchQuery.trim().length > 0;
+
+  const displayedProducts = isSearching
     ? recommendedProducts.filter(p =>
         p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -140,8 +142,8 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
         </div>
       </div>
 
-      {/* Stories bar */}
-      <div style={styles.storiesBar}>
+      {/* Stories bar — hidden during search */}
+      {!isSearching && <div style={styles.storiesBar}>
         {stories.map((s) => (
           <div key={s.key} style={styles.storyItem}>
             <div style={styles.storyRing}>
@@ -150,20 +152,18 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
             <div style={styles.storyLabel}>{s.label}</div>
           </div>
         ))}
-      </div>
+      </div>}
 
-      {/* Social proof */}
-      <div style={styles.socialProof}>
+      {!isSearching && <div style={styles.socialProof}>
         <div style={styles.avatarStack}>
           <div style={styles.miniAvatar}>😊</div>
           <div style={{ ...styles.miniAvatar, marginLeft: -8 }}>🙂</div>
           <div style={{ ...styles.miniAvatar, marginLeft: -8 }}>😄</div>
         </div>
         <div style={styles.socialText}><b>2,300+</b> orders placed today</div>
-      </div>
+      </div>}
 
-      {/* Bento category grid */}
-      <div className="bento-grid-responsive" style={styles.bentoWrap}>
+      {!isSearching && <div className="bento-grid-responsive" style={styles.bentoWrap}>
         <div style={styles.bentoGrid}>
           <div style={{ flex: 1.3 }}>
             <div
@@ -196,10 +196,9 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
-      {/* Flash Sale */}
-      <div style={styles.section}>
+      {!isSearching && <div style={styles.section}>
         <div style={styles.sectionHead}>
           <div style={styles.sectionTitle}>Flash Sale <span style={styles.livePill}>LIVE</span></div>
           <div style={styles.sectionLink} onClick={() => onNavigate && onNavigate("flash-sale")}>See all</div>
@@ -228,19 +227,18 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
-      {/* Voucher banner */}
-      <div style={styles.voucherCard} onClick={() => onNavigate && onNavigate("vouchers")}>
+      {!isSearching && <div style={styles.voucherCard} onClick={() => onNavigate && onNavigate("vouchers")}>
         <div style={styles.voucherEyebrow}>Limited Drop</div>
         <div style={styles.voucherTitle}>Rs 200 off your first order</div>
         <div style={styles.voucherBtn}>Claim now →</div>
-      </div>
+      </div>}
 
-      {/* Just For You */}
+      {/* Products Section */}
       <div style={styles.section}>
         <div style={styles.sectionHead}>
-          <div style={styles.sectionTitle}>Just For You</div>
+          <div style={styles.sectionTitle}>{isSearching ? `Search Results for "${searchQuery}"` : "Just For You"}</div>
           <div style={styles.sectionLink}>See all</div>
         </div>
       </div>
