@@ -17,6 +17,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [activeImage, setActiveImage] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
   const [addedFeedback, setAddedFeedback] = useState(false);
 
@@ -105,13 +106,14 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
       </div>
 
       {/* Image gallery */}
-      <div style={styles.imageWrap}>
+      <div style={styles.imageWrap} onClick={() => product.images?.length && setLightboxOpen(true)}>
         {product.images?.length ? (
           <img src={product.images[activeImage]} alt={product.name} style={styles.mainImage} />
         ) : (
           <div style={styles.mainImagePlaceholder}>🛍️</div>
         )}
         {isOutOfStock && <div style={styles.outOfStockBadge}>Out of Stock</div>}
+        {product.images?.length > 0 && <div style={styles.zoomHint}>🔍 Tap to view closely</div>}
       </div>
 
       {product.images?.length > 1 && (
@@ -125,6 +127,48 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
               <img src={img} alt="" style={styles.imgFit} />
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Full-screen close-up viewer */}
+      {lightboxOpen && product.images?.length > 0 && (
+        <div style={styles.lightboxOverlay} onClick={() => setLightboxOpen(false)}>
+          <div style={styles.lightboxTop}>
+            <span style={styles.lightboxCounter}>{activeImage + 1} / {product.images.length}</span>
+            <div style={styles.lightboxClose} onClick={() => setLightboxOpen(false)}>✕</div>
+          </div>
+          <div style={styles.lightboxImageWrap} onClick={(e) => e.stopPropagation()}>
+            {product.images.length > 1 && (
+              <div
+                style={styles.lightboxNav}
+                onClick={() => setActiveImage((i) => (i - 1 + product.images.length) % product.images.length)}
+              >
+                ‹
+              </div>
+            )}
+            <img src={product.images[activeImage]} alt={product.name} style={styles.lightboxImage} />
+            {product.images.length > 1 && (
+              <div
+                style={{ ...styles.lightboxNav, right: 8, left: "auto" }}
+                onClick={() => setActiveImage((i) => (i + 1) % product.images.length)}
+              >
+                ›
+              </div>
+            )}
+          </div>
+          {product.images.length > 1 && (
+            <div style={styles.lightboxThumbRow} onClick={(e) => e.stopPropagation()}>
+              {product.images.map((img, i) => (
+                <div
+                  key={i}
+                  style={{ ...styles.lightboxThumb, ...(i === activeImage ? styles.thumbActive : {}) }}
+                  onClick={() => setActiveImage(i)}
+                >
+                  <img src={img} alt="" style={styles.imgFit} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -184,6 +228,38 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
           <div style={styles.infoRow}>🛡️ <span>Buyer Protection — full refund if item isn't as described</span></div>
         </div>
 
+        {/* Deep product details — like Daraz's "Product details of" section */}
+        {(product.highlights?.length > 0 || product.brand || product.material || product.weight || product.warranty) && (
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>Product Details</h3>
+            <div style={styles.detailsCard}>
+              {product.highlights?.length > 0 && (
+                <ul style={styles.highlightList}>
+                  {product.highlights.map((h, i) => (
+                    <li key={i} style={styles.highlightItem}>• {h}</li>
+                  ))}
+                </ul>
+              )}
+              {(product.brand || product.material || product.weight || product.warranty) && (
+                <div style={styles.specGrid}>
+                  {product.brand && (
+                    <div style={styles.specRow}><span style={styles.specLabel}>Brand</span><span style={styles.specValue}>{product.brand}</span></div>
+                  )}
+                  {product.material && (
+                    <div style={styles.specRow}><span style={styles.specLabel}>Material</span><span style={styles.specValue}>{product.material}</span></div>
+                  )}
+                  {product.weight && (
+                    <div style={styles.specRow}><span style={styles.specLabel}>Weight / Size</span><span style={styles.specValue}>{product.weight}</span></div>
+                  )}
+                  {product.warranty && (
+                    <div style={styles.specRow}><span style={styles.specLabel}>Warranty</span><span style={styles.specValue}>{product.warranty}</span></div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Description */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Description</h3>
@@ -233,10 +309,21 @@ const styles = {
   topActions: { display: "flex", gap: 10 },
   iconBtn: { width: 36, height: 36, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", cursor: "pointer", fontSize: 15 },
 
-  imageWrap: { width: "100%", height: 320, background: "#F0F5F0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 60, position: "relative" },
+  imageWrap: { width: "100%", height: 320, background: "#F0F5F0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 60, position: "relative", cursor: "zoom-in" },
   mainImage: { width: "100%", height: "100%", objectFit: "cover" },
   mainImagePlaceholder: { fontSize: 60 },
   outOfStockBadge: { position: "absolute", top: 14, left: 14, background: "#C0392B", color: "#fff", fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 8 },
+  zoomHint: { position: "absolute", bottom: 12, right: 12, background: "rgba(11,61,46,0.75)", color: "#fff", fontSize: 10.5, fontWeight: 600, padding: "5px 10px", borderRadius: 20 },
+
+  lightboxOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.94)", zIndex: 1000, display: "flex", flexDirection: "column" },
+  lightboxTop: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 18px" },
+  lightboxCounter: { color: "#fff", fontSize: 13, fontWeight: 600 },
+  lightboxClose: { color: "#fff", fontSize: 22, cursor: "pointer", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center" },
+  lightboxImageWrap: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "auto", padding: "0 12px" },
+  lightboxImage: { maxWidth: "100%", maxHeight: "100%", objectFit: "contain" },
+  lightboxNav: { position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", width: 40, height: 40, background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, cursor: "pointer" },
+  lightboxThumbRow: { display: "flex", gap: 8, padding: "14px 16px", overflowX: "auto" },
+  lightboxThumb: { width: 50, height: 50, borderRadius: 8, overflow: "hidden", border: "2px solid transparent", cursor: "pointer", flexShrink: 0 },
 
   thumbRow: { display: "flex", gap: 8, padding: "10px 16px" },
   thumb: { width: 56, height: 56, borderRadius: 10, overflow: "hidden", border: "2px solid transparent", cursor: "pointer" },
@@ -265,6 +352,14 @@ const styles = {
   sectionTitle: { fontSize: 15, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 8 },
   description: { fontSize: 13, color: "#444", lineHeight: 1.6 },
   emptyText: { fontSize: 12.5, color: "#888" },
+
+  detailsCard: { background: "#F0F5F0", borderRadius: 12, padding: 16 },
+  highlightList: { margin: 0, padding: "0 0 0 18px", listStyle: "none" },
+  highlightItem: { fontSize: 12.5, color: "#333", lineHeight: 1.9, position: "relative", paddingLeft: 14 },
+  specGrid: { marginTop: 10, borderTop: "1px solid #dfe8df", paddingTop: 10 },
+  specRow: { display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #e4ecE4", fontSize: 12.5 },
+  specLabel: { color: "#6b6b6b", fontWeight: 600 },
+  specValue: { color: "#1a1a1a", fontWeight: 600, textAlign: "right" },
 
   reviewCard: { borderBottom: "1px solid #eee0c0", paddingBottom: 12, marginBottom: 12 },
   reviewHead: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 },
