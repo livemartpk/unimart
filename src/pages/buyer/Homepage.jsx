@@ -111,42 +111,48 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
           transition: "padding 0.25s ease"
         }}
       >
-        <div style={styles.topRow}>
-          <div style={styles.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
-          <div style={styles.topIcons}>
-            {user ? (
-              <>
-                <IconButton icon="🔔" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
-                <div style={{ position: "relative" }}>
-                  <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
-                  {cartCount > 0 && <div style={styles.cartBadge}>{cartCount}</div>}
-                </div>
-                <IconButton icon="📦" onClick={() => onNavigate && onNavigate("orders")} />
-                <div style={styles.logoutIconBtn} onClick={handleLogout}>🚪</div>
-              </>
-            ) : (
-              <>
-                <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
-                  👤 Login
-                </div>
-                <div style={{ position: "relative" }}>
-                  <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
-                  {cartCount > 0 && <div style={styles.cartBadge}>{cartCount}</div>}
-                </div>
-              </>
-            )}
-          </div>
+        {/* Utility row: bell/orders/profile — collapses on scroll like Daraz's top links bar */}
+        <div
+          style={{
+            ...styles.topUtilityRow,
+            maxHeight: isScrolled ? 0 : 40,
+            opacity: isScrolled ? 0 : 1,
+            overflow: "hidden",
+            marginBottom: isScrolled ? 0 : 12,
+            transition: "max-height 0.25s ease, opacity 0.2s ease, margin-bottom 0.25s ease"
+          }}
+        >
+          {user ? (
+            <>
+              <IconButton icon="🔔" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
+              <IconButton icon="📦" onClick={() => onNavigate && onNavigate("orders")} />
+              <div style={styles.logoutIconBtn} onClick={handleLogout}>🚪</div>
+            </>
+          ) : (
+            <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
+              👤 Login
+            </div>
+          )}
         </div>
-        <div style={styles.searchWrap}>
-          <input
-            style={styles.searchBar}
-            placeholder="Search products, stores, brands..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleSearch()}
-            autoComplete="off"
-          />
-          <div style={styles.searchBtn} onClick={handleSearch}>🔍</div>
+
+        {/* Main row: logo (left) + search bar + cart (right) — same row, like Daraz */}
+        <div style={styles.mainRow}>
+          <div style={styles.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
+          <div style={styles.searchWrap}>
+            <input
+              style={styles.searchBar}
+              placeholder="Search products, stores, brands..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleSearch()}
+              autoComplete="off"
+            />
+            <div style={styles.searchBtn} onClick={handleSearch}>🔍</div>
+          </div>
+          <div style={{ position: "relative" }}>
+            <IconButton icon="🛒" onClick={() => onNavigate && onNavigate("cart")} />
+            {cartCount > 0 && <div style={styles.cartBadge}>{cartCount}</div>}
+          </div>
         </div>
         <div
           style={{
@@ -335,6 +341,8 @@ const styles = {
   page: { minHeight: "100vh", background: "var(--color-bg)", paddingBottom: 20, margin: "0 auto", fontFamily: "var(--font-body)" },
 
   header: { background: "#0B3D2E", padding: "18px 16px 26px", position: "sticky", top: 0, zIndex: 100 },
+  topUtilityRow: { display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 14 },
+  mainRow: { display: "flex", alignItems: "center", gap: 12 },
   topRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
   logo: { color: "#FBF9F4", fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 900 },
   topIcons: { display: "flex", gap: 14, alignItems: "center" },
@@ -343,7 +351,7 @@ const styles = {
   cartBadge: { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, background: "#D4AF37", color: "#0B3D2E", borderRadius: 999, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" },
   iconBtn: { width: 38, height: 38, borderRadius: 12, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "#fff", position: "relative", cursor: "pointer" },
   badgeDot: { position: "absolute", top: -3, right: -3, width: 9, height: 9, background: "#D4AF37", borderRadius: "50%", border: "2px solid #0B3D2E" },
-  searchWrap: { display: "flex", alignItems: "center", background: "rgba(255,255,255,0.95)", borderRadius: 14, overflow: "hidden" },
+  searchWrap: { display: "flex", alignItems: "center", background: "rgba(255,255,255,0.95)", borderRadius: 14, overflow: "hidden", flex: 1, minWidth: 0 },
   searchBar: { flex: 1, background: "transparent", padding: "13px 16px", color: "#1a1a1a", fontSize: 13, fontWeight: 500, border: "none", outline: "none", fontFamily: "inherit" },
   searchBtn: { padding: "13px 16px", background: "#D4AF37", color: "#0B3D2E", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 },
   greeting: { marginTop: 14 },
