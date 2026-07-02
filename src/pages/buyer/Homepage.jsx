@@ -111,37 +111,39 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
           transition: "padding 0.25s ease"
         }}
       >
-        {/* Top info row: Salam (left) — greeting (center) — icons (right), above search bar */}
+        {/* Top info row: line 1 = Salam + icons, line 2 = centered greeting — stacked so it never overlaps on mobile */}
         <div
           style={{
             ...styles.topInfoRow,
-            maxHeight: isScrolled ? 0 : 52,
+            maxHeight: isScrolled ? 0 : 92,
             opacity: isScrolled ? 0 : 1,
             overflow: "hidden",
             marginBottom: isScrolled ? 0 : 12,
             transition: "max-height 0.25s ease, opacity 0.2s ease, margin-bottom 0.25s ease"
           }}
         >
-          <div style={styles.greetingEyebrow}>
-            {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"} 👋
+          <div style={styles.topInfoLine}>
+            <div style={styles.greetingEyebrow}>
+              {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"} 👋
+            </div>
+            <div style={styles.topIconsInline}>
+              {user ? (
+                <>
+                  <IconButton icon="🔔" label="Notification" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
+                  <IconButton icon="📦" label="Track Order" onClick={() => onNavigate && onNavigate("orders")} />
+                  <div style={styles.iconBtnWrap} onClick={handleLogout}>
+                    <div style={styles.logoutIconBtn}>🚪</div>
+                    <div style={styles.iconBtnLabel}>Logout</div>
+                  </div>
+                </>
+              ) : (
+                <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
+                  👤 Login
+                </div>
+              )}
+            </div>
           </div>
           <div style={styles.greetingTextCentered}>What are we hunting today?</div>
-          <div style={styles.topIconsInline}>
-            {user ? (
-              <>
-                <IconButton icon="🔔" label="Notification" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
-                <IconButton icon="📦" label="Track Order" onClick={() => onNavigate && onNavigate("orders")} />
-                <div style={styles.iconBtnWrap} onClick={handleLogout}>
-                  <div style={styles.logoutIconBtn}>🚪</div>
-                  <div style={styles.iconBtnLabel}>Logout</div>
-                </div>
-              </>
-            ) : (
-              <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
-                👤 Login
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Main row: logo (left) + search bar + cart (right) — same row, like Daraz */}
@@ -338,8 +340,9 @@ const styles = {
   page: { minHeight: "100vh", background: "var(--color-bg)", paddingBottom: 20, margin: "0 auto", fontFamily: "var(--font-body)" },
 
   header: { background: "linear-gradient(135deg, #0B3D2E 0%, #0f4d3a 100%)", padding: "18px 16px 18px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 6px 24px rgba(11,61,46,0.28)", borderRadius: "0 0 18px 18px" },
-  topInfoRow: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
-  greetingTextCentered: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 15, fontWeight: 600, flex: 1, textAlign: "center" },
+  topInfoRow: { display: "flex", flexDirection: "column", gap: 6 },
+  topInfoLine: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
+  greetingTextCentered: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 14, fontWeight: 600, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
   topIconsInline: { display: "flex", gap: 10, alignItems: "center", flexShrink: 0 },
   topUtilityRow: { display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 14 },
   mainRow: { display: "flex", alignItems: "center", gap: 12 },
