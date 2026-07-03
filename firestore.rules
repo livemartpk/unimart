@@ -126,6 +126,13 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // ---------- WITHDRAWAL REQUESTS ----------
+    match /withdrawalRequests/{requestId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && request.resource.data.status == "pending";
+      allow update: if isAdmin();
+    }
+
     // ---------- POLICIES (Super Admin only) ----------
     match /policies/{policyId} {
       allow read: if isSignedIn();
