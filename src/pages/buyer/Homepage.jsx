@@ -132,7 +132,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
         >
           <div style={styles.topInfoLine}>
             <div style={styles.greetingEyebrow}>
-              {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"} 👋
+              {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"}
             </div>
             <div style={styles.topIconsInline}>
               {user ? (
