@@ -10,6 +10,7 @@ import { collection, query, where, orderBy, limit, getDocs } from "firebase/fire
 import { signOut } from "firebase/auth";
 import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
+import LoadingLogo from "../../components/LoadingLogo";
 
 export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 }) {
   const [flashSaleProducts, setFlashSaleProducts] = useState([]);
@@ -236,7 +237,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
         </div>
 
         {loading ? (
-          <p style={styles.loadingText}>Loading deals...</p>
+          <LoadingLogo fullPage={false} size={16} />
         ) : flashSaleProducts.length === 0 ? (
           <p style={styles.emptyText}>No flash deals right now — check back soon.</p>
         ) : (
@@ -275,7 +276,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
       </div>
 
       {loading ? (
-        <p style={{ ...styles.loadingText, padding: "0 16px" }}>Loading products...</p>
+        <div style={{ padding: "12px 16px" }}><LoadingLogo fullPage={false} size={18} /></div>
       ) : displayedProducts.length === 0 ? (
         <p style={{ ...styles.emptyText, padding: "0 16px" }}>{searchQuery ? "No products found for your search." : "No products yet — be the first seller to add one!"}</p>
       ) : (
