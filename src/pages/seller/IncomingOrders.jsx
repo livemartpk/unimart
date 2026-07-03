@@ -86,8 +86,9 @@ export default function IncomingOrders({ user, onNavigate }) {
       await addDoc(col(db, "notifications"), {
         userId: viewOrder.buyerId,
         type: "order_update",
-        message: `Your order #${viewOrder.id.slice(0,8)} has been dispatched via ${courierName}. Tracking: ${dispatchForm.trackingNumber}`,
+        message: `Your order number ${viewOrder.orderGroupId || viewOrder.id} has been dispatched via ${courierName}. Tracking: ${dispatchForm.trackingNumber}`,
         orderId: viewOrder.id,
+        orderGroupId: viewOrder.orderGroupId || null,
         read: false,
         createdAt: serverTimestamp()
       });
