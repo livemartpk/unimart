@@ -5,7 +5,7 @@
 // ============================================
 
 import { useState, useEffect } from "react";
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import "../../styles/theme.css";
 
@@ -94,6 +94,18 @@ export default function IncomingOrders({ user, onNavigate }) {
       setOrders(os => os.map(o => o.id === viewOrder.id ? { ...o, status: "dispatched", dispatchDetails: { courierCompany: courierName, dispatchDate: dispatchForm.date, trackingNumber: dispatchForm.trackingNumber } } : o));
       setViewOrder(v => ({ ...v, status: "dispatched", dispatchDetails: { courierCompany: courierName, dispatchDate: dispatchForm.date, trackingNumber: dispatchForm.trackingNumber } }));
       setShowDispatch(false);
+
+      // Award points-per-sale (rate set by Super Admin in Policy Engine) — only once per order
+      if (!viewOrder.pointsAwarded) {
+        try {
+          const policySnap = await getDoc(doc(db, "policies", "current"));
+          const pointsPerSale = policySnap.exists() ? (policySnap.data().pointsPerSale ?? 10) : 10;
+          await updateDoc(doc(db, "sellers", user.uid), { points: increment(pointsPerSale) });
+          await updateDoc(doc(db, "orders", viewOrder.id), { pointsAwarded: true });
+        } catch (pointsErr) {
+          console.error("Failed to award points:", pointsErr);
+        }
+      }
     } catch (err) { console.error(err); }
     setActionLoading(false);
   };
