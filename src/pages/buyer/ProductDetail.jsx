@@ -9,6 +9,7 @@ import { doc, getDoc, collection, query, where, limit, getDocs } from "firebase/
 import { signOut } from "firebase/auth";
 import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
+import LoadingLogo from "../../components/LoadingLogo";
 
 export default function ProductDetail({ productId, user, onNavigate, onAddToCart }) {
   const [product, setProduct] = useState(null);
@@ -110,7 +111,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
   };
 
   if (loading) {
-    return <div style={styles.centerMsg}>Loading product...</div>;
+    return <LoadingLogo label="Loading product..." />;
   }
 
   if (!product) {
