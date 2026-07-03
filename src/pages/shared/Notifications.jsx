@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import "../../styles/theme.css";
+import LoadingLogo from "../../components/LoadingLogo";
 
 export default function Notifications({ user, onNavigate }) {
   const [notifications, setNotifications] = useState([]);
@@ -59,7 +60,7 @@ export default function Notifications({ user, onNavigate }) {
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         {loading ? (
-          <p style={styles.emptyText}>Loading notifications...</p>
+          <LoadingLogo fullPage={false} size={20} />
         ) : notifications.length === 0 ? (
           <p style={styles.emptyText}>You're all caught up — no notifications yet.</p>
         ) : (
