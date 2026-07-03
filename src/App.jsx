@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "./config/firebase";
+import LoadingLogo from "./components/LoadingLogo";
 
 // Auth pages
 import Login from "./pages/auth/Login";
@@ -213,7 +214,7 @@ export default function App() {
   };
 
   if (!authChecked) {
-    return <div style={{ padding: 40, textAlign: "center", color: "#0B3D2E" }}>Loading UniMart...</div>;
+    return <LoadingLogo />;
   }
 
   // Pages that require being logged in as a buyer
@@ -639,7 +640,7 @@ function ObjectionScreen({ role, userEmail, userId }) {
     setSubmitting(false);
   };
 
-  if (loading) return <div style={{ padding: 40, textAlign: "center" }}>Loading...</div>;
+  if (loading) return <LoadingLogo />;
 
   if (submitted) {
     return (
