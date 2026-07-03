@@ -1,10 +1,12 @@
 // ============================================
 // UniMart - Withdrawal Requests (Finance Team)
-// View full details before marking as paid.
+// View full details, do the bank transfer manually
+// outside the app, then record proof here — this is
+// what actually deducts the seller's wallet balance.
 // ============================================
 
 import { useState, useEffect } from "react";
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, increment, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../config/firebase";
 import "../../../styles/theme.css";
 
@@ -13,6 +15,10 @@ export default function WithdrawalRequests({ user }) {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [slipNo, setSlipNo] = useState("");
+  const [referenceNo, setReferenceNo] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Bank Transfer");
+  const [paymentDate, setPaymentDate] = useState("");
 
   useEffect(() => { loadRequests(); }, []);
 
@@ -26,15 +32,56 @@ export default function WithdrawalRequests({ user }) {
     setLoading(false);
   };
 
+  const openRequest = (r) => {
+    setSelected(r);
+    setSlipNo("");
+    setReferenceNo("");
+    setPaymentMethod("Bank Transfer");
+    setPaymentDate(new Date().toISOString().slice(0, 10));
+  };
+
+  const walletCollectionFor = (role) => {
+    if (role === "seller") return "wallets_seller";
+    if (role === "agent") return "wallets_agent";
+    return "wallets_buyer";
+  };
+
   const handleMarkPaid = async (request) => {
+    if (!slipNo.trim() || !referenceNo.trim() || !paymentDate) {
+      alert("Please fill in Slip No, Reference No, and Payment Date before marking as paid.");
+      return;
+    }
     setActionLoading(true);
     try {
-      await updateDoc(doc(db, "withdrawalRequests", request.id), { status: "paid", paidAt: serverTimestamp(), paidBy: user.uid });
-      await addDoc(collection(db, "notifications"), { userId: request.userId, type: "withdrawal_status", message: `Your withdrawal of Rs ${request.amount} has been processed and paid.`, read: false, createdAt: serverTimestamp() });
+      // Deduct from the seller/agent/buyer's wallet — this is the actual money leaving the platform
+      const walletCol = walletCollectionFor(request.role);
+      await updateDoc(doc(db, walletCol, request.userId), {
+        availableBalance: increment(-request.amount),
+        totalBalance: increment(-request.amount)
+      });
+      await addDoc(collection(db, walletCol, request.userId, "ledger_net"), {
+        type: "withdrawal_paid",
+        amount: request.amount,
+        slipNo, referenceNo, paymentMethod, paymentDate,
+        withdrawalRequestId: request.id,
+        createdAt: serverTimestamp()
+      });
+
+      await updateDoc(doc(db, "withdrawalRequests", request.id), {
+        status: "paid",
+        slipNo, referenceNo, paymentMethod, paymentDate,
+        paidAt: serverTimestamp(),
+        paidBy: user.uid
+      });
+      await addDoc(collection(db, "notifications"), { userId: request.userId, type: "withdrawal_status", message: `Your withdrawal of Rs ${request.amount} has been paid via ${paymentMethod} (Ref: ${referenceNo}).`, read: false, createdAt: serverTimestamp() });
       await addDoc(collection(db, "adminLogs"), { adminId: user.uid, adminRole: "finance_team", action: "marked_withdrawal_paid", targetId: request.id, timestamp: serverTimestamp() });
+
       setSelected(null);
       loadRequests();
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+      alert("Failed: " + err.message);
+    }
     setActionLoading(false);
   };
 
@@ -53,7 +100,7 @@ export default function WithdrawalRequests({ user }) {
                 <div style={s.cardName}>Rs {r.amount?.toLocaleString()}</div>
                 <div style={s.cardMeta}>{r.role} · {r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString() : "—"}</div>
               </div>
-              <div style={s.viewBtn} onClick={() => setSelected(r)}>View Details</div>
+              <div style={s.viewBtn} onClick={() => openRequest(r)}>View Details</div>
             </div>
           ))
         }
@@ -65,10 +112,30 @@ export default function WithdrawalRequests({ user }) {
             <div style={s.modalTitle}>Withdrawal Request</div>
             <DetailRow label="Amount" value={`Rs ${selected.amount?.toLocaleString()}`} />
             <DetailRow label="Role" value={selected.role} />
-            <DetailRow label="Payment Account" value={selected.paymentAccount} />
-            <DetailRow label="Account Type" value={selected.accountType} />
+            <DetailRow label="Bank Name" value={selected.bankName} />
+            <DetailRow label="Branch" value={selected.branchName} />
+            <DetailRow label="Account Number" value={selected.accountNumber} />
             <DetailRow label="User ID" value={selected.userId?.slice(0, 12)} />
             <DetailRow label="Requested On" value={selected.createdAt?.toDate ? selected.createdAt.toDate().toLocaleString() : "—"} />
+
+            <div style={s.divider} />
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: "#0B3D2E", marginBottom: 10 }}>
+              After transferring the payment manually, record proof below:
+            </div>
+            <label className="input-label">Slip No</label>
+            <input className="input-field" style={{ marginBottom: 10 }} value={slipNo} onChange={(e) => setSlipNo(e.target.value)} placeholder="Bank slip number" />
+            <label className="input-label">Reference No</label>
+            <input className="input-field" style={{ marginBottom: 10 }} value={referenceNo} onChange={(e) => setReferenceNo(e.target.value)} placeholder="Transaction reference number" />
+            <label className="input-label">Payment Method</label>
+            <select className="input-field" style={{ marginBottom: 10 }} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+              <option>Bank Transfer</option>
+              <option>Easypaisa</option>
+              <option>JazzCash</option>
+              <option>Cash</option>
+            </select>
+            <label className="input-label">Payment Date</label>
+            <input type="date" className="input-field" style={{ marginBottom: 6 }} value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+
             <div style={s.modalActions}>
               <button className="btn-primary" style={{ flex: 1 }} onClick={() => handleMarkPaid(selected)} disabled={actionLoading}>
                 {actionLoading ? "Processing..." : "✓ Mark as Paid"}
@@ -103,6 +170,8 @@ const s = {
   overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "flex-end" },
   modal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", maxHeight: "85vh", overflowY: "auto" },
   modalTitle: { fontSize: 17, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 16, fontWeight: 700 },
+  divider: { borderTop: "1px solid #eee", margin: "14px 0" },
   modalActions: { display: "flex", gap: 10, marginTop: 20, marginBottom: 12 },
   closeBtn: { textAlign: "center", fontSize: 13, color: "#888", cursor: "pointer", padding: "8px 0" }
 };
+
