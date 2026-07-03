@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import "../../styles/theme.css";
+import LoadingLogo from "../../components/LoadingLogo";
 
 const TIER_COLORS = {
   bronze: { bg: "#E8D5C4", text: "#7a4f2a" },
@@ -49,7 +50,7 @@ export default function AgentDashboard({ user, onNavigate }) {
     alert("Referral link copied!");
   };
 
-  if (loading) return <div className="page-shell" style={styles.page}><p style={{ padding: 20 }}>Loading dashboard...</p></div>;
+  if (loading) return <LoadingLogo />;
 
   const targets = agent?.monthlyTargets || { newStores: 0, salesAmount: 0, traffic: 0 };
   const tierStyle = TIER_COLORS[agent?.tier] || TIER_COLORS.bronze;
