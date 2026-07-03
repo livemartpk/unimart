@@ -6,7 +6,7 @@
 // ============================================
 
 import { useState, useEffect } from "react";
-import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, orderBy, where } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import "../../styles/theme.css";
 
@@ -14,10 +14,13 @@ export default function SellerWallet({ user, onNavigate }) {
   const [wallet, setWallet] = useState(null);
   const [grossLedger, setGrossLedger] = useState([]);
   const [netLedger, setNetLedger] = useState([]);
+  const [myRequests, setMyRequests] = useState([]);
   const [activeTab, setActiveTab] = useState("net");
   const [loading, setLoading] = useState(true);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [branchName, setBranchName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -37,6 +40,11 @@ export default function SellerWallet({ user, onNavigate }) {
       const netSnap = await getDocs(query(collection(db, "wallets_seller", user.uid, "ledger_net"), orderBy("createdAt", "desc")));
       setNetLedger(netSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
 
+      const reqSnap = await getDocs(query(collection(db, "withdrawalRequests"), where("userId", "==", user.uid)));
+      const requests = reqSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      requests.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      setMyRequests(requests);
+
     } catch (err) {
       console.error("Failed to load wallet:", err);
     }
@@ -47,25 +55,29 @@ export default function SellerWallet({ user, onNavigate }) {
     const amount = Number(withdrawAmount);
     if (!amount || amount <= 0) { alert("Enter a valid amount."); return; }
     if (amount > (wallet?.availableBalance || 0)) { alert("Amount exceeds your available balance."); return; }
-    if (!accountNumber.trim()) { alert("Enter your payment account number."); return; }
+    if (!bankName.trim()) { alert("Enter your bank name."); return; }
+    if (!branchName.trim()) { alert("Enter your branch name."); return; }
+    if (!accountNumber.trim()) { alert("Enter your account number."); return; }
 
     setSubmitting(true);
     try {
-      // Create withdrawal request — goes to Finance Team queue
-      await addDoc(collection(db, "wallets_seller", user.uid, "ledger_net"), {
-        type: "withdrawal_request",
+      // Create withdrawal request — goes to Finance Team's queue
+      await addDoc(collection(db, "withdrawalRequests"), {
+        userId: user.uid,
+        role: "seller",
         amount,
+        bankName,
+        branchName,
         accountNumber,
-        status: "pending", // Finance Team will mark "paid" once transferred
-        requestedAt: serverTimestamp()
+        status: "pending", // Finance Team marks "paid" once transferred, which also deducts these balances
+        createdAt: serverTimestamp()
       });
-
-      // NOTE: availableBalance should be decremented here via a transaction
-      // in production code, to prevent double-withdrawal of the same funds.
 
       setSubmitting(false);
       setShowWithdrawModal(false);
       setWithdrawAmount("");
+      setBankName("");
+      setBranchName("");
       setAccountNumber("");
       loadWallet();
 
@@ -114,9 +126,29 @@ export default function SellerWallet({ user, onNavigate }) {
           <div style={{ ...styles.tab, ...(activeTab === "gross" ? styles.tabActive : {}) }} onClick={() => setActiveTab("gross")}>
             Gross Ledger ({grossLedger.length})
           </div>
+          <div style={{ ...styles.tab, ...(activeTab === "requests" ? styles.tabActive : {}) }} onClick={() => setActiveTab("requests")}>
+            Withdrawals ({myRequests.length})
+          </div>
         </div>
 
-        {activeList.length === 0 ? (
+        {activeTab === "requests" ? (
+          myRequests.length === 0 ? (
+            <p style={styles.emptyText}>No withdrawal requests yet.</p>
+          ) : (
+            myRequests.map((r) => (
+              <div key={r.id} style={styles.ledgerRow}>
+                <div>
+                  <div style={styles.ledgerType}>{r.bankName} — {r.accountNumber}</div>
+                  <div style={styles.ledgerDate}>{r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString() : "—"}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={styles.ledgerAmount}>Rs {r.amount?.toLocaleString()}</div>
+                  <div style={{ ...styles.ledgerStatus, color: r.status === "paid" ? "#2E7D32" : "#D4AF37" }}>{r.status}</div>
+                </div>
+              </div>
+            ))
+          )
+        ) : activeList.length === 0 ? (
           <p style={styles.emptyText}>No entries yet.</p>
         ) : (
           activeList.map((entry) => (
@@ -147,8 +179,12 @@ export default function SellerWallet({ user, onNavigate }) {
             <h3 style={styles.modalTitle}>Request Withdrawal</h3>
             <label className="input-label">Amount (Rs)</label>
             <input type="number" className="input-field" style={{ marginBottom: 12 }} value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder={`Max: ${wallet?.availableBalance || 0}`} />
-            <label className="input-label">Payment Account Number</label>
-            <input className="input-field" style={{ marginBottom: 16 }} value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="Bank / Easypaisa / JazzCash account" />
+            <label className="input-label">Bank Name</label>
+            <input className="input-field" style={{ marginBottom: 12 }} value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. HBL, Meezan Bank" />
+            <label className="input-label">Branch Name</label>
+            <input className="input-field" style={{ marginBottom: 12 }} value={branchName} onChange={(e) => setBranchName(e.target.value)} placeholder="e.g. Gulshan-e-Iqbal Branch" />
+            <label className="input-label">Account Number</label>
+            <input className="input-field" style={{ marginBottom: 16 }} value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="Your bank account number" />
             <p style={styles.modalNote}>Your request will be reviewed by our Finance Team. You'll be notified once payment is processed.</p>
             <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
               <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowWithdrawModal(false)}>Cancel</button>
