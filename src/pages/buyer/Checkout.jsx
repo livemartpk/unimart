@@ -92,17 +92,17 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
           read: false,
           createdAt: serverTimestamp()
         });
-
-        // Notify buyer too
-        await addDoc(collection(db, "notifications"), {
-          userId: buyerUid,
-          type: "order_update",
-          message: `Order placed successfully! Order #${orderRef.id.slice(0,8)} from ${group.sellerName}`,
-          orderId: orderRef.id,
-          read: false,
-          createdAt: serverTimestamp()
-        });
       }
+
+      // Notify buyer once — with the order number clearly shown, so they can always find it here
+      await addDoc(collection(db, "notifications"), {
+        userId: buyerUid,
+        type: "order_update",
+        message: `Your order was placed! Your order number is ${orderGroupId} — save this to track your order anytime from "My Orders".`,
+        orderGroupId,
+        read: false,
+        createdAt: serverTimestamp()
+      });
 
       setPlacing(false);
       setOrderSuccess({ orderGroupId, orderIds: placedOrderIds });
