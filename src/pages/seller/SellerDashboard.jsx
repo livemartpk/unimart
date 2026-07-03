@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import "../../styles/theme.css";
+import LoadingLogo from "../../components/LoadingLogo";
 
 export default function SellerDashboard({ user, onNavigate }) {
   const [seller, setSeller] = useState(null);
@@ -74,7 +75,7 @@ export default function SellerDashboard({ user, onNavigate }) {
     setVacationLoading(false);
   };
 
-  if (loading) return <div className="page-shell" style={styles.page}><p style={{ padding: 20 }}>Loading dashboard...</p></div>;
+  if (loading) return <LoadingLogo />;
 
   const onVacation = seller?.storeStatus === "vacation";
 
