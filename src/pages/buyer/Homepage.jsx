@@ -309,15 +309,6 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
           ))}
         </div>
       )}
-
-      {/* Bottom Nav */}
-      <div className="bottom-nav-responsive" style={styles.bottomNav}>
-        <NavItem icon="🏠" label="Home" active onClick={() => onNavigate && onNavigate("home")} />
-        <NavItem icon="📂" label="Shop" onClick={() => onNavigate && onNavigate("shop")} />
-        <NavItem icon="🛒" label="Cart" onClick={() => onNavigate && onNavigate("cart")} />
-        <NavItem icon="📦" label="Orders" onClick={() => onNavigate && onNavigate("orders")} />
-        <NavItem icon="👤" label="You" onClick={() => onNavigate && onNavigate("account")} />
-      </div>
     </div>
   );
 }
