@@ -6,13 +6,15 @@
 
 import { useState, useEffect } from "react";
 import { doc, getDoc, collection, query, where, limit, getDocs } from "firebase/firestore";
-import { db } from "../../config/firebase";
+import { signOut } from "firebase/auth";
+import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
 
 export default function ProductDetail({ productId, user, onNavigate, onAddToCart }) {
   const [product, setProduct] = useState(null);
   const [seller, setSeller] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [recommended, setRecommended] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
@@ -20,8 +22,16 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
   const [addedFeedback, setAddedFeedback] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const handleLogout = async () => {
+    try { await signOut(auth); } catch (err) { console.error(err); }
+  };
 
   useEffect(() => {
+    setActiveTab("overview");
+    setMenuOpen(false);
     loadProduct();
   }, [productId]);
 
@@ -53,6 +63,24 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
       );
       const reviewsSnap = await getDocs(reviewsQuery);
       setReviews(reviewsSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+
+      // Fetch recommended products from the same category
+      if (productData.category) {
+        const recQuery = query(
+          collection(db, "products"),
+          where("category", "==", productData.category),
+          limit(6)
+        );
+        const recSnap = await getDocs(recQuery);
+        setRecommended(
+          recSnap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .filter((p) => p.id !== productData.id)
+            .slice(0, 4)
+        );
+      } else {
+        setRecommended([]);
+      }
 
     } catch (err) {
       console.error("Failed to load product:", err);
@@ -96,17 +124,24 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
 
   return (
     <div className="page-shell" style={styles.page}>
-      {/* Top bar */}
-      <div style={styles.topBar}>
-        <div style={styles.backBtn} onClick={() => onNavigate && onNavigate("back")}>←</div>
-        <div style={styles.topActions}>
-          <div style={styles.iconBtn} onClick={() => setInWishlist((v) => !v)}>{inWishlist ? "❤️" : "🤍"}</div>
-          <div style={styles.iconBtn} onClick={() => onNavigate && onNavigate("cart")}>🛒</div>
-        </div>
-      </div>
-
-      {/* Image gallery */}
+      {/* Image gallery with overlay icons — home (left), cart + menu (right) */}
       <div style={styles.imageWrap} onClick={() => product.images?.length && setLightboxOpen(true)}>
+        <div style={styles.overlayTop} onClick={(e) => e.stopPropagation()}>
+          <div style={styles.overlayBtn} onClick={() => onNavigate && onNavigate("home")}>🏠</div>
+          <div style={styles.overlayRight}>
+            <div style={styles.overlayBtn} onClick={() => onNavigate && onNavigate("cart")}>🛒</div>
+            <div style={{ position: "relative" }}>
+              <div style={styles.overlayBtn} onClick={() => setMenuOpen((v) => !v)}>⋮</div>
+              {menuOpen && (
+                <div style={styles.dropdownMenu}>
+                  <div style={styles.dropdownItem} onClick={() => { setMenuOpen(false); onNavigate && onNavigate("notifications"); }}>🔔 Notification</div>
+                  <div style={styles.dropdownItem} onClick={() => { setMenuOpen(false); onNavigate && onNavigate("orders"); }}>📦 Track Order</div>
+                  <div style={{ ...styles.dropdownItem, color: "#C0392B", borderBottom: "none" }} onClick={() => { setMenuOpen(false); handleLogout(); }}>🚪 Logout</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
         {product.images?.length ? (
           <img src={product.images[activeImage]} alt={product.name} style={styles.mainImage} />
         ) : (
@@ -114,6 +149,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
         )}
         {isOutOfStock && <div style={styles.outOfStockBadge}>Out of Stock</div>}
         {product.images?.length > 0 && <div style={styles.zoomHint}>🔍 Tap to view closely</div>}
+        {product.images?.length > 1 && <div style={styles.imgCounter}>{activeImage + 1}/{product.images.length}</div>}
       </div>
 
       {product.images?.length > 1 && (
@@ -129,6 +165,24 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
           ))}
         </div>
       )}
+
+      {/* Tab bar — Overview / Ratings / Product details / Recommendations */}
+      <div style={styles.tabBar}>
+        {[
+          { key: "overview", label: "Overview" },
+          { key: "ratings", label: "Ratings" },
+          { key: "details", label: "Product details" },
+          { key: "recommendations", label: "Recommendations" }
+        ].map((t) => (
+          <div
+            key={t.key}
+            style={{ ...styles.tabItem, ...(activeTab === t.key ? styles.tabItemActive : {}) }}
+            onClick={() => setActiveTab(t.key)}
+          >
+            {t.label}
+          </div>
+        ))}
+      </div>
 
       {/* Full-screen close-up viewer */}
       {lightboxOpen && product.images?.length > 0 && (
@@ -173,7 +227,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
       )}
 
       <div className="container" style={styles.content}>
-        {/* Verified badge + seller */}
+        {/* Verified badge + seller — always visible, like Daraz's title block */}
         <div style={styles.sellerRow}>
           {seller?.verifiedMallBadge && <span className="badge-verified">VERIFIED MALL</span>}
           <span style={styles.sellerName}>{seller?.storeName || "UniMart Store"}</span>
@@ -185,104 +239,139 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
           <span style={styles.price}>Rs {product.price}</span>
           {product.mrp && <span style={styles.mrp}>Rs {product.mrp}</span>}
           {product.rating && <span style={styles.rating}>⭐ {product.rating} ({product.reviewCount || 0})</span>}
+          <div style={styles.wishlistBtn} onClick={() => setInWishlist((v) => !v)}>{inWishlist ? "❤️" : "🤍"}</div>
         </div>
 
-        {/* Variants (display only — Phase 1) */}
-        {product.variants?.colors?.length > 0 && (
-          <div style={styles.variantBlock}>
-            <p style={styles.variantLabel}>Color</p>
-            <div style={styles.variantOptions}>
-              {product.variants.colors.map((c) => (
-                <div
-                  key={c}
-                  style={{ ...styles.variantPill, ...(selectedColor === c ? styles.variantPillActive : {}) }}
-                  onClick={() => setSelectedColor(c)}
-                >
-                  {c}
+        {/* ---------- OVERVIEW TAB ---------- */}
+        {activeTab === "overview" && (
+          <>
+            {product.variants?.colors?.length > 0 && (
+              <div style={styles.variantBlock}>
+                <p style={styles.variantLabel}>Color</p>
+                <div style={styles.variantOptions}>
+                  {product.variants.colors.map((c) => (
+                    <div
+                      key={c}
+                      style={{ ...styles.variantPill, ...(selectedColor === c ? styles.variantPillActive : {}) }}
+                      onClick={() => setSelectedColor(c)}
+                    >
+                      {c}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            )}
+
+            {product.variants?.sizes?.length > 0 && (
+              <div style={styles.variantBlock}>
+                <p style={styles.variantLabel}>Size</p>
+                <div style={styles.variantOptions}>
+                  {product.variants.sizes.map((s) => (
+                    <div
+                      key={s}
+                      style={{ ...styles.variantPill, ...(selectedSize === s ? styles.variantPillActive : {}) }}
+                      onClick={() => setSelectedSize(s)}
+                    >
+                      {s}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={styles.infoCard}>
+              <div style={styles.infoRow}>🚚 <span>Delivery in {product.deliveryTime || "3-5 days"}</span></div>
+              <div style={styles.infoRow}>🛡️ <span>Buyer Protection — full refund if item isn't as described</span></div>
             </div>
+
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Description</h3>
+              <p style={styles.description}>{product.description || "No description provided."}</p>
+            </div>
+          </>
+        )}
+
+        {/* ---------- RATINGS TAB ---------- */}
+        {activeTab === "ratings" && (
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>Reviews ({reviews.length})</h3>
+            {reviews.length === 0 ? (
+              <p style={styles.emptyText}>No reviews yet — be the first to share your experience.</p>
+            ) : (
+              reviews.map((r) => (
+                <div key={r.id} style={styles.reviewCard}>
+                  <div style={styles.reviewHead}>
+                    <span style={styles.reviewStars}>{"⭐".repeat(r.rating || 0)}</span>
+                    {r.verifiedPurchase && <span style={styles.verifiedPurchase}>Verified Purchase</span>}
+                  </div>
+                  <p style={styles.reviewText}>{r.comment}</p>
+                </div>
+              ))
+            )}
           </div>
         )}
 
-        {product.variants?.sizes?.length > 0 && (
-          <div style={styles.variantBlock}>
-            <p style={styles.variantLabel}>Size</p>
-            <div style={styles.variantOptions}>
-              {product.variants.sizes.map((s) => (
-                <div
-                  key={s}
-                  style={{ ...styles.variantPill, ...(selectedSize === s ? styles.variantPillActive : {}) }}
-                  onClick={() => setSelectedSize(s)}
-                >
-                  {s}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Delivery info */}
-        <div style={styles.infoCard}>
-          <div style={styles.infoRow}>🚚 <span>Delivery in {product.deliveryTime || "3-5 days"}</span></div>
-          <div style={styles.infoRow}>🛡️ <span>Buyer Protection — full refund if item isn't as described</span></div>
-        </div>
-
-        {/* Deep product details — like Daraz's "Product details of" section */}
-        {(product.highlights?.length > 0 || product.brand || product.material || product.weight || product.warranty) && (
+        {/* ---------- PRODUCT DETAILS TAB ---------- */}
+        {activeTab === "details" && (
           <div style={styles.section}>
             <h3 style={styles.sectionTitle}>Product Details</h3>
-            <div style={styles.detailsCard}>
-              {product.highlights?.length > 0 && (
-                <ul style={styles.highlightList}>
-                  {product.highlights.map((h, i) => (
-                    <li key={i} style={styles.highlightItem}>• {h}</li>
-                  ))}
-                </ul>
-              )}
-              {(product.brand || product.material || product.weight || product.warranty) && (
-                <div style={styles.specGrid}>
-                  {product.brand && (
-                    <div style={styles.specRow}><span style={styles.specLabel}>Brand</span><span style={styles.specValue}>{product.brand}</span></div>
-                  )}
-                  {product.material && (
-                    <div style={styles.specRow}><span style={styles.specLabel}>Material</span><span style={styles.specValue}>{product.material}</span></div>
-                  )}
-                  {product.weight && (
-                    <div style={styles.specRow}><span style={styles.specLabel}>Weight / Size</span><span style={styles.specValue}>{product.weight}</span></div>
-                  )}
-                  {product.warranty && (
-                    <div style={styles.specRow}><span style={styles.specLabel}>Warranty</span><span style={styles.specValue}>{product.warranty}</span></div>
-                  )}
-                </div>
-              )}
-            </div>
+            {(product.highlights?.length > 0 || product.brand || product.material || product.weight || product.warranty) ? (
+              <div style={styles.detailsCard}>
+                {product.highlights?.length > 0 && (
+                  <ul style={styles.highlightList}>
+                    {product.highlights.map((h, i) => (
+                      <li key={i} style={styles.highlightItem}>• {h}</li>
+                    ))}
+                  </ul>
+                )}
+                {(product.brand || product.material || product.weight || product.warranty) && (
+                  <div style={styles.specGrid}>
+                    {product.brand && (
+                      <div style={styles.specRow}><span style={styles.specLabel}>Brand</span><span style={styles.specValue}>{product.brand}</span></div>
+                    )}
+                    {product.material && (
+                      <div style={styles.specRow}><span style={styles.specLabel}>Material</span><span style={styles.specValue}>{product.material}</span></div>
+                    )}
+                    {product.weight && (
+                      <div style={styles.specRow}><span style={styles.specLabel}>Weight / Size</span><span style={styles.specValue}>{product.weight}</span></div>
+                    )}
+                    {product.warranty && (
+                      <div style={styles.specRow}><span style={styles.specLabel}>Warranty</span><span style={styles.specValue}>{product.warranty}</span></div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p style={styles.emptyText}>This seller hasn't added deeper product details yet.</p>
+            )}
           </div>
         )}
 
-        {/* Description */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>Description</h3>
-          <p style={styles.description}>{product.description || "No description provided."}</p>
-        </div>
-
-        {/* Reviews */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>Reviews ({reviews.length})</h3>
-          {reviews.length === 0 ? (
-            <p style={styles.emptyText}>No reviews yet — be the first to share your experience.</p>
-          ) : (
-            reviews.map((r) => (
-              <div key={r.id} style={styles.reviewCard}>
-                <div style={styles.reviewHead}>
-                  <span style={styles.reviewStars}>{"⭐".repeat(r.rating || 0)}</span>
-                  {r.verifiedPurchase && <span style={styles.verifiedPurchase}>Verified Purchase</span>}
-                </div>
-                <p style={styles.reviewText}>{r.comment}</p>
+        {/* ---------- RECOMMENDATIONS TAB ---------- */}
+        {activeTab === "recommendations" && (
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>You may also like</h3>
+            {recommended.length === 0 ? (
+              <p style={styles.emptyText}>No similar products found yet.</p>
+            ) : (
+              <div style={styles.recGrid}>
+                {recommended.map((p) => (
+                  <div key={p.id} style={styles.recCard} onClick={() => onNavigate && onNavigate("product", p.id)}>
+                    <div style={styles.recImageWrap}>
+                      {p.images?.[0] ? (
+                        <img src={p.images[0]} alt={p.name} style={styles.imgFit} />
+                      ) : (
+                        <div style={styles.recImagePlaceholder}>🛍️</div>
+                      )}
+                    </div>
+                    <p style={styles.recName}>{p.name}</p>
+                    <p style={styles.recPrice}>Rs {p.price}</p>
+                  </div>
+                ))}
               </div>
-            ))
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Sticky bottom bar */}
@@ -304,10 +393,25 @@ const styles = {
   page: { minHeight: "100vh", background: "var(--color-bg)", margin: "0 auto", paddingBottom: 80 },
   centerMsg: { padding: 60, textAlign: "center", color: "#666" },
 
-  topBar: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", position: "sticky", top: 0, background: "rgba(251,249,244,0.95)", zIndex: 10 },
-  backBtn: { width: 36, height: 36, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", cursor: "pointer", fontSize: 16 },
-  topActions: { display: "flex", gap: 10 },
-  iconBtn: { width: 36, height: 36, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", cursor: "pointer", fontSize: 15 },
+  topBar: { display: "none" },
+  overlayTop: { position: "absolute", top: 12, left: 12, right: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-start", zIndex: 5 },
+  overlayRight: { display: "flex", gap: 8 },
+  overlayBtn: { width: 34, height: 34, borderRadius: "50%", background: "rgba(0,0,0,0.35)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, cursor: "pointer", backdropFilter: "blur(4px)" },
+  dropdownMenu: { position: "absolute", top: 40, right: 0, background: "#fff", borderRadius: 12, boxShadow: "0 6px 20px rgba(0,0,0,0.18)", minWidth: 150, overflow: "hidden", zIndex: 20 },
+  dropdownItem: { padding: "12px 16px", fontSize: 13, fontWeight: 600, color: "#1a1a1a", cursor: "pointer", borderBottom: "1px solid #f0f0f0" },
+  imgCounter: { position: "absolute", bottom: 12, left: 12, background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20 },
+  wishlistBtn: { marginLeft: "auto", fontSize: 18, cursor: "pointer" },
+
+  tabBar: { display: "flex", borderBottom: "1px solid #eee0c0", position: "sticky", top: 0, background: "var(--color-bg)", zIndex: 8, overflowX: "auto" },
+  tabItem: { flex: "0 0 auto", padding: "12px 14px", fontSize: 12.5, fontWeight: 600, color: "#888", cursor: "pointer", whiteSpace: "nowrap", borderBottom: "2.5px solid transparent" },
+  tabItemActive: { color: "#0B3D2E", borderBottomColor: "#D4AF37" },
+
+  recGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
+  recCard: { background: "#fff", borderRadius: 12, overflow: "hidden", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
+  recImageWrap: { width: "100%", height: 110, background: "#F0F5F0", display: "flex", alignItems: "center", justifyContent: "center" },
+  recImagePlaceholder: { fontSize: 30 },
+  recName: { fontSize: 11.5, color: "#333", padding: "8px 8px 2px", lineHeight: 1.3, minHeight: 28 },
+  recPrice: { fontSize: 13, fontWeight: 800, color: "#0B3D2E", padding: "0 8px 10px" },
 
   imageWrap: { width: "100%", height: 320, background: "#F0F5F0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 60, position: "relative", cursor: "zoom-in" },
   mainImage: { width: "100%", height: "100%", objectFit: "cover" },
