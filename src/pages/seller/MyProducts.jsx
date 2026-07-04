@@ -132,7 +132,22 @@ export default function MyProducts({ user, onNavigate }) {
                 <DetailItem label="Stock" value={viewProduct.stock} />
                 <DetailItem label="Status" value={viewProduct.status} />
                 <DetailItem label="Description" value={viewProduct.description} />
+                {viewProduct.brand && <DetailItem label="Brand" value={viewProduct.brand} />}
+                {viewProduct.material && <DetailItem label="Material" value={viewProduct.material} />}
+                {viewProduct.weight && <DetailItem label="Weight / Size" value={viewProduct.weight} />}
+                {viewProduct.warranty && <DetailItem label="Warranty" value={viewProduct.warranty} />}
               </div>
+
+              {viewProduct.highlights?.length > 0 && (
+                <div style={{ marginTop: 4, marginBottom: 4 }}>
+                  <div style={{ fontSize: 10.5, color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Key Product Details</div>
+                  <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
+                    {viewProduct.highlights.map((h, i) => (
+                      <li key={i} style={{ fontSize: 12.5, color: "#333", lineHeight: 1.8 }}>{h}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div style={styles.modalActions}>
