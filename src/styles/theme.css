@@ -279,3 +279,21 @@ a {
     print-color-adjust: exact !important;
   }
 }
+
+/* ============================================
+   Product Card Interaction — hover on desktop,
+   press feedback on mobile (Daraz-style lift)
+   ============================================ */
+.product-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+@media (hover: hover) {
+  .product-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 22px rgba(11, 61, 46, 0.18) !important;
+  }
+}
+.product-card-hover:active {
+  transform: translateY(-1px) scale(0.98);
+  box-shadow: 0 5px 12px rgba(11, 61, 46, 0.14) !important;
+}
