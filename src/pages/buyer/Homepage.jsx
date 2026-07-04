@@ -298,7 +298,15 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
                 </div>
                 <div style={styles.quickAdd} onClick={() => {
                   if (onAddToCart) {
-                    onAddToCart(p);
+                    onAddToCart({
+                      productId: p.id,
+                      name: p.name,
+                      price: p.price,
+                      image: p.images?.[0] || null,
+                      sellerId: p.sellerId,
+                      sellerName: p.sellerName || "Store",
+                      qty: 1
+                    });
                     // If guest, redirect to login
                     if (!user) { onNavigate && onNavigate("login"); return; }
                   }

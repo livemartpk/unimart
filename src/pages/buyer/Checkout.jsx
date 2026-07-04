@@ -67,10 +67,10 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
           sellerId: group.sellerId,
           sellerName: group.sellerName,
           items: group.items.map(i => ({
-            productId: i.productId,
-            name: i.name,
-            price: i.price,
-            qty: i.qty,
+            productId: i.productId || i.id || null,
+            name: i.name || "Product",
+            price: i.price || 0,
+            qty: i.qty || 1,
             image: i.image || null
           })),
           subtotal: sellerSubtotal,
