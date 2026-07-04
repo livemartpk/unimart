@@ -4,12 +4,19 @@
 // stock status, seller info, reviews, add to cart
 // ============================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { doc, getDoc, collection, query, where, limit, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
+
+const TABS = [
+  { key: "overview", label: "Overview" },
+  { key: "ratings", label: "Ratings" },
+  { key: "details", label: "Product details" },
+  { key: "recommendations", label: "Recommendations" }
+];
 
 export default function ProductDetail({ productId, user, onNavigate, onAddToCart }) {
   const [product, setProduct] = useState(null);
@@ -25,6 +32,9 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const tabBarRef = useRef(null);
+  const sectionRefs = useRef({});
+  const isProgrammaticScroll = useRef(false);
 
   const handleLogout = async () => {
     try { await signOut(auth); } catch (err) { console.error(err); }
@@ -35,6 +45,42 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
     setMenuOpen(false);
     loadProduct();
   }, [productId]);
+
+  // Scroll-spy: highlight whichever section is currently under the tab bar
+  useEffect(() => {
+    if (loading || !product) return;
+    const tabBarHeight = tabBarRef.current?.offsetHeight || 44;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isProgrammaticScroll.current) return;
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const key = entry.target.getAttribute("data-section");
+            if (key) setActiveTab(key);
+          }
+        });
+      },
+      { rootMargin: `-${tabBarHeight + 4}px 0px -75% 0px`, threshold: 0 }
+    );
+    TABS.forEach((t) => {
+      const el = sectionRefs.current[t.key];
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [loading, product]);
+
+  const scrollToSection = (key) => {
+    setActiveTab(key);
+    const el = sectionRefs.current[key];
+    if (!el) return;
+    isProgrammaticScroll.current = true;
+    const tabBarHeight = tabBarRef.current?.offsetHeight || 44;
+    const top = el.getBoundingClientRect().top + window.scrollY - tabBarHeight - 6;
+    window.scrollTo({ top, behavior: "smooth" });
+    // Re-enable scroll-spy once the smooth scroll settles
+    window.clearTimeout(scrollToSection._t);
+    scrollToSection._t = window.setTimeout(() => { isProgrammaticScroll.current = false; }, 600);
+  };
 
   const loadProduct = async () => {
     setLoading(true);
@@ -168,17 +214,12 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
       )}
 
       {/* Tab bar — Overview / Ratings / Product details / Recommendations */}
-      <div style={styles.tabBar}>
-        {[
-          { key: "overview", label: "Overview" },
-          { key: "ratings", label: "Ratings" },
-          { key: "details", label: "Product details" },
-          { key: "recommendations", label: "Recommendations" }
-        ].map((t) => (
+      <div ref={tabBarRef} style={styles.tabBar}>
+        {TABS.map((t) => (
           <div
             key={t.key}
             style={{ ...styles.tabItem, ...(activeTab === t.key ? styles.tabItemActive : {}) }}
-            onClick={() => setActiveTab(t.key)}
+            onClick={() => scrollToSection(t.key)}
           >
             {t.label}
           </div>
@@ -243,136 +284,128 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
           <div style={styles.wishlistBtn} onClick={() => setInWishlist((v) => !v)}>{inWishlist ? "❤️" : "🤍"}</div>
         </div>
 
-        {/* ---------- OVERVIEW TAB ---------- */}
-        {activeTab === "overview" && (
-          <>
-            {product.variants?.colors?.length > 0 && (
-              <div style={styles.variantBlock}>
-                <p style={styles.variantLabel}>Color</p>
-                <div style={styles.variantOptions}>
-                  {product.variants.colors.map((c) => (
-                    <div
-                      key={c}
-                      style={{ ...styles.variantPill, ...(selectedColor === c ? styles.variantPillActive : {}) }}
-                      onClick={() => setSelectedColor(c)}
-                    >
-                      {c}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {product.variants?.sizes?.length > 0 && (
-              <div style={styles.variantBlock}>
-                <p style={styles.variantLabel}>Size</p>
-                <div style={styles.variantOptions}>
-                  {product.variants.sizes.map((s) => (
-                    <div
-                      key={s}
-                      style={{ ...styles.variantPill, ...(selectedSize === s ? styles.variantPillActive : {}) }}
-                      onClick={() => setSelectedSize(s)}
-                    >
-                      {s}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div style={styles.infoCard}>
-              <div style={styles.infoRow}>🚚 <span>Delivery in {product.deliveryTime || "3-5 days"}</span></div>
-              <div style={styles.infoRow}>🛡️ <span>Buyer Protection — full refund if item isn't as described</span></div>
-            </div>
-
-            <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Description</h3>
-              <p style={styles.description}>{product.description || "No description provided."}</p>
-            </div>
-          </>
-        )}
-
-        {/* ---------- RATINGS TAB ---------- */}
-        {activeTab === "ratings" && (
-          <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>Reviews ({reviews.length})</h3>
-            {reviews.length === 0 ? (
-              <p style={styles.emptyText}>No reviews yet — be the first to share your experience.</p>
-            ) : (
-              reviews.map((r) => (
-                <div key={r.id} style={styles.reviewCard}>
-                  <div style={styles.reviewHead}>
-                    <span style={styles.reviewStars}>{"⭐".repeat(r.rating || 0)}</span>
-                    {r.verifiedPurchase && <span style={styles.verifiedPurchase}>Verified Purchase</span>}
-                  </div>
-                  <p style={styles.reviewText}>{r.comment}</p>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* ---------- PRODUCT DETAILS TAB ---------- */}
-        {activeTab === "details" && (
-          <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>Product Details</h3>
-            {(product.highlights?.length > 0 || product.brand || product.material || product.weight || product.warranty) ? (
-              <div style={styles.detailsCard}>
-                {product.highlights?.length > 0 && (
-                  <ul style={styles.highlightList}>
-                    {product.highlights.map((h, i) => (
-                      <li key={i} style={styles.highlightItem}>• {h}</li>
-                    ))}
-                  </ul>
-                )}
-                {(product.brand || product.material || product.weight || product.warranty) && (
-                  <div style={styles.specGrid}>
-                    {product.brand && (
-                      <div style={styles.specRow}><span style={styles.specLabel}>Brand</span><span style={styles.specValue}>{product.brand}</span></div>
-                    )}
-                    {product.material && (
-                      <div style={styles.specRow}><span style={styles.specLabel}>Material</span><span style={styles.specValue}>{product.material}</span></div>
-                    )}
-                    {product.weight && (
-                      <div style={styles.specRow}><span style={styles.specLabel}>Weight / Size</span><span style={styles.specValue}>{product.weight}</span></div>
-                    )}
-                    {product.warranty && (
-                      <div style={styles.specRow}><span style={styles.specLabel}>Warranty</span><span style={styles.specValue}>{product.warranty}</span></div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p style={styles.emptyText}>This seller hasn't added deeper product details yet.</p>
-            )}
-          </div>
-        )}
-
-        {/* ---------- RECOMMENDATIONS TAB ---------- */}
-        {activeTab === "recommendations" && (
-          <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>You may also like</h3>
-            {recommended.length === 0 ? (
-              <p style={styles.emptyText}>No similar products found yet.</p>
-            ) : (
-              <div style={styles.recGrid}>
-                {recommended.map((p) => (
-                  <div key={p.id} style={styles.recCard} onClick={() => onNavigate && onNavigate("product", p.id)}>
-                    <div style={styles.recImageWrap}>
-                      {p.images?.[0] ? (
-                        <img src={p.images[0]} alt={p.name} style={styles.imgFit} />
-                      ) : (
-                        <div style={styles.recImagePlaceholder}>🛍️</div>
-                      )}
-                    </div>
-                    <p style={styles.recName}>{p.name}</p>
-                    <p style={styles.recPrice}>Rs {p.price}</p>
+        {/* ---------- OVERVIEW ---------- */}
+        <div ref={(el) => (sectionRefs.current.overview = el)} data-section="overview" style={styles.sectionAnchor}>
+          {product.variants?.colors?.length > 0 && (
+            <div style={styles.variantBlock}>
+              <p style={styles.variantLabel}>Color</p>
+              <div style={styles.variantOptions}>
+                {product.variants.colors.map((c) => (
+                  <div
+                    key={c}
+                    style={{ ...styles.variantPill, ...(selectedColor === c ? styles.variantPillActive : {}) }}
+                    onClick={() => setSelectedColor(c)}
+                  >
+                    {c}
                   </div>
                 ))}
               </div>
-            )}
+            </div>
+          )}
+
+          {product.variants?.sizes?.length > 0 && (
+            <div style={styles.variantBlock}>
+              <p style={styles.variantLabel}>Size</p>
+              <div style={styles.variantOptions}>
+                {product.variants.sizes.map((s) => (
+                  <div
+                    key={s}
+                    style={{ ...styles.variantPill, ...(selectedSize === s ? styles.variantPillActive : {}) }}
+                    onClick={() => setSelectedSize(s)}
+                  >
+                    {s}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={styles.infoCard}>
+            <div style={styles.infoRow}>🚚 <span>Delivery in {product.deliveryTime || "3-5 days"}</span></div>
+            <div style={styles.infoRow}>🛡️ <span>Buyer Protection — full refund if item isn't as described</span></div>
           </div>
-        )}
+
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>Description</h3>
+            <p style={styles.description}>{product.description || "No description provided."}</p>
+          </div>
+        </div>
+
+        {/* ---------- RATINGS ---------- */}
+        <div ref={(el) => (sectionRefs.current.ratings = el)} data-section="ratings" style={{ ...styles.section, ...styles.sectionAnchor }}>
+          <h3 style={styles.sectionTitle}>Reviews ({reviews.length})</h3>
+          {reviews.length === 0 ? (
+            <p style={styles.emptyText}>No reviews yet — be the first to share your experience.</p>
+          ) : (
+            reviews.map((r) => (
+              <div key={r.id} style={styles.reviewCard}>
+                <div style={styles.reviewHead}>
+                  <span style={styles.reviewStars}>{"⭐".repeat(r.rating || 0)}</span>
+                  {r.verifiedPurchase && <span style={styles.verifiedPurchase}>Verified Purchase</span>}
+                </div>
+                <p style={styles.reviewText}>{r.comment}</p>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* ---------- PRODUCT DETAILS ---------- */}
+        <div ref={(el) => (sectionRefs.current.details = el)} data-section="details" style={{ ...styles.section, ...styles.sectionAnchor }}>
+          <h3 style={styles.sectionTitle}>Product Details</h3>
+          {(product.highlights?.length > 0 || product.brand || product.material || product.weight || product.warranty) ? (
+            <div style={styles.detailsCard}>
+              {product.highlights?.length > 0 && (
+                <ul style={styles.highlightList}>
+                  {product.highlights.map((h, i) => (
+                    <li key={i} style={styles.highlightItem}>• {h}</li>
+                  ))}
+                </ul>
+              )}
+              {(product.brand || product.material || product.weight || product.warranty) && (
+                <div style={styles.specGrid}>
+                  {product.brand && (
+                    <div style={styles.specRow}><span style={styles.specLabel}>Brand</span><span style={styles.specValue}>{product.brand}</span></div>
+                  )}
+                  {product.material && (
+                    <div style={styles.specRow}><span style={styles.specLabel}>Material</span><span style={styles.specValue}>{product.material}</span></div>
+                  )}
+                  {product.weight && (
+                    <div style={styles.specRow}><span style={styles.specLabel}>Weight / Size</span><span style={styles.specValue}>{product.weight}</span></div>
+                  )}
+                  {product.warranty && (
+                    <div style={styles.specRow}><span style={styles.specLabel}>Warranty</span><span style={styles.specValue}>{product.warranty}</span></div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p style={styles.emptyText}>This seller hasn't added deeper product details yet.</p>
+          )}
+        </div>
+
+        {/* ---------- RECOMMENDATIONS ---------- */}
+        <div ref={(el) => (sectionRefs.current.recommendations = el)} data-section="recommendations" style={{ ...styles.section, ...styles.sectionAnchor }}>
+          <h3 style={styles.sectionTitle}>You may also like</h3>
+          {recommended.length === 0 ? (
+            <p style={styles.emptyText}>No similar products found yet.</p>
+          ) : (
+            <div style={styles.recGrid}>
+              {recommended.map((p) => (
+                <div key={p.id} style={styles.recCard} onClick={() => onNavigate && onNavigate("product", p.id)}>
+                  <div style={styles.recImageWrap}>
+                    {p.images?.[0] ? (
+                      <img src={p.images[0]} alt={p.name} style={styles.imgFit} />
+                    ) : (
+                      <div style={styles.recImagePlaceholder}>🛍️</div>
+                    )}
+                  </div>
+                  <p style={styles.recName}>{p.name}</p>
+                  <p style={styles.recPrice}>Rs {p.price}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sticky bottom bar */}
@@ -403,9 +436,10 @@ const styles = {
   imgCounter: { position: "absolute", bottom: 12, left: 12, background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20 },
   wishlistBtn: { marginLeft: "auto", fontSize: 18, cursor: "pointer" },
 
-  tabBar: { display: "flex", borderBottom: "1px solid #eee0c0", position: "sticky", top: 0, background: "var(--color-bg)", zIndex: 8, overflowX: "auto" },
-  tabItem: { flex: "0 0 auto", padding: "12px 14px", fontSize: 12.5, fontWeight: 600, color: "#888", cursor: "pointer", whiteSpace: "nowrap", borderBottom: "2.5px solid transparent" },
+  tabBar: { display: "flex", borderBottom: "1px solid #eee0c0", position: "sticky", top: 0, background: "var(--color-bg)", zIndex: 8, overflowX: "auto", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" },
+  tabItem: { flex: "0 0 auto", padding: "12px 14px", fontSize: 12.5, fontWeight: 600, color: "#888", cursor: "pointer", whiteSpace: "nowrap", borderBottom: "2.5px solid transparent", transition: "color 0.25s ease, border-color 0.25s ease" },
   tabItemActive: { color: "#0B3D2E", borderBottomColor: "#D4AF37" },
+  sectionAnchor: { scrollMarginTop: 56 },
 
   recGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
   recCard: { background: "#fff", borderRadius: 12, overflow: "hidden", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
