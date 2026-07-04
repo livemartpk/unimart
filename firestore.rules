@@ -133,6 +133,12 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
+    // ---------- SITE CONFIG (homepage banners etc.) ----------
+    match /siteConfig/{configId} {
+      allow read: if true; // public homepage needs this
+      allow write: if isAdmin();
+    }
+
     // ---------- POLICIES (Super Admin only) ----------
     match /policies/{policyId} {
       allow read: if isSignedIn();
