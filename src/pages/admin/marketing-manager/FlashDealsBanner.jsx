@@ -1,13 +1,14 @@
 // ============================================
-// UniMart - Flash Deals Banner (Marketing Manager)
-// Upload the image shown on the buyer homepage's
-// big "Flash Deals" tile. Any image size/aspect
-// ratio works — it's displayed with cover-fit so it
-// always fills the tile cleanly on mobile and web.
+// UniMart - Flash Deals Banners (Marketing Manager)
+// Full CRUD list — add unlimited banners, each one
+// becomes a slide in the homepage's Flash Deals
+// slideshow. Any image size/shape works; it's shown
+// with cover-fit so it fills the tile cleanly on
+// both mobile and desktop.
 // ============================================
 
 import { useState, useEffect } from "react";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../config/firebase";
 import "../../../styles/theme.css";
 
@@ -15,136 +16,207 @@ const CLOUD_NAME = "eez9oojf";
 const UPLOAD_PRESET = "unimart-products";
 
 export default function FlashDealsBanner({ user }) {
-  const [currentImage, setCurrentImage] = useState(null);
-  const [previewFile, setPreviewFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewBanner, setViewBanner] = useState(null);
+  const [editBanner, setEditBanner] = useState(null); // null = not editing, "new" = adding, or a banner object
+  const [title, setTitle] = useState("");
+  const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    loadBanner();
-  }, []);
+  useEffect(() => { loadBanners(); }, []);
 
-  const loadBanner = async () => {
+  const loadBanners = async () => {
     setLoading(true);
     try {
-      const snap = await getDoc(doc(db, "siteConfig", "flashDealsBanner"));
-      if (snap.exists()) setCurrentImage(snap.data().imageUrl || null);
+      const snap = await getDocs(query(collection(db, "flashBanners"), orderBy("createdAt", "desc")));
+      setBanners(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     } catch (err) {
-      console.error("Failed to load banner:", err);
+      console.error("Failed to load banners:", err);
     }
     setLoading(false);
   };
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setPreviewFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
+  const openAdd = () => {
+    setEditBanner("new");
+    setTitle("");
+    setFile(null);
+    setPreviewUrl(null);
     setError("");
-    setSaved(false);
   };
 
-  const handleUpload = async () => {
-    if (!previewFile) { setError("Choose an image first."); return; }
+  const openEdit = (b) => {
+    setEditBanner(b);
+    setTitle(b.title || "");
+    setFile(null);
+    setPreviewUrl(b.imageUrl);
+    setError("");
+  };
+
+  const handleFileSelect = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setFile(f);
+    setPreviewUrl(URL.createObjectURL(f));
+    setError("");
+  };
+
+  const handleSave = async () => {
+    const isNew = editBanner === "new";
+    if (isNew && !file) { setError("Choose an image."); return; }
     setUploading(true);
     setError("");
     try {
-      const data = new FormData();
-      data.append("file", previewFile);
-      data.append("upload_preset", UPLOAD_PRESET);
-      data.append("folder", "unimart/banners");
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: data });
-      const json = await res.json();
-      if (!json.secure_url) throw new Error(json.error?.message || "Upload failed");
+      let imageUrl = isNew ? null : editBanner.imageUrl;
+      if (file) {
+        const data = new FormData();
+        data.append("file", file);
+        data.append("upload_preset", UPLOAD_PRESET);
+        data.append("folder", "unimart/banners");
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: data });
+        const json = await res.json();
+        if (!json.secure_url) throw new Error(json.error?.message || "Upload failed");
+        imageUrl = json.secure_url;
+      }
 
-      await setDoc(doc(db, "siteConfig", "flashDealsBanner"), {
-        imageUrl: json.secure_url,
-        updatedBy: user.uid,
-        updatedAt: serverTimestamp()
-      });
+      if (isNew) {
+        await addDoc(collection(db, "flashBanners"), {
+          imageUrl, title: title.trim() || null,
+          createdBy: user.uid, createdAt: serverTimestamp()
+        });
+      } else {
+        await updateDoc(doc(db, "flashBanners", editBanner.id), {
+          imageUrl, title: title.trim() || null,
+          updatedBy: user.uid, updatedAt: serverTimestamp()
+        });
+      }
 
-      setCurrentImage(json.secure_url);
-      setPreviewFile(null);
-      setPreviewUrl(null);
-      setSaved(true);
+      setEditBanner(null);
+      loadBanners();
     } catch (err) {
       console.error(err);
-      setError("Upload failed: " + err.message);
+      setError("Failed: " + err.message);
     }
     setUploading(false);
   };
 
-  const handleRemove = async () => {
-    if (!window.confirm("Remove the banner image? The homepage will show the plain green tile instead.")) return;
+  const handleDelete = async (bannerId) => {
+    if (!window.confirm("Delete this banner? It will be removed from the homepage slideshow.")) return;
     try {
-      await setDoc(doc(db, "siteConfig", "flashDealsBanner"), { imageUrl: null, updatedBy: user.uid, updatedAt: serverTimestamp() });
-      setCurrentImage(null);
+      await deleteDoc(doc(db, "flashBanners", bannerId));
+      setBanners((list) => list.filter((b) => b.id !== bannerId));
+      setViewBanner(null);
     } catch (err) {
       console.error(err);
+      alert("Failed to delete: " + err.message);
     }
   };
-
-  if (loading) return <p style={{ padding: 30, textAlign: "center", color: "#888" }}>Loading...</p>;
 
   return (
     <div style={s.page}>
       <div style={s.header}>
-        <div style={s.headerTitle}>Flash Deals Banner</div>
+        <div style={s.headerTitle}>Flash Deals Banners</div>
+        <div style={s.addBtn} onClick={openAdd}>+ Add</div>
       </div>
 
       <div style={{ padding: 16, paddingBottom: 60 }}>
         <p style={s.helper}>
-          This image shows on the buyer homepage's big "Flash Deals" tile. Any image size or shape works —
-          it's automatically cropped to fill the tile on both mobile and desktop.
+          Every banner here becomes a slide in the homepage's Flash Deals slideshow (auto-rotating).
+          Add as many as you like — any image size or shape works, it's automatically cropped to fit.
         </p>
 
-        <div style={s.previewCard}>
-          <div style={s.previewLabel}>Live Preview</div>
-          <div
-            style={{
-              ...s.bentoPreview,
-              ...((previewUrl || currentImage)
-                ? { backgroundImage: `linear-gradient(180deg, rgba(11,61,46,0.15) 0%, rgba(11,61,46,0.85) 100%), url(${previewUrl || currentImage})`, backgroundSize: "cover", backgroundPosition: "center" }
-                : {})
-            }}
-          >
-            <div style={{ fontSize: 22 }}>⚡</div>
-            <div>
-              <div style={{ fontSize: 12.5, fontWeight: 700 }}>Flash Deals</div>
-              <div style={{ fontSize: 11, opacity: 0.9 }}>Up to 60% off</div>
-            </div>
+        {loading ? (
+          <p style={s.emptyText}>Loading...</p>
+        ) : banners.length === 0 ? (
+          <div style={s.emptyState}>
+            <div style={{ fontSize: 30, marginBottom: 8 }}>🖼️</div>
+            <p style={s.emptyText}>No banners yet — add your first one.</p>
+            <button className="btn-primary" onClick={openAdd}>+ Add Banner</button>
           </div>
-        </div>
-
-        <label className="input-label">Choose Image</label>
-        <input type="file" className="input-field" accept="image/*" onChange={handleFileSelect} style={{ marginBottom: 12 }} />
-
-        {error && <p className="error-text">{error}</p>}
-        {saved && <p style={s.savedMsg}>✓ Banner updated — live on the homepage now.</p>}
-
-        <button className="btn-primary" style={{ width: "100%", marginBottom: 10 }} onClick={handleUpload} disabled={uploading || !previewFile}>
-          {uploading ? "Uploading..." : "Upload & Publish"}
-        </button>
-
-        {currentImage && (
-          <button style={s.removeBtn} onClick={handleRemove}>🗑 Remove Current Banner Image</button>
+        ) : (
+          <div style={s.grid}>
+            {banners.map((b) => (
+              <div key={b.id} style={s.card} onClick={() => setViewBanner(b)}>
+                <div style={s.thumbWrap}>
+                  <img src={b.imageUrl} alt={b.title || "Banner"} style={s.thumb} />
+                </div>
+                <div style={s.cardTitle}>{b.title || "Untitled banner"}</div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
+
+      {/* ===== View Modal ===== */}
+      {viewBanner && !editBanner && (
+        <div style={s.overlay} onClick={() => setViewBanner(null)}>
+          <div style={s.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={s.modalTitle}>{viewBanner.title || "Untitled banner"}</div>
+            <img src={viewBanner.imageUrl} alt="" style={s.modalImg} />
+            <div style={s.modalActions}>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => openEdit(viewBanner)}>✏️ Edit</button>
+              <button style={s.deleteBtn} onClick={() => handleDelete(viewBanner.id)}>🗑 Delete</button>
+            </div>
+            <div style={s.closeBtn} onClick={() => setViewBanner(null)}>Close</div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Add / Edit Modal ===== */}
+      {editBanner && (
+        <div style={s.overlay} onClick={() => setEditBanner(null)}>
+          <div style={s.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={s.modalTitle}>{editBanner === "new" ? "Add Banner" : "Edit Banner"}</div>
+
+            <div style={s.previewBox}>
+              {previewUrl ? <img src={previewUrl} alt="" style={s.modalImg} /> : <div style={s.previewPlaceholder}>🖼️ No image selected</div>}
+            </div>
+
+            <label className="input-label">Image</label>
+            <input type="file" className="input-field" accept="image/*" onChange={handleFileSelect} style={{ marginBottom: 12 }} />
+
+            <label className="input-label">Title (optional, for your own reference)</label>
+            <input className="input-field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Eid Sale Banner" style={{ marginBottom: 12 }} />
+
+            {error && <p className="error-text">{error}</p>}
+
+            <div style={s.modalActions}>
+              <button className="btn-primary" style={{ flex: 1 }} onClick={handleSave} disabled={uploading}>
+                {uploading ? "Saving..." : "Save"}
+              </button>
+            </div>
+            <div style={s.closeBtn} onClick={() => setEditBanner(null)}>Cancel</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 const s = {
   page: { minHeight: "100vh", background: "var(--color-bg)" },
-  header: { background: "#0B3D2E", padding: "18px 16px" },
+  header: { background: "#0B3D2E", padding: "18px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" },
   headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700 },
+  addBtn: { background: "#D4AF37", color: "#0B3D2E", fontWeight: 700, fontSize: 12.5, padding: "8px 16px", borderRadius: 20, cursor: "pointer" },
   helper: { fontSize: 12, color: "#888", lineHeight: 1.6, marginBottom: 16 },
-  previewCard: { background: "#fff", border: "1px solid #eee0c0", borderRadius: 14, padding: 14, marginBottom: 20 },
-  previewLabel: { fontSize: 11, color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
-  bentoPreview: { minHeight: 140, borderRadius: 14, background: "linear-gradient(160deg, #0B3D2E, #1a5c44)", color: "#fff", padding: 16, display: "flex", flexDirection: "column", justifyContent: "space-between" },
-  savedMsg: { fontSize: 12.5, color: "#2E7D32", fontWeight: 600, marginBottom: 10 },
-  removeBtn: { width: "100%", background: "none", border: "1px solid #C0392B", color: "#C0392B", borderRadius: 10, padding: "10px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }
+  emptyText: { fontSize: 13, color: "#888", padding: "10px 0" },
+  emptyState: { textAlign: "center", padding: "40px 20px", background: "#fff", borderRadius: 14, border: "1px solid #eee0c0" },
+
+  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 },
+  card: { background: "#fff", border: "1px solid #eee0c0", borderRadius: 14, overflow: "hidden", cursor: "pointer" },
+  thumbWrap: { width: "100%", height: 90, background: "#F0F5F0" },
+  thumb: { width: "100%", height: "100%", objectFit: "cover" },
+  cardTitle: { fontSize: 11.5, fontWeight: 600, color: "#1a1a1a", padding: "8px 10px" },
+
+  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center" },
+  modal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", maxWidth: 480, maxHeight: "88vh", overflowY: "auto" },
+  modalTitle: { fontSize: 16, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 14, fontWeight: 700 },
+  modalImg: { width: "100%", maxHeight: 220, objectFit: "cover", borderRadius: 12, marginBottom: 14 },
+  previewBox: { marginBottom: 14 },
+  previewPlaceholder: { width: "100%", height: 140, background: "#F0F5F0", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "#888", fontSize: 13 },
+  modalActions: { display: "flex", gap: 10, marginTop: 6, marginBottom: 10 },
+  deleteBtn: { flex: 1, background: "#FCEAEA", color: "#C0392B", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" },
+  closeBtn: { textAlign: "center", fontSize: 13, color: "#888", cursor: "pointer", padding: "6px 0" }
 };
