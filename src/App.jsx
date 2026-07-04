@@ -346,6 +346,7 @@ export default function App() {
         case "my-products": return <MyProducts user={firebaseUser} onNavigate={navigate} />;
         case "products": return <MyProducts user={firebaseUser} onNavigate={navigate} />;
         case "add-product": return <AddProduct user={firebaseUser} sellerStoreName={userData.storeName} onSuccess={() => navigate("my-products")} onNavigate={navigate} />;
+        case "edit-product": return <AddProduct user={firebaseUser} sellerStoreName={userData.storeName} editProductId={pageParam} onSuccess={() => navigate("products")} onNavigate={navigate} />;
         case "incoming-orders": return <IncomingOrders user={firebaseUser} onNavigate={navigate} />;
         case "orders": return <IncomingOrders user={firebaseUser} onNavigate={navigate} />;
         case "seller-wallet": return <SellerWallet user={firebaseUser} onNavigate={navigate} />;
