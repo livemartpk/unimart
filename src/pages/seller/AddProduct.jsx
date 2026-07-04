@@ -2,21 +2,60 @@
 // UniMart - Add Product (Seller)
 // ============================================
 
-import { useState } from "react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useState, useEffect } from "react";
+import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import "../../styles/theme.css";
+import LoadingLogo from "../../components/LoadingLogo";
 
-export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigate }) {
+export default function AddProduct({ user, sellerStoreName, editProductId, onSuccess, onNavigate }) {
+  const isEditMode = !!editProductId;
   const [form, setForm] = useState({
     name: "", category: "", price: "", mrp: "", stock: "",
     description: "", deliveryTime: "", colors: "", sizes: "",
     brand: "", highlights: "", material: "", weight: "", warranty: ""
   });
   const [images, setImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [loadingProduct, setLoadingProduct] = useState(isEditMode);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  useEffect(() => {
+    if (!isEditMode) return;
+    const loadProduct = async () => {
+      setLoadingProduct(true);
+      try {
+        const snap = await getDoc(doc(db, "products", editProductId));
+        if (snap.exists()) {
+          const p = snap.data();
+          setForm({
+            name: p.name || "",
+            category: p.category || "",
+            price: p.price != null ? String(p.price) : "",
+            mrp: p.mrp != null ? String(p.mrp) : "",
+            stock: p.stock != null ? String(p.stock) : "",
+            description: p.description || "",
+            deliveryTime: p.deliveryTime || "",
+            colors: p.variants?.colors?.join(", ") || "",
+            sizes: p.variants?.sizes?.join(", ") || "",
+            brand: p.brand || "",
+            highlights: p.highlights?.join("\n") || "",
+            material: p.material || "",
+            weight: p.weight || "",
+            warranty: p.warranty || ""
+          });
+          setExistingImages(p.images || []);
+        }
+      } catch (err) {
+        console.error("Failed to load product for editing:", err);
+        setSubmitError("Couldn't load this product. Please go back and try again.");
+      }
+      setLoadingProduct(false);
+    };
+    loadProduct();
+  }, [editProductId]);
 
   const handleChange = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
@@ -35,7 +74,7 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
     if (!form.description.trim()) e.description = "Add a short description.";
     const highlightLines = form.highlights.split("\n").map((l) => l.trim()).filter(Boolean);
     if (highlightLines.length < 2) e.highlights = "Add at least 2 key details (one per line) — e.g. material, capacity, what makes it special.";
-    if (images.length === 0) e.images = "Add at least one product image.";
+    if (images.length === 0 && existingImages.length === 0) e.images = "Add at least one product image.";
     return e;
   };
 
@@ -72,20 +111,19 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
 
     setSubmitting(true);
     try {
-      let imageUrls = [];
+      let newImageUrls = [];
       if (images.length > 0) {
         try {
-          imageUrls = await uploadImagesToCloudinary(images);
+          newImageUrls = await uploadImagesToCloudinary(images);
         } catch (uploadErr) {
           setSubmitting(false);
           setSubmitError(`Image upload failed: ${uploadErr.message}. Please try again.`);
           return;
         }
       }
+      const finalImages = [...existingImages, ...newImageUrls];
 
-      await addDoc(collection(db, "products"), {
-        sellerId: user.uid,
-        sellerName: sellerStoreName || "Store",
+      const productData = {
         name: form.name,
         category: form.category,
         price: Number(form.price),
@@ -93,7 +131,7 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
         stock: Number(form.stock),
         description: form.description,
         deliveryTime: form.deliveryTime || "3-5 days",
-        images: imageUrls,
+        images: finalImages,
         brand: form.brand.trim() || null,
         material: form.material.trim() || null,
         weight: form.weight.trim() || null,
@@ -102,14 +140,24 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
         variants: {
           colors: form.colors ? form.colors.split(",").map((c) => c.trim()).filter(Boolean) : [],
           sizes: form.sizes ? form.sizes.split(",").map((s) => s.trim()).filter(Boolean) : []
-        },
-        status: "active",
-        rating: 0,
-        reviewCount: 0,
-        verifiedMall: false,
-        boost: null,
-        createdAt: serverTimestamp()
-      });
+        }
+      };
+
+      if (isEditMode) {
+        await updateDoc(doc(db, "products", editProductId), productData);
+      } else {
+        await addDoc(collection(db, "products"), {
+          ...productData,
+          sellerId: user.uid,
+          sellerName: sellerStoreName || "Store",
+          status: "active",
+          rating: 0,
+          reviewCount: 0,
+          verifiedMall: false,
+          boost: null,
+          createdAt: serverTimestamp()
+        });
+      }
 
       setSubmitting(false);
       if (onSuccess) onSuccess();
@@ -121,11 +169,13 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
     }
   };
 
+  if (loadingProduct) return <LoadingLogo label="Loading product..." />;
+
   return (
     <div className="page-shell" style={styles.page}>
       <div style={styles.header}>
         <div style={styles.backBtn} onClick={() => onNavigate && onNavigate("products")}>←</div>
-        <div style={styles.headerTitle}>Add Product</div>
+        <div style={styles.headerTitle}>{isEditMode ? "Edit Product" : "Add Product"}</div>
         <div style={{ width: 36 }} />
       </div>
 
@@ -213,15 +263,25 @@ export default function AddProduct({ user, sellerStoreName, onSuccess, onNavigat
             <input className="input-field" value={form.warranty} onChange={(e) => handleChange("warranty", e.target.value)} placeholder="e.g. 6 months seller warranty" />
           </Field>
 
-          <Field label="Product Images (up to 5)" error={errors.images}>
+          <Field label={isEditMode ? "Add More Images (optional)" : "Product Images (up to 5)"} error={errors.images}>
+            {existingImages.length > 0 && (
+              <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                {existingImages.map((url, i) => (
+                  <div key={i} style={styles.existingImgWrap}>
+                    <img src={url} alt="" style={styles.existingImg} />
+                    <div style={styles.removeImgBtn} onClick={() => setExistingImages((imgs) => imgs.filter((_, idx) => idx !== i))}>✕</div>
+                  </div>
+                ))}
+              </div>
+            )}
             <input type="file" className="input-field" multiple accept="image/*" onChange={handleImageSelect} />
-            {images.length > 0 && <p style={styles.imgCount}>{images.length} image(s) selected</p>}
+            {images.length > 0 && <p style={styles.imgCount}>{images.length} new image(s) selected</p>}
           </Field>
 
           {submitError && <p className="error-text">{submitError}</p>}
 
           <button type="submit" className="btn-primary" style={{ width: "100%", marginTop: 8 }} disabled={submitting}>
-            {submitting ? "Publishing..." : "Publish Product"}
+            {submitting ? "Saving..." : isEditMode ? "Save Changes" : "Publish Product"}
           </button>
         </form>
       </div>
@@ -245,5 +305,8 @@ const styles = {
   backBtn: { color: "#fff", fontSize: 18, cursor: "pointer", width: 36 },
   headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 },
   imgCount: { fontSize: 11.5, color: "#0B3D2E", marginTop: 6, fontWeight: 600 },
-  helperText: { fontSize: 11, color: "#888", marginTop: 5 }
+  helperText: { fontSize: 11, color: "#888", marginTop: 5 },
+  existingImgWrap: { position: "relative", width: 64, height: 64 },
+  existingImg: { width: 64, height: 64, objectFit: "cover", borderRadius: 10, border: "1px solid #eee0c0" },
+  removeImgBtn: { position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#C0392B", color: "#fff", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }
 };
