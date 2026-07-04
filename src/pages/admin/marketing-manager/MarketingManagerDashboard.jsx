@@ -69,6 +69,7 @@ export default function MarketingManagerDashboard({ onNavigate }) {
           <ActionTile icon="🤝" label="Agent Management" onClick={() => onNavigate("dashboard")} />
           <ActionTile icon="📊" label="Performance" onClick={() => onNavigate("performance")} />
           <ActionTile icon="🔍" label="Fraud Monitor" onClick={() => onNavigate("fraud-monitor")} />
+          <ActionTile icon="⚡" label="Flash Deals Banner" onClick={() => onNavigate("flash-banner")} />
         </div>
       </div>
     </div>
