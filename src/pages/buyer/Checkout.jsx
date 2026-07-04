@@ -2,8 +2,8 @@
 // UniMart - Checkout Page (Fixed)
 // ============================================
 
-import { useState } from "react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useState, useEffect } from "react";
+import { collection, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import "../../styles/theme.css";
 
@@ -14,10 +14,10 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
     fullName: user?.fullName || "",
     phone: user?.phone || "",
     city: user?.city || "",
-    fullAddress: ""
+    fullAddress: user?.savedAddress || ""
   });
   const [addingAddress, setAddingAddress] = useState(false);
-  const [addressSaved, setAddressSaved] = useState(false);
+  const [addressSaved, setAddressSaved] = useState(!!user?.savedAddress);
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [showConfirm, setShowConfirm] = useState(false);
   const [placing, setPlacing] = useState(false);
@@ -181,10 +181,22 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
               <input className="input-field" style={{ marginBottom: 8 }} placeholder="Phone Number" value={address.phone} onChange={e => setAddress(a => ({ ...a, phone: e.target.value }))} />
               <input className="input-field" style={{ marginBottom: 8 }} placeholder="City" value={address.city} onChange={e => setAddress(a => ({ ...a, city: e.target.value }))} />
               <textarea className="input-field" rows={2} placeholder="Full Address (street, area, landmark)" value={address.fullAddress} onChange={e => setAddress(a => ({ ...a, fullAddress: e.target.value }))} style={{ resize: "none", fontFamily: "inherit", marginBottom: 10 }} />
-              <button className="btn-primary" style={{ width: "100%" }} onClick={() => {
+              <button className="btn-primary" style={{ width: "100%" }} onClick={async () => {
                 if (!address.phone || !address.city || !address.fullAddress) { setError("Fill all address fields."); return; }
                 setError("");
                 setAddressSaved(true);
+                try {
+                  const buyerUid = firebaseUser?.uid || user?.uid;
+                  if (buyerUid) {
+                    await updateDoc(doc(db, "users", buyerUid), {
+                      phone: address.phone,
+                      city: address.city,
+                      savedAddress: address.fullAddress
+                    });
+                  }
+                } catch (err) {
+                  console.error("Failed to save address for next time:", err);
+                }
               }}>
                 Save Address
               </button>
