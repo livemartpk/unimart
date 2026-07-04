@@ -284,7 +284,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
         ) : (
           <div style={styles.flashScroll}>
             {flashSaleProducts.map((p) => (
-              <div key={p.id} style={styles.flashCard} onClick={() => onNavigate && onNavigate("product", p.id)}>
+              <div key={p.id} className="product-card-hover" style={styles.flashCard} onClick={() => onNavigate && onNavigate("product", p.id)}>
                 <div style={styles.flashImg}>
                   {p.images?.[0] ? <img src={p.images[0]} alt={p.name} style={styles.imgFit} /> : "🛍️"}
                   {p.discountPercent && <div style={styles.flashTag}>-{p.discountPercent}%</div>}
@@ -323,7 +323,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
       ) : (
         <div className="product-grid-responsive" style={styles.productGrid}>
           {displayedProducts.map((p) => (
-            <div key={p.id} style={styles.pcard}>
+            <div key={p.id} className="product-card-hover" style={styles.pcard}>
               <div style={styles.pimg} onClick={() => onNavigate && onNavigate("product", p.id)}>
                 {p.images?.[0] ? <img src={p.images[0]} alt={p.name} style={styles.imgFit} /> : "🛍️"}
                 <div style={styles.heart} onClick={(e) => { e.stopPropagation(); toggleWishlist(p.id); }}>
