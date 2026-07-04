@@ -6,7 +6,7 @@
 // ============================================
 
 import { useState, useEffect } from "react";
-import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
@@ -14,6 +14,7 @@ import LoadingLogo from "../../components/LoadingLogo";
 
 export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 }) {
   const [flashSaleProducts, setFlashSaleProducts] = useState([]);
+  const [flashBannerImage, setFlashBannerImage] = useState(null);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -75,6 +76,14 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
       );
       const flashSnap = await getDocs(flashQuery);
       setFlashSaleProducts(flashSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+
+      // Flash Deals banner image (set by Marketing Manager)
+      try {
+        const bannerSnap = await getDoc(doc(db, "siteConfig", "flashDealsBanner"));
+        if (bannerSnap.exists() && bannerSnap.data().imageUrl) setFlashBannerImage(bannerSnap.data().imageUrl);
+      } catch (err) {
+        console.error("Failed to load flash banner image:", err);
+      }
 
       // "Just For You" — latest active products
       const recoQuery = query(
@@ -205,7 +214,13 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
         <div style={styles.bentoGrid}>
           <div style={{ flex: 1.3 }}>
             <div
-              style={{ ...styles.bentoCard, ...styles.bentoBig }}
+              style={{
+                ...styles.bentoCard,
+                ...styles.bentoBig,
+                ...(flashBannerImage
+                  ? { backgroundImage: `linear-gradient(180deg, rgba(11,61,46,0.15) 0%, rgba(11,61,46,0.85) 100%), url(${flashBannerImage})`, backgroundSize: "cover", backgroundPosition: "center" }
+                  : {})
+              }}
               onClick={() => onNavigate && onNavigate("category", "flash")}
             >
               <div style={styles.bentoEmoji}>⚡</div>
