@@ -36,6 +36,7 @@ const SIDEBAR_ITEMS = {
     { key: "agents", icon: "🤝", label: "Agent Management" },
     { key: "performance", icon: "📊", label: "Performance Analytics" },
     { key: "fraud-monitor", icon: "🔍", label: "Fraud Monitor" },
+    { key: "flash-banner", icon: "⚡", label: "Flash Deals Banner" },
   ],
   support_team: [
     { key: "dashboard", icon: "🏠", label: "Dashboard" },
