@@ -6,7 +6,7 @@
 // ============================================
 
 import { useState, useEffect } from "react";
-import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
@@ -14,7 +14,8 @@ import LoadingLogo from "../../components/LoadingLogo";
 
 export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 }) {
   const [flashSaleProducts, setFlashSaleProducts] = useState([]);
-  const [flashBannerImage, setFlashBannerImage] = useState(null);
+  const [flashBanners, setFlashBanners] = useState([]);
+  const [bannerSlide, setBannerSlide] = useState(0);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -44,6 +45,14 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   useEffect(() => {
     loadHomepageData();
   }, []);
+
+  useEffect(() => {
+    if (flashBanners.length < 2) return;
+    const interval = setInterval(() => {
+      setBannerSlide((i) => (i + 1) % flashBanners.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [flashBanners.length]);
 
   useEffect(() => {
     let ticking = false;
@@ -77,12 +86,12 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
       const flashSnap = await getDocs(flashQuery);
       setFlashSaleProducts(flashSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
 
-      // Flash Deals banner image (set by Marketing Manager)
+      // Flash Deals banners (set by Marketing Manager) — homepage slideshow
       try {
-        const bannerSnap = await getDoc(doc(db, "siteConfig", "flashDealsBanner"));
-        if (bannerSnap.exists() && bannerSnap.data().imageUrl) setFlashBannerImage(bannerSnap.data().imageUrl);
+        const bannersSnap = await getDocs(collection(db, "flashBanners"));
+        setFlashBanners(bannersSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (err) {
-        console.error("Failed to load flash banner image:", err);
+        console.error("Failed to load flash banners:", err);
       }
 
       // "Just For You" — latest active products
@@ -217,8 +226,8 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
               style={{
                 ...styles.bentoCard,
                 ...styles.bentoBig,
-                ...(flashBannerImage
-                  ? { backgroundImage: `linear-gradient(180deg, rgba(11,61,46,0.15) 0%, rgba(11,61,46,0.85) 100%), url(${flashBannerImage})`, backgroundSize: "cover", backgroundPosition: "center" }
+                ...(flashBanners[bannerSlide]?.imageUrl
+                  ? { backgroundImage: `linear-gradient(180deg, rgba(11,61,46,0.15) 0%, rgba(11,61,46,0.85) 100%), url(${flashBanners[bannerSlide].imageUrl})`, backgroundSize: "cover", backgroundPosition: "center", transition: "background-image 0.5s ease" }
                   : {})
               }}
               onClick={() => onNavigate && onNavigate("category", "flash")}
@@ -228,6 +237,17 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
                 <div style={styles.bentoLabel}>Flash Deals</div>
                 <div style={styles.bentoSub}>Up to 60% off</div>
               </div>
+              {flashBanners.length > 1 && (
+                <div style={styles.bannerDots} onClick={(e) => e.stopPropagation()}>
+                  {flashBanners.map((_, i) => (
+                    <div
+                      key={i}
+                      style={{ ...styles.bannerDot, ...(i === bannerSlide ? styles.bannerDotActive : {}) }}
+                      onClick={() => setBannerSlide(i)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -403,8 +423,11 @@ const styles = {
 
   bentoWrap: { padding: 16 },
   bentoGrid: { display: "flex", gap: 8 },
-  bentoCard: { borderRadius: 18, padding: 14, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 78, cursor: "pointer" },
+  bentoCard: { borderRadius: 18, padding: 14, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 78, cursor: "pointer", position: "relative" },
   bentoBig: { background: "linear-gradient(160deg, #0B3D2E, #1a5c44)", color: "#fff", minHeight: 166 },
+  bannerDots: { position: "absolute", bottom: 10, right: 12, display: "flex", gap: 5 },
+  bannerDot: { width: 6, height: 6, borderRadius: 10, background: "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all 0.3s ease" },
+  bannerDotActive: { background: "#D4AF37", width: 16 },
   bentoC1: { background: "#F0F5F0", color: "#0B3D2E" },
   bentoC2: { background: "#FBF1DA", color: "#0B3D2E" },
   bentoEmoji: { fontSize: 24 },
