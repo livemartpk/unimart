@@ -335,8 +335,9 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
                 <div style={styles.pname}>{p.name}</div>
                 <div style={styles.priceRow}>
                   <span style={styles.pprice}>Rs {p.price}</span>
-                  <span style={styles.prating}>⭐{p.rating || "New"}</span>
+                  {p.mrp > p.price && <span style={styles.pdiscount}>-{Math.round((1 - p.price / p.mrp) * 100)}%</span>}
                 </div>
+                <div style={styles.pratingRow}>⭐ {p.rating || "New"}</div>
                 <div style={styles.quickAdd} onClick={() => {
                   if (onAddToCart) {
                     onAddToCart({
@@ -448,7 +449,10 @@ const styles = {
   flashImg: { width: "100%", height: 120, background: "linear-gradient(135deg,#F0F5F0,#dce8de)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, position: "relative" },
   flashTag: { position: "absolute", top: 8, left: 8, background: "#0B3D2E", color: "#D4AF37", fontSize: 9, fontWeight: 800, padding: "3px 7px", borderRadius: 8 },
   flashInfo: { padding: 10 },
-  flashName: { fontSize: 11, color: "#444", fontWeight: 600, marginBottom: 4 },
+  flashName: {
+    fontSize: 11, color: "#444", fontWeight: 600, marginBottom: 4, lineHeight: 1.3,
+    minHeight: "2.6em", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden"
+  },
   flashPriceRow: { display: "flex", alignItems: "center", gap: 6 },
   flashPrice: { color: "#0B3D2E", fontWeight: 800, fontSize: 14 },
   flashOld: { color: "#bbb", fontSize: 10, textDecoration: "line-through" },
@@ -465,10 +469,14 @@ const styles = {
   heart: { position: "absolute", top: 8, right: 8, width: 28, height: 28, background: "rgba(255,255,255,0.9)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, cursor: "pointer" },
   verifiedTag: { position: "absolute", bottom: 8, left: 8, background: "#D4AF37", color: "#0B3D2E", fontSize: 8, fontWeight: 800, padding: "3px 7px", borderRadius: 7 },
   pinfo: { padding: 10 },
-  pname: { fontSize: 11.5, color: "#333", fontWeight: 600, marginBottom: 5, lineHeight: 1.3 },
-  priceRow: { display: "flex", justifyContent: "space-between", alignItems: "center" },
+  pname: {
+    fontSize: 11.5, color: "#333", fontWeight: 600, marginBottom: 5, lineHeight: 1.3,
+    minHeight: "2.6em", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden"
+  },
+  priceRow: { display: "flex", alignItems: "center", gap: 6 },
   pprice: { color: "#0B3D2E", fontWeight: 800, fontSize: 13.5 },
-  prating: { fontSize: 9.5, color: "#999", fontWeight: 600 },
+  pdiscount: { fontSize: 10.5, color: "#C0392B", fontWeight: 700 },
+  pratingRow: { fontSize: 10, color: "#999", fontWeight: 600, marginTop: 2 },
   quickAdd: { width: "100%", marginTop: 8, background: "#0B3D2E", color: "#D4AF37", fontSize: 10.5, fontWeight: 700, textAlign: "center", padding: 7, borderRadius: 10, cursor: "pointer" },
 
   bottomNav: { display: "flex", justifyContent: "space-around", alignItems: "center", padding: "12px 8px", margin: "10px 14px 0", background: "#0B3D2E", borderRadius: 24, boxShadow: "0 8px 24px rgba(11,61,46,0.3)", position: "sticky", bottom: 10 },
