@@ -45,12 +45,18 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   }, []);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const y = window.scrollY;
-      setIsScrolled(prev => {
-        if (!prev && y > 60) return true;
-        if (prev && y < 30) return false;
-        return prev;
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const y = window.scrollY;
+        setIsScrolled(prev => {
+          if (!prev && y > 90) return true;
+          if (prev && y < 40) return false;
+          return prev;
+        });
+        ticking = false;
       });
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
