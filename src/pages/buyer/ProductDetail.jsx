@@ -391,7 +391,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
           ) : (
             <div style={styles.recGrid}>
               {recommended.map((p) => (
-                <div key={p.id} style={styles.recCard} onClick={() => onNavigate && onNavigate("product", p.id)}>
+                <div key={p.id} className="product-card-hover" style={styles.recCard} onClick={() => onNavigate && onNavigate("product", p.id)}>
                   <div style={styles.recImageWrap}>
                     {p.images?.[0] ? (
                       <img src={p.images[0]} alt={p.name} style={styles.imgFit} />
