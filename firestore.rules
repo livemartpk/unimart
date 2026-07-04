@@ -133,8 +133,8 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
-    // ---------- SITE CONFIG (homepage banners etc.) ----------
-    match /siteConfig/{configId} {
+    // ---------- FLASH DEALS BANNERS (homepage slideshow) ----------
+    match /flashBanners/{bannerId} {
       allow read: if true; // public homepage needs this
       allow write: if isAdmin();
     }
