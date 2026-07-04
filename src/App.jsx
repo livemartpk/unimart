@@ -65,6 +65,7 @@ import FlaggedSellers from "./pages/admin/seller-manager/FlaggedSellers";
 import AgentManagement from "./pages/admin/marketing-manager/AgentManagement";
 import PerformanceAnalytics from "./pages/admin/marketing-manager/PerformanceAnalytics";
 import ReferralFraudMonitor from "./pages/admin/marketing-manager/ReferralFraudMonitor";
+import FlashDealsBanner from "./pages/admin/marketing-manager/FlashDealsBanner";
 
 import Disputes from "./pages/admin/support-team/Disputes";
 import Complaints from "./pages/admin/support-team/Complaints";
@@ -420,6 +421,7 @@ export default function App() {
           case "agents": return <AgentManagement user={firebaseUser} />;
           case "performance": return <PerformanceAnalytics />;
           case "fraud-monitor": return <ReferralFraudMonitor />;
+          case "flash-banner": return <FlashDealsBanner user={firebaseUser} />;
           default: return <MarketingManagerDashboard onNavigate={navigate} />;
         }
       }
