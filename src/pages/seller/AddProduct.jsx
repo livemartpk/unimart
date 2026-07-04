@@ -3,7 +3,7 @@
 // ============================================
 
 import { useState, useEffect } from "react";
-import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
@@ -17,10 +17,23 @@ export default function AddProduct({ user, sellerStoreName, editProductId, onSuc
   });
   const [images, setImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loadingProduct, setLoadingProduct] = useState(isEditMode);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const snap = await getDocs(collection(db, "categories"));
+        setCategories(snap.docs.map((d) => d.data().name).filter(Boolean));
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    };
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     if (!isEditMode) return;
@@ -188,13 +201,17 @@ export default function AddProduct({ user, sellerStoreName, editProductId, onSuc
           <Field label="Category" error={errors.category}>
             <select className="input-field" value={form.category} onChange={(e) => handleChange("category", e.target.value)}>
               <option value="">Select category</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Fashion">Fashion</option>
-              <option value="Home">Home</option>
-              <option value="Beauty">Beauty</option>
-              <option value="Food">Food</option>
-              <option value="Medical">Medical</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+              {/* Keep the product's existing category selectable even if it was later removed from Category Management */}
+              {isEditMode && form.category && !categories.includes(form.category) && (
+                <option value={form.category}>{form.category}</option>
+              )}
             </select>
+            {categories.length === 0 && (
+              <p style={styles.helperText}>No categories set up yet — ask Super Admin to add some in Category Management.</p>
+            )}
           </Field>
 
           <div style={{ display: "flex", gap: 12 }}>
