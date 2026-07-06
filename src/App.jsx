@@ -165,10 +165,6 @@ export default function App() {
           }
 
           setUserData(ud);
-          const adminRoles = ["super_admin", "seller_manager", "marketing_manager", "support_team", "finance_team", "content_team"];
-          if (adminRoles.includes(ud.role)) {
-            setPage("dashboard");
-          }
         }
       } else {
         setUserData(null);
