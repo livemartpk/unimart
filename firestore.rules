@@ -139,6 +139,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ---------- PASSWORD RESET OTPs ----------
+    // Only touched by the Admin SDK from serverless functions (api/send-otp.js,
+    // api/verify-otp.js), which bypasses these rules entirely. No client should
+    // ever read or write this directly.
+    match /passwordResets/{email} {
+      allow read, write: if false;
+    }
+
     // ---------- POLICIES (Super Admin only) ----------
     match /policies/{policyId} {
       allow read: if isSignedIn();
