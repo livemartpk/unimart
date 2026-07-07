@@ -96,6 +96,22 @@ export default function IncomingOrders({ user, onNavigate }) {
       setViewOrder(v => ({ ...v, status: "dispatched", dispatchDetails: { courierCompany: courierName, dispatchDate: dispatchForm.date, trackingNumber: dispatchForm.trackingNumber } }));
       setShowDispatch(false);
 
+      // Track sales count per product (used to rank "Just For You" on the homepage) — only once per order
+      if (!viewOrder.salesTracked) {
+        try {
+          for (const item of viewOrder.items || []) {
+            if (item.productId) {
+              await updateDoc(doc(db, "products", item.productId), {
+                salesCount: increment(item.qty || 1)
+              });
+            }
+          }
+          await updateDoc(doc(db, "orders", viewOrder.id), { salesTracked: true });
+        } catch (salesErr) {
+          console.error("Failed to track product sales:", salesErr);
+        }
+      }
+
       // Award points-per-sale (rate set by Super Admin in Policy Engine) — only once per order
       if (!viewOrder.pointsAwarded) {
         try {
