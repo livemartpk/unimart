@@ -58,6 +58,12 @@ export default function MyOrders({ user, onNavigate }) {
     if (reviewRating === 0) { setReviewError("Please select a star rating."); return; }
     if (!reviewText.trim()) { setReviewError("Please write a short review."); return; }
 
+    const { order, item } = reviewItem;
+    if (!item.productId) {
+      setReviewError("This item can't be reviewed — it's missing a product reference (likely from an older order). Please try a more recent order.");
+      return;
+    }
+
     setSubmittingReview(true);
     setReviewError("");
     try {
@@ -73,7 +79,6 @@ export default function MyOrders({ user, onNavigate }) {
         imageUrl = json.secure_url;
       }
 
-      const { order, item } = reviewItem;
       await addDoc(collection(db, "products", item.productId, "reviews"), {
         rating: reviewRating,
         comment: reviewText.trim(),
@@ -98,7 +103,7 @@ export default function MyOrders({ user, onNavigate }) {
       setReviewItem(null);
     } catch (err) {
       console.error("Failed to submit review:", err);
-      setReviewError("Something went wrong. Please try again.");
+      setReviewError(err.message || "Something went wrong. Please try again.");
     }
     setSubmittingReview(false);
   };
@@ -181,6 +186,21 @@ export default function MyOrders({ user, onNavigate }) {
         deliveredAt: serverTimestamp()
       });
       setResults(r => r.map(o => o.id === orderId ? { ...o, status: "delivered" } : o));
+
+      // Remind the buyer to leave a review, since it's not required at delivery time
+      const order = results.find(o => o.id === orderId);
+      try {
+        await addDoc(collection(db, "notifications"), {
+          userId: user.uid,
+          type: "review_reminder",
+          message: `How was your order from ${order?.sellerName || "the store"}? Add a review to help other buyers.`,
+          orderId,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+      } catch (notifErr) {
+        console.error("Failed to send review reminder notification:", notifErr);
+      }
     } catch (err) { console.error(err); }
     setActionLoading(null);
   };
