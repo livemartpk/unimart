@@ -280,7 +280,11 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
         <div style={styles.priceRow}>
           <span style={styles.price}>Rs {product.price}</span>
           {product.mrp && <span style={styles.mrp}>Rs {product.mrp}</span>}
-          {product.rating && <span style={styles.rating}>⭐ {product.rating} ({product.reviewCount || 0})</span>}
+          {reviews.length > 0 && (
+            <span style={styles.rating}>
+              ⭐ {(reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)} ({reviews.length})
+            </span>
+          )}
           <div style={styles.wishlistBtn} onClick={() => setInWishlist((v) => !v)}>{inWishlist ? "❤️" : "🤍"}</div>
         </div>
 
