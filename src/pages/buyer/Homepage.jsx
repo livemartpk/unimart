@@ -94,14 +94,32 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
         console.error("Failed to load flash banners:", err);
       }
 
-      // "Just For You" — latest active products
+      // "Just For You" — ranked by a weighted score (sales, rating, recency),
+      // out-of-stock items pushed to the bottom. Candidate pool of 40 active
+      // products, ranked client-side, top 8 shown — same two-stage pattern
+      // (candidates → ranking) that marketplaces like Daraz use, sized down
+      // to what UniMart actually tracks today.
       const recoQuery = query(
         collection(db, "products"),
         where("status", "==", "active"),
-        limit(8)
+        limit(40)
       );
       const recoSnap = await getDocs(recoQuery);
-      setRecommendedProducts(recoSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const candidates = recoSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      const now = Date.now();
+      const scored = candidates.map((p) => {
+        const inStock = (p.stock || 0) > 0;
+        const salesScore = Math.log((p.salesCount || 0) + 1) * 12;   // sales velocity — strongest signal
+        const ratingScore = (p.rating || 0) * 5;                      // customer trust
+        const ageDays = p.createdAt?.seconds ? (now - p.createdAt.seconds * 1000) / 86400000 : 999;
+        const recencyScore = Math.max(0, 15 - ageDays);                // fresh listings get a temporary boost
+        const score = inStock ? salesScore + ratingScore + recencyScore : -9999; // out-of-stock sinks to the bottom
+        return { ...p, _score: score };
+      });
+      scored.sort((a, b) => b._score - a._score);
+
+      setRecommendedProducts(scored.slice(0, 8));
 
     } catch (err) {
       console.error("Failed to load homepage data:", err);
