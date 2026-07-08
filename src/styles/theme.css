@@ -3,7 +3,7 @@
    Deep Green + Gold | Phase 1 brand identity
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Georgia&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* Fonts loaded via <link> in index.html (non-blocking) instead of @import here */
 
 :root {
   /* Core Colors */
