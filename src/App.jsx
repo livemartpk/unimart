@@ -98,20 +98,22 @@ export default function App() {
   // ===== CART STATE =====
   const [cartItems, setCartItems] = useState([]);
 
-  const addToCart = (product, qty = 1) => {
+  const addToCart = (item, qty) => {
+    const productId = item.productId || item.id;
+    const addQty = qty || item.qty || 1;
     setCartItems(prev => {
-      const existing = prev.find(i => i.productId === product.id);
+      const existing = prev.find(i => i.productId === productId);
       if (existing) {
-        return prev.map(i => i.productId === product.id ? { ...i, qty: i.qty + qty } : i);
+        return prev.map(i => i.productId === productId ? { ...i, qty: i.qty + addQty } : i);
       }
       return [...prev, {
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.images?.[0] || null,
-        sellerId: product.sellerId,
-        sellerName: product.sellerName || "Seller",
-        qty
+        productId,
+        name: item.name,
+        price: item.price,
+        image: item.image || item.images?.[0] || null,
+        sellerId: item.sellerId,
+        sellerName: item.sellerName || "Seller",
+        qty: addQty
       }];
     });
   };
