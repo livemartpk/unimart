@@ -112,9 +112,12 @@ export default function WalletsReconciliation() {
   // Tax and the Agent/Website split both come OUT of that commission —
   // they are not additional deductions from the seller.
   const splitFor = (order, agentId) => {
-    const gross = order.grandTotal || 0;
+    // Commission only applies to the product subtotal — shipping belongs to
+    // the courier company (e.g. TCS), not UniMart's commission pool.
+    const gross = order.subtotal ?? order.grandTotal ?? 0;
+    const shipping = order.shippingCharge || 0;
     const commission = +(gross * (rates.commissionPercent / 100)).toFixed(2);
-    const sellerNet = +(gross - commission).toFixed(2);
+    const sellerNet = +(gross - commission).toFixed(2); // seller keeps product price minus commission; shipping is tracked separately
     const tax = +(commission * (rates.taxPercent / 100)).toFixed(2);
     const remaining = +(commission - tax).toFixed(2);
     let agentShare = 0;
@@ -123,7 +126,7 @@ export default function WalletsReconciliation() {
       agentShare = +(remaining * (rates.agentSharePercent / 100)).toFixed(2);
       websiteShare = +(remaining - agentShare).toFixed(2);
     }
-    return { gross, commission, sellerNet, tax, remaining, agentShare, websiteShare };
+    return { gross, shipping, commission, sellerNet, tax, remaining, agentShare, websiteShare };
   };
 
   const getAgentIdForSeller = async (sellerId) => {
@@ -275,7 +278,7 @@ export default function WalletsReconciliation() {
           <p style={styles.emptyText}>Nothing waiting — all dispatched orders are credited.</p>
         ) : (
           stage1Orders.map((o) => {
-            const { gross, commission, sellerNet, tax, agentShare, websiteShare } = splitFor(o, sellerAgentCache[o.sellerId]);
+            const { gross, shipping, commission, sellerNet, tax, agentShare, websiteShare } = splitFor(o, sellerAgentCache[o.sellerId]);
             return (
               <div key={o.id} style={styles.payoutCard}>
                 <div style={styles.payoutHead}>
@@ -284,7 +287,7 @@ export default function WalletsReconciliation() {
                     {busyId === o.id ? "..." : "Credit"}
                   </button>
                 </div>
-                <div style={styles.payoutRow}>Order total: Rs {gross.toLocaleString()} · Commission: Rs {commission.toLocaleString()}</div>
+                <div style={styles.payoutRow}>Product price: Rs {gross.toLocaleString()} (shipping Rs {shipping.toLocaleString()} not included) · Commission: Rs {commission.toLocaleString()}</div>
                 <div style={styles.payoutRow}>Tax: Rs {tax.toLocaleString()} · Website: Rs {websiteShare.toLocaleString()}{agentShare > 0 && ` · Agent: Rs ${agentShare.toLocaleString()}`}</div>
                 <div style={{ ...styles.payoutRow, fontWeight: 700, color: "#0B3D2E" }}>To Seller's Total Balance: Rs {sellerNet.toLocaleString()}</div>
               </div>
