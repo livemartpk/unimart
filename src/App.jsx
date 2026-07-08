@@ -6,86 +6,86 @@
 // and which page is currently active.
 // ============================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "./config/firebase";
 import LoadingLogo from "./components/LoadingLogo";
 
 // Auth pages
-import Login from "./pages/auth/Login";
-import BuyerSignUp from "./pages/auth/BuyerSignUp";
-import BuyerProfileCompletion from "./pages/auth/BuyerProfileCompletion";
+const Login = lazy(() => import("./pages/auth/Login"));
+const BuyerSignUp = lazy(() => import("./pages/auth/BuyerSignUp"));
+const BuyerProfileCompletion = lazy(() => import("./pages/auth/BuyerProfileCompletion"));
 
 // Buyer pages
-import Homepage from "./pages/buyer/Homepage";
-import ProductDetail from "./pages/buyer/ProductDetail";
-import Cart from "./pages/buyer/Cart";
-import Checkout from "./pages/buyer/Checkout";
-import MyOrders from "./pages/buyer/MyOrders";
-import BuyerWallet from "./pages/buyer/BuyerWallet";
+const Homepage = lazy(() => import("./pages/buyer/Homepage"));
+const ProductDetail = lazy(() => import("./pages/buyer/ProductDetail"));
+const Cart = lazy(() => import("./pages/buyer/Cart"));
+const Checkout = lazy(() => import("./pages/buyer/Checkout"));
+const MyOrders = lazy(() => import("./pages/buyer/MyOrders"));
+const BuyerWallet = lazy(() => import("./pages/buyer/BuyerWallet"));
 
 // Seller pages
-import SellerSignUp from "./pages/seller/SellerSignUp";
-import SellerDashboard from "./pages/seller/SellerDashboard";
-import MyProducts from "./pages/seller/MyProducts";
-import AddProduct from "./pages/seller/AddProduct";
-import IncomingOrders from "./pages/seller/IncomingOrders";
-import SellerWallet from "./pages/seller/SellerWallet";
-import PointsAndBoost from "./pages/seller/PointsAndBoost";
-import StoreSettings from "./pages/seller/StoreSettings";
+const SellerSignUp = lazy(() => import("./pages/seller/SellerSignUp"));
+const SellerDashboard = lazy(() => import("./pages/seller/SellerDashboard"));
+const MyProducts = lazy(() => import("./pages/seller/MyProducts"));
+const AddProduct = lazy(() => import("./pages/seller/AddProduct"));
+const IncomingOrders = lazy(() => import("./pages/seller/IncomingOrders"));
+const SellerWallet = lazy(() => import("./pages/seller/SellerWallet"));
+const PointsAndBoost = lazy(() => import("./pages/seller/PointsAndBoost"));
+const StoreSettings = lazy(() => import("./pages/seller/StoreSettings"));
 
 // Agent pages
-import AgentSignUp from "./pages/agent/AgentSignUp";
-import AgentDashboard from "./pages/agent/AgentDashboard";
-import SellerTags from "./pages/agent/SellerTags";
-import AgentWallet from "./pages/agent/AgentWallet";
-import Leaderboard from "./pages/agent/Leaderboard";
+const AgentSignUp = lazy(() => import("./pages/agent/AgentSignUp"));
+const AgentDashboard = lazy(() => import("./pages/agent/AgentDashboard"));
+const SellerTags = lazy(() => import("./pages/agent/SellerTags"));
+const AgentWallet = lazy(() => import("./pages/agent/AgentWallet"));
+const Leaderboard = lazy(() => import("./pages/agent/Leaderboard"));
 
 // Admin pages
-import SuperAdminDashboard from "./pages/admin/super-admin/SuperAdminDashboard";
-import SellerManagerDashboard from "./pages/admin/seller-manager/SellerManagerDashboard";
-import MarketingManagerDashboard from "./pages/admin/marketing-manager/MarketingManagerDashboard";
-import SupportTeamDashboard from "./pages/admin/support-team/SupportTeamDashboard";
-import FinanceTeamDashboard from "./pages/admin/finance-team/FinanceTeamDashboard";
-import ContentTeamDashboard from "./pages/admin/content-team/ContentTeamDashboard";
-import PolicyEngine from "./pages/admin/super-admin/PolicyEngine";
-import AdminManagement from "./pages/admin/super-admin/AdminManagement";
-import WalletsOverview from "./pages/admin/super-admin/WalletsOverview";
-import ActivityLogs from "./pages/admin/super-admin/ActivityLogs";
-import CategoryManagement from "./pages/admin/super-admin/CategoryManagement";
-import Announcements from "./pages/admin/super-admin/Announcements";
+const SuperAdminDashboard = lazy(() => import("./pages/admin/super-admin/SuperAdminDashboard"));
+const SellerManagerDashboard = lazy(() => import("./pages/admin/seller-manager/SellerManagerDashboard"));
+const MarketingManagerDashboard = lazy(() => import("./pages/admin/marketing-manager/MarketingManagerDashboard"));
+const SupportTeamDashboard = lazy(() => import("./pages/admin/support-team/SupportTeamDashboard"));
+const FinanceTeamDashboard = lazy(() => import("./pages/admin/finance-team/FinanceTeamDashboard"));
+const ContentTeamDashboard = lazy(() => import("./pages/admin/content-team/ContentTeamDashboard"));
+const PolicyEngine = lazy(() => import("./pages/admin/super-admin/PolicyEngine"));
+const AdminManagement = lazy(() => import("./pages/admin/super-admin/AdminManagement"));
+const WalletsOverview = lazy(() => import("./pages/admin/super-admin/WalletsOverview"));
+const ActivityLogs = lazy(() => import("./pages/admin/super-admin/ActivityLogs"));
+const CategoryManagement = lazy(() => import("./pages/admin/super-admin/CategoryManagement"));
+const Announcements = lazy(() => import("./pages/admin/super-admin/Announcements"));
 
-import SellerRegistrations from "./pages/admin/seller-manager/SellerRegistrations";
-import AllSellers from "./pages/admin/seller-manager/AllSellers";
-import NewSellerProductReview from "./pages/admin/seller-manager/NewSellerProductReview";
-import VacationRequests from "./pages/admin/seller-manager/VacationRequests";
-import FlaggedSellers from "./pages/admin/seller-manager/FlaggedSellers";
+const SellerRegistrations = lazy(() => import("./pages/admin/seller-manager/SellerRegistrations"));
+const AllSellers = lazy(() => import("./pages/admin/seller-manager/AllSellers"));
+const NewSellerProductReview = lazy(() => import("./pages/admin/seller-manager/NewSellerProductReview"));
+const VacationRequests = lazy(() => import("./pages/admin/seller-manager/VacationRequests"));
+const FlaggedSellers = lazy(() => import("./pages/admin/seller-manager/FlaggedSellers"));
 
-import AgentManagement from "./pages/admin/marketing-manager/AgentManagement";
-import PerformanceAnalytics from "./pages/admin/marketing-manager/PerformanceAnalytics";
-import ReferralFraudMonitor from "./pages/admin/marketing-manager/ReferralFraudMonitor";
-import FlashDealsBanner from "./pages/admin/marketing-manager/FlashDealsBanner";
+const AgentManagement = lazy(() => import("./pages/admin/marketing-manager/AgentManagement"));
+const PerformanceAnalytics = lazy(() => import("./pages/admin/marketing-manager/PerformanceAnalytics"));
+const ReferralFraudMonitor = lazy(() => import("./pages/admin/marketing-manager/ReferralFraudMonitor"));
+const FlashDealsBanner = lazy(() => import("./pages/admin/marketing-manager/FlashDealsBanner"));
 
-import Disputes from "./pages/admin/support-team/Disputes";
-import Complaints from "./pages/admin/support-team/Complaints";
-import ReturnRefundTracker from "./pages/admin/support-team/ReturnRefundTracker";
+const Disputes = lazy(() => import("./pages/admin/support-team/Disputes"));
+const Complaints = lazy(() => import("./pages/admin/support-team/Complaints"));
+const ReturnRefundTracker = lazy(() => import("./pages/admin/support-team/ReturnRefundTracker"));
 
-import WithdrawalRequests from "./pages/admin/finance-team/WithdrawalRequests";
-import FinancialReports from "./pages/admin/finance-team/FinancialReports";
-import WalletsReconciliation from "./pages/admin/finance-team/WalletsReconciliation";
+const WithdrawalRequests = lazy(() => import("./pages/admin/finance-team/WithdrawalRequests"));
+const FinancialReports = lazy(() => import("./pages/admin/finance-team/FinancialReports"));
+const WalletsReconciliation = lazy(() => import("./pages/admin/finance-team/WalletsReconciliation"));
 
-import ProductReviews from "./pages/admin/content-team/ProductReviews";
-import FlaggedListings from "./pages/admin/content-team/FlaggedListings";
-import BannerManagement from "./pages/admin/content-team/BannerManagement";
+const ProductReviews = lazy(() => import("./pages/admin/content-team/ProductReviews"));
+const FlaggedListings = lazy(() => import("./pages/admin/content-team/FlaggedListings"));
+const BannerManagement = lazy(() => import("./pages/admin/content-team/BannerManagement"));
 
 // Shared pages
-import Invoice from "./pages/shared/Invoice";
-import DispatchSlip from "./pages/shared/DispatchSlip";
-import Notifications from "./pages/shared/Notifications";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import AdminLayout from "./components/AdminLayout";
-import SellerLayout from "./components/SellerLayout";
+const Invoice = lazy(() => import("./pages/shared/Invoice"));
+const DispatchSlip = lazy(() => import("./pages/shared/DispatchSlip"));
+const Notifications = lazy(() => import("./pages/shared/Notifications"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
+const AdminLayout = lazy(() => import("./components/AdminLayout"));
+const SellerLayout = lazy(() => import("./components/SellerLayout"));
 
 export default function App() {
   const [firebaseUser, setFirebaseUser] = useState(null);
