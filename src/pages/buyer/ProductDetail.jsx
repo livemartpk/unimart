@@ -10,6 +10,7 @@ import { signOut } from "firebase/auth";
 import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
+import { optimizeImage } from "../../utils/optimizeImage";
 
 const TABS = [
   { key: "overview", label: "Overview" },
@@ -190,7 +191,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
           </div>
         </div>
         {product.images?.length ? (
-          <img src={product.images[activeImage]} alt={product.name} style={styles.mainImage} />
+          <img src={optimizeImage(product.images[activeImage], 700)} alt={product.name} style={styles.mainImage} />
         ) : (
           <div style={styles.mainImagePlaceholder}>🛍️</div>
         )}
@@ -207,7 +208,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
               style={{ ...styles.thumb, ...(i === activeImage ? styles.thumbActive : {}) }}
               onClick={() => setActiveImage(i)}
             >
-              <img src={img} alt="" style={styles.imgFit} />
+              <img src={optimizeImage(img, 100)} alt="" style={styles.imgFit} loading="lazy" />
             </div>
           ))}
         </div>
@@ -242,7 +243,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
                 ‹
               </div>
             )}
-            <img src={product.images[activeImage]} alt={product.name} style={styles.lightboxImage} />
+            <img src={optimizeImage(product.images[activeImage], 1000)} alt={product.name} style={styles.lightboxImage} />
             {product.images.length > 1 && (
               <div
                 style={{ ...styles.lightboxNav, right: 8, left: "auto" }}
@@ -260,7 +261,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
                   style={{ ...styles.lightboxThumb, ...(i === activeImage ? styles.thumbActive : {}) }}
                   onClick={() => setActiveImage(i)}
                 >
-                  <img src={img} alt="" style={styles.imgFit} />
+                  <img src={optimizeImage(img, 100)} alt="" style={styles.imgFit} loading="lazy" />
                 </div>
               ))}
             </div>
@@ -398,7 +399,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
                 <div key={p.id} className="product-card-hover" style={styles.recCard} onClick={() => onNavigate && onNavigate("product", p.id)}>
                   <div style={styles.recImageWrap}>
                     {p.images?.[0] ? (
-                      <img src={p.images[0]} alt={p.name} style={styles.imgFit} />
+                      <img src={optimizeImage(p.images[0], 260)} alt={p.name} style={styles.imgFit} loading="lazy" />
                     ) : (
                       <div style={styles.recImagePlaceholder}>🛍️</div>
                     )}
