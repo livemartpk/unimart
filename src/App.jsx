@@ -55,6 +55,7 @@ const WalletsOverview = lazy(() => import("./pages/admin/super-admin/WalletsOver
 const ActivityLogs = lazy(() => import("./pages/admin/super-admin/ActivityLogs"));
 const CategoryManagement = lazy(() => import("./pages/admin/super-admin/CategoryManagement"));
 const Announcements = lazy(() => import("./pages/admin/super-admin/Announcements"));
+const ResetTestData = lazy(() => import("./pages/admin/super-admin/ResetTestData"));
 
 const SellerRegistrations = lazy(() => import("./pages/admin/seller-manager/SellerRegistrations"));
 const AllSellers = lazy(() => import("./pages/admin/seller-manager/AllSellers"));
@@ -399,6 +400,7 @@ export default function App() {
           case "activity-logs": return <ActivityLogs />;
           case "categories": return <CategoryManagement user={firebaseUser} />;
           case "announcements": return <Announcements user={firebaseUser} />;
+          case "reset-test-data": return <ResetTestData user={firebaseUser} />;
           case "sellers": return <SellerRegistrations user={firebaseUser} />;
           case "agents": return <AgentManagement user={firebaseUser} />;
           default: return <SuperAdminDashboard user={firebaseUser} onNavigate={navigate} />;
