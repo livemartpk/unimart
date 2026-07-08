@@ -22,6 +22,7 @@ const SIDEBAR_ITEMS = {
     { key: "activity-logs", icon: "📋", label: "Activity Logs" },
     { key: "categories", icon: "🏷️", label: "Categories" },
     { key: "announcements", icon: "📢", label: "Announcements" },
+    { key: "reset-test-data", icon: "🧹", label: "Reset Test Data" },
   ],
   seller_manager: [
     { key: "dashboard", icon: "🏠", label: "Dashboard" },
