@@ -11,6 +11,7 @@ import { signOut } from "firebase/auth";
 import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
+import { optimizeImage } from "../../utils/optimizeImage";
 
 export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 }) {
   const [flashSaleProducts, setFlashSaleProducts] = useState([]);
@@ -245,7 +246,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
                 ...styles.bentoCard,
                 ...styles.bentoBig,
                 ...(flashBanners[bannerSlide]?.imageUrl
-                  ? { backgroundImage: `linear-gradient(180deg, rgba(11,61,46,0.15) 0%, rgba(11,61,46,0.85) 100%), url(${flashBanners[bannerSlide].imageUrl})`, backgroundSize: "cover", backgroundPosition: "center", transition: "background-image 0.5s ease" }
+                  ? { backgroundImage: `linear-gradient(180deg, rgba(11,61,46,0.15) 0%, rgba(11,61,46,0.85) 100%), url(${optimizeImage(flashBanners[bannerSlide].imageUrl, 700)})`, backgroundSize: "cover", backgroundPosition: "center", transition: "background-image 0.5s ease" }
                   : {})
               }}
               onClick={() => onNavigate && onNavigate("category", "flash")}
@@ -304,7 +305,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
             {flashSaleProducts.map((p) => (
               <div key={p.id} className="product-card-hover" style={styles.flashCard} onClick={() => onNavigate && onNavigate("product", p.id)}>
                 <div style={styles.flashImg}>
-                  {p.images?.[0] ? <img src={p.images[0]} alt={p.name} style={styles.imgFit} /> : "🛍️"}
+                  {p.images?.[0] ? <img src={optimizeImage(p.images[0], 260)} alt={p.name} style={styles.imgFit} loading="lazy" /> : "🛍️"}
                   {p.discountPercent && <div style={styles.flashTag}>-{p.discountPercent}%</div>}
                 </div>
                 <div style={styles.flashInfo}>
@@ -343,7 +344,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
           {displayedProducts.map((p) => (
             <div key={p.id} className="product-card-hover" style={styles.pcard}>
               <div style={styles.pimg} onClick={() => onNavigate && onNavigate("product", p.id)}>
-                {p.images?.[0] ? <img src={p.images[0]} alt={p.name} style={styles.imgFit} /> : "🛍️"}
+                {p.images?.[0] ? <img src={optimizeImage(p.images[0], 320)} alt={p.name} style={styles.imgFit} loading="lazy" /> : "🛍️"}
                 <div style={styles.heart} onClick={(e) => { e.stopPropagation(); toggleWishlist(p.id); }}>
                   {wishlist.includes(p.id) ? "❤️" : "🤍"}
                 </div>
@@ -459,8 +460,8 @@ const styles = {
   livePill: { background: "#D4AF37", color: "#0B3D2E", fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 20 },
   sectionLink: { fontSize: 11.5, color: "#0B3D2E", fontWeight: 700, opacity: 0.6, cursor: "pointer" },
 
-  loadingText: { fontSize: 13, color: "#888" },
-  emptyText: { fontSize: 13, color: "#888" },
+  loadingText: { fontSize: 13, color: "#6b6b6b" },
+  emptyText: { fontSize: 13, color: "#6b6b6b" },
 
   flashScroll: { display: "flex", gap: 12, overflowX: "auto", paddingBottom: 6 },
   flashCard: { minWidth: 130, background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 14px rgba(11,61,46,0.08)", cursor: "pointer" },
@@ -494,7 +495,7 @@ const styles = {
   priceRow: { display: "flex", alignItems: "center", gap: 6 },
   pprice: { color: "#0B3D2E", fontWeight: 800, fontSize: 13.5 },
   pdiscount: { fontSize: 10.5, color: "#C0392B", fontWeight: 700 },
-  pratingRow: { fontSize: 10, color: "#999", fontWeight: 600, marginTop: 2 },
+  pratingRow: { fontSize: 10, color: "#767676", fontWeight: 600, marginTop: 2 },
   quickAdd: { width: "100%", marginTop: 8, background: "#0B3D2E", color: "#D4AF37", fontSize: 10.5, fontWeight: 700, textAlign: "center", padding: 7, borderRadius: 10, cursor: "pointer" },
 
   bottomNav: { display: "flex", justifyContent: "space-around", alignItems: "center", padding: "12px 8px", margin: "10px 14px 0", background: "#0B3D2E", borderRadius: 24, boxShadow: "0 8px 24px rgba(11,61,46,0.3)", position: "sticky", bottom: 10 },
