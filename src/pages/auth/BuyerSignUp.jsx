@@ -11,12 +11,16 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../config/firebase";
+import { getCurrencyForCountry } from "../../utils/countries";
+import CountryGenderFields from "../../components/CountryGenderFields";
 import "../../styles/theme.css";
 
 export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsing }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [country, setCountry] = useState("");
+  const [gender, setGender] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +29,8 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
     if (!email.includes("@")) return "Please enter a valid email address.";
     if (password.length < 6) return "Password must be at least 6 characters.";
     if (password !== confirmPassword) return "Passwords do not match.";
+    if (!country) return "Please select your country.";
+    if (!gender) return "Please select your gender.";
     return "";
   };
 
@@ -51,6 +57,9 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         role: "buyer",
+        country,
+        currency: getCurrencyForCountry(country),
+        gender,
         emailVerified: false,
         profileComplete: false,   // becomes true after first checkout details are filled
         status: "active",
@@ -151,6 +160,8 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
               </span>
             </div>
           </div>
+
+          <CountryGenderFields country={country} setCountry={setCountry} gender={gender} setGender={setGender} />
 
           {error && <p className="error-text">{error}</p>}
 
