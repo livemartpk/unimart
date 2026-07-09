@@ -64,6 +64,7 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
           buyerId: buyerUid,
           buyerName: address.fullName || user?.fullName || "",
           buyerPhone: address.phone,
+          country: user?.country || "Pakistan",
           sellerId: group.sellerId,
           sellerName: group.sellerName,
           items: group.items.map(i => ({
