@@ -72,7 +72,18 @@ export default function BackfillCountries() {
       const productsFixed = await commitInChunks(productsToFix);
       addLog(`✓ Set country on ${productsFixed} product(s)`);
 
-      addLog("✅ Done — all old accounts and products are now tagged with a country.");
+      // 4. Orders missing country — inherit from their seller
+      const ordersSnap = await getDocs(collection(db, "orders"));
+      const ordersToFix = ordersSnap.docs
+        .filter((d) => !d.data().country)
+        .map((d) => ({
+          ref: d.ref,
+          data: { country: sellerCountryMap[d.data().sellerId] || DEFAULT_COUNTRY }
+        }));
+      const ordersFixed = await commitInChunks(ordersToFix);
+      addLog(`✓ Set country on ${ordersFixed} order(s)`);
+
+      addLog("✅ Done — all old accounts, products, and orders are now tagged with a country.");
       setDone(true);
     } catch (err) {
       console.error(err);
