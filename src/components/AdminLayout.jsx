@@ -9,6 +9,8 @@
 import { useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../config/firebase";
+import { COUNTRIES } from "../utils/countries";
+import { AdminCountryProvider, useAdminCountry } from "../context/AdminCountryContext";
 import "../styles/theme.css";
 
 const SIDEBAR_ITEMS = {
@@ -70,8 +72,17 @@ const ROLE_LABELS = {
   content_team: "Content Team",
 };
 
-export default function AdminLayout({ role, currentPage, onNavigate, children }) {
+export default function AdminLayout(props) {
+  return (
+    <AdminCountryProvider>
+      <AdminLayoutInner {...props} />
+    </AdminCountryProvider>
+  );
+}
+
+function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { country, setCountry } = useAdminCountry();
   const items = SIDEBAR_ITEMS[role] || [];
   const roleLabel = ROLE_LABELS[role] || "Admin";
 
@@ -150,6 +161,16 @@ export default function AdminLayout({ role, currentPage, onNavigate, children })
             {items.find(i => i.key === currentPage)?.label || roleLabel}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <select
+              style={{ ...s.adminChip, ...( !country ? s.countrySelectorEmpty : {}), border: "1px solid #BFE3CC", cursor: "pointer", fontFamily: "inherit" }}
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+            >
+              <option value="">🌍 Select country</option>
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.name}>{c.name}</option>
+              ))}
+            </select>
             <div style={s.adminChip}>
               <span>👤</span> {roleLabel}
             </div>
@@ -295,6 +316,9 @@ const s = {
     padding: "6px 14px", borderRadius: 999,
     fontSize: 13, fontWeight: 600,
     display: "flex", alignItems: "center", gap: 7
+  },
+  countrySelectorEmpty: {
+    background: "#FCEAEA", color: "#C0392B", border: "1px solid #f5c6c6"
   },
   topbarLogoutBtn: {
     background: "#FCEAEA",
