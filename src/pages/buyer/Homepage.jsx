@@ -77,11 +77,17 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   const loadHomepageData = async () => {
     setLoading(true);
     try {
+      // Country-matching: buyer only ever sees sellers/products from their own
+      // country. Guests default to Pakistan until location auto-detection is
+      // built (a later step) — this keeps behavior consistent in the meantime.
+      const buyerCountry = user?.country || "Pakistan";
+
       // Flash Sale products
       const flashQuery = query(
         collection(db, "products"),
         where("boost.type", "==", "flash_sale"),
         where("status", "==", "active"),
+        where("country", "==", buyerCountry),
         limit(6)
       );
       const flashSnap = await getDocs(flashQuery);
@@ -103,6 +109,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
       const recoQuery = query(
         collection(db, "products"),
         where("status", "==", "active"),
+        where("country", "==", buyerCountry),
         limit(40)
       );
       const recoSnap = await getDocs(recoQuery);
