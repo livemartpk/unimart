@@ -27,7 +27,10 @@ import { collection, getDocs, query, where, doc, getDoc, setDoc, updateDoc, incr
 import { db } from "../../../config/firebase";
 import "../../../styles/theme.css";
 
+import { useAdminCountry } from "../../../context/AdminCountryContext";
+
 export default function WalletsReconciliation() {
+  const { country } = useAdminCountry();
   const [summary, setSummary] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stage1Orders, setStage1Orders] = useState([]); // dispatched/delivered, not yet credited to Total Balance
@@ -39,19 +42,31 @@ export default function WalletsReconciliation() {
   const [sellerAgentCache, setSellerAgentCache] = useState({}); // sellerId -> agentId | null
 
   useEffect(() => {
+    if (!country) return;
     loadReconciliation();
     loadPipeline();
-  }, []);
+  }, [country]);
 
   const loadReconciliation = async () => {
     setLoading(true);
     try {
+      // Only sum wallets belonging to sellers/agents/buyers of the selected country —
+      // mixing different countries' money into one total would be meaningless
+      // (their currencies are different, e.g. PKR vs SAR).
+      const ownersByCollection = {
+        wallets_seller: new Set((await getDocs(query(collection(db, "sellers"), where("country", "==", country)))).docs.map((d) => d.id)),
+        wallets_agent: new Set((await getDocs(query(collection(db, "agents"), where("country", "==", country)))).docs.map((d) => d.id)),
+        wallets_buyer: new Set((await getDocs(query(collection(db, "users"), where("role", "==", "buyer"), where("country", "==", country)))).docs.map((d) => d.id)),
+      };
+
       const collections = ["wallets_buyer", "wallets_seller", "wallets_agent"];
       const results = [];
       for (const colName of collections) {
         const snap = await getDocs(collection(db, colName));
+        const owners = ownersByCollection[colName];
         let total = 0, available = 0, pending = 0;
         snap.docs.forEach((d) => {
+          if (!owners.has(d.id)) return; // skip wallets from other countries
           const data = d.data();
           total += data.totalBalance || 0;
           available += data.availableBalance || 0;
@@ -84,8 +99,8 @@ export default function WalletsReconciliation() {
       };
       setRates(currentRates);
 
-      const dispatchedSnap = await getDocs(query(collection(db, "orders"), where("status", "==", "dispatched")));
-      const deliveredSnap = await getDocs(query(collection(db, "orders"), where("status", "==", "delivered")));
+      const dispatchedSnap = await getDocs(query(collection(db, "orders"), where("status", "==", "dispatched"), where("country", "==", country)));
+      const deliveredSnap = await getDocs(query(collection(db, "orders"), where("status", "==", "delivered"), where("country", "==", country)));
       const dispatched = dispatchedSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
       const delivered = deliveredSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
@@ -283,10 +298,23 @@ export default function WalletsReconciliation() {
     return Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
   };
 
+  if (!country) {
+    return (
+      <div className="page-shell" style={styles.page}>
+        <div style={styles.header}>
+          <div style={styles.headerTitle}>Wallets Reconciliation</div>
+        </div>
+        <div className="container" style={{ paddingTop: 40, textAlign: "center" }}>
+          <p style={styles.emptyText}>🌍 Select a country from the dropdown above to view its wallet data.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page-shell" style={styles.page}>
       <div style={styles.header}>
-        <div style={styles.headerTitle}>Wallets Reconciliation</div>
+        <div style={styles.headerTitle}>Wallets Reconciliation — {country}</div>
       </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
