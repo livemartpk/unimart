@@ -6,6 +6,8 @@ import { useState } from "react";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../config/firebase";
+import { getCurrencyForCountry } from "../../utils/countries";
+import CountryGenderFields from "../../components/CountryGenderFields";
 import "../../styles/theme.css";
 
 const CATEGORY_DOCS = {
@@ -18,7 +20,7 @@ const CATEGORY_DOCS = {
 export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsing }) {
   const [form, setForm] = useState({
     storeName: "", ownerName: "", email: "", password: "", confirmPassword: "",
-    phone: "", country: "Pakistan", nationalId: "", city: "",
+    phone: "", country: "", gender: "", nationalId: "", city: "",
     category: "", businessType: "Individual", monthlyVolume: "",
     paymentAccount: "", documentFile: null
   });
@@ -41,6 +43,8 @@ export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrows
     if (!/^\d{10,15}$/.test(form.phone.replace(/\D/g, ""))) e.phone = "Enter a valid phone number.";
     if (!/^\d{13}$/.test(form.nationalId.replace(/\D/g, ""))) e.nationalId = "Enter a valid 13-digit National ID.";
     if (!form.city.trim()) e.city = "City is required.";
+    if (!form.country) e.country = "Please select your country.";
+    if (!form.gender) e.gender = "Please select your gender.";
     if (!form.category) e.category = "Select a business category.";
     if (!form.paymentAccount.trim()) e.paymentAccount = "Payment account is required for payouts.";
     return e;
@@ -93,6 +97,8 @@ export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrows
         fullName: form.ownerName,
         phone: form.phone,
         country: form.country,
+        currency: getCurrencyForCountry(form.country),
+        gender: form.gender,
         nationalId: form.nationalId,
         emailVerified: false,
         profileComplete: true,
@@ -106,6 +112,7 @@ export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrows
         businessType: form.businessType,
         monthlyVolume: form.monthlyVolume || null,
         city: form.city,
+        country: form.country,
         documents: {
           type: CATEGORY_DOCS[form.category],
           url: documentUrl,
@@ -205,6 +212,14 @@ export default function SellerSignUp({ onSuccess, onSwitchToLogin, onBackToBrows
           <Field label="City" error={errors.city}>
             <input className="input-field" value={form.city} onChange={(e) => handleChange("city", e.target.value)} />
           </Field>
+
+          <CountryGenderFields
+            country={form.country}
+            setCountry={(v) => handleChange("country", v)}
+            gender={form.gender}
+            setGender={(v) => handleChange("gender", v)}
+            errors={errors}
+          />
 
           <Field label="Business Category" error={errors.category}>
             <select className="input-field" value={form.category} onChange={(e) => handleChange("category", e.target.value)}>
