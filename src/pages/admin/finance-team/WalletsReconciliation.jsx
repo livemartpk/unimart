@@ -23,7 +23,7 @@
 // ============================================
 
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, where, doc, getDoc, setDoc, updateDoc, increment, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, getDoc, setDoc, updateDoc, increment, addDoc, serverTimestamp, runTransaction } from "firebase/firestore";
 import { db } from "../../../config/firebase";
 import "../../../styles/theme.css";
 
@@ -146,6 +146,25 @@ export default function WalletsReconciliation() {
   const creditTotalBalance = async (order) => {
     setBusyId(order.id);
     try {
+      // Atomic guard: claim this order first. If it's already claimed (by an
+      // earlier click, a double-click, or "Run All" overlapping), this throws
+      // and we stop immediately — no wallet writes happen twice.
+      const orderRef = doc(db, "orders", order.id);
+      try {
+        await runTransaction(db, async (t) => {
+          const snap = await t.get(orderRef);
+          if (snap.data()?.totalCredited) throw new Error("ALREADY_CREDITED");
+          t.update(orderRef, { totalCredited: true, totalCreditedAt: serverTimestamp() });
+        });
+      } catch (guardErr) {
+        if (guardErr.message === "ALREADY_CREDITED") {
+          setStage1Orders((list) => list.filter((o) => o.id !== order.id));
+          setBusyId(null);
+          return;
+        }
+        throw guardErr;
+      }
+
       const agentId = await getAgentIdForSeller(order.sellerId);
       const { gross, commission, sellerNet, tax, remaining, agentShare, websiteShare } = splitFor(order, agentId);
 
@@ -189,8 +208,6 @@ export default function WalletsReconciliation() {
       }
 
       await updateDoc(doc(db, "orders", order.id), {
-        totalCredited: true,
-        totalCreditedAt: serverTimestamp(),
         payoutSplit: { gross, commission, sellerNet, tax, remaining, agentId: agentId || null, agentShare, websiteShare }
       });
 
@@ -208,6 +225,22 @@ export default function WalletsReconciliation() {
   const releaseAvailable = async (order) => {
     setBusyId(order.id);
     try {
+      const orderRef = doc(db, "orders", order.id);
+      try {
+        await runTransaction(db, async (t) => {
+          const snap = await t.get(orderRef);
+          if (snap.data()?.availableCredited) throw new Error("ALREADY_RELEASED");
+          t.update(orderRef, { availableCredited: true, availableCreditedAt: serverTimestamp() });
+        });
+      } catch (guardErr) {
+        if (guardErr.message === "ALREADY_RELEASED") {
+          setStage2Ready((list) => list.filter((o) => o.id !== order.id));
+          setBusyId(null);
+          return;
+        }
+        throw guardErr;
+      }
+
       const sellerNet = order.payoutSplit?.sellerNet ?? splitFor(order).sellerNet;
 
       await updateDoc(doc(db, "wallets_seller", order.sellerId), {
@@ -220,10 +253,6 @@ export default function WalletsReconciliation() {
         orderGroupId: order.orderGroupId || null,
         amount: sellerNet,
         createdAt: serverTimestamp()
-      });
-      await updateDoc(doc(db, "orders", order.id), {
-        availableCredited: true,
-        availableCreditedAt: serverTimestamp()
       });
 
       setStage2Ready((list) => list.filter((o) => o.id !== order.id));
