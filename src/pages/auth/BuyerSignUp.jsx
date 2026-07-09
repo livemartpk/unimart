@@ -24,6 +24,7 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   const validate = () => {
     if (!email.includes("@")) return "Please enter a valid email address.";
@@ -76,7 +77,7 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
       });
 
       setLoading(false);
-      if (onSuccess) onSuccess(user);
+      setRegistered(true);
 
     } catch (err) {
       setLoading(false);
@@ -96,6 +97,21 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
       }
     }
   };
+
+  if (registered) {
+    return (
+      <div style={{ minHeight: "100vh", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div style={styles.popup}>
+          <div style={{ fontSize: 48, textAlign: "center", marginBottom: 12 }}>🎉</div>
+          <h2 style={styles.popupTitle}>Congratulations!</h2>
+          <p style={styles.popupText}>Your UniMart account has been created successfully. You're all set to start shopping.</p>
+          <button className="btn-primary" style={{ width: "100%", marginTop: 8 }} onClick={() => onSuccess && onSuccess()}>
+            Continue Shopping →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-shell" style={styles.page}>
@@ -190,5 +206,8 @@ const styles = {
   switchLink: { color: "#0B3D2E", fontWeight: 700, cursor: "pointer" },
   backToHomeBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 20px", background: "#F0F5F0", border: "1.5px solid #eee0c0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#0B3D2E", cursor: "pointer", marginBottom: 20, textAlign: "center" },
   passwordWrap: { position: "relative" },
-  eyeIcon: { position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", cursor: "pointer", fontSize: 16, userSelect: "none" }
+  eyeIcon: { position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", cursor: "pointer", fontSize: 16, userSelect: "none" },
+  popup: { background: "#fff", borderRadius: 20, padding: 28, maxWidth: 400, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" },
+  popupTitle: { fontFamily: "Georgia, serif", fontSize: 20, color: "#0B3D2E", textAlign: "center", marginBottom: 10 },
+  popupText: { fontSize: 13.5, color: "#444", textAlign: "center", lineHeight: 1.5, marginBottom: 16 }
 };
