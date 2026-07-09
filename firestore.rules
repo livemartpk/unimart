@@ -196,6 +196,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isSuperAdmin();
     }
+    match /activeCountries/{code} {
+      allow read: if true; // signup forms need this
+      allow write: if isSuperAdmin();
+    }
     match /banners/{id} {
       allow read: if true;
       allow create, update: if isAdmin();
