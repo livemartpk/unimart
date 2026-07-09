@@ -6,6 +6,8 @@ import { useState } from "react";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../config/firebase";
+import { getCurrencyForCountry } from "../../utils/countries";
+import CountryGenderFields from "../../components/CountryGenderFields";
 import "../../styles/theme.css";
 
 function generateReferralCode(name) {
@@ -17,7 +19,7 @@ function generateReferralCode(name) {
 export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsing }) {
   const [form, setForm] = useState({
     fullName: "", email: "", password: "", confirmPassword: "",
-    phone: "", country: "Pakistan", nationalId: "", city: "",
+    phone: "", country: "", gender: "", nationalId: "", city: "",
     paymentAccount: "", experience: "", socialHandle: "", cnicFile: null
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -38,6 +40,8 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
     if (!/^\d{10,15}$/.test(form.phone.replace(/\D/g, ""))) e.phone = "Enter a valid phone number.";
     if (!/^\d{13}$/.test(form.nationalId.replace(/\D/g, ""))) e.nationalId = "Enter a valid 13-digit National ID.";
     if (!form.city.trim()) e.city = "City is required.";
+    if (!form.country) e.country = "Please select your country.";
+    if (!form.gender) e.gender = "Please select your gender.";
     if (!form.paymentAccount.trim()) e.paymentAccount = "Payment account is required for commission payouts.";
     return e;
   };
@@ -87,6 +91,8 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
         fullName: form.fullName,
         phone: form.phone,
         country: form.country,
+        currency: getCurrencyForCountry(form.country),
+        gender: form.gender,
         nationalId: form.nationalId,
         emailVerified: false,
         profileComplete: true,
@@ -99,6 +105,7 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
         email: form.email,
         phone: form.phone,
         city: form.city,
+        country: form.country,
         nationalId: form.nationalId,
         cnicUrl: cnicUrl,
         tier: "bronze",
@@ -181,11 +188,13 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
           <Field label="Phone Number" error={errors.phone}>
             <input className="input-field" value={form.phone} onChange={(e) => handleChange("phone", e.target.value)} placeholder="+92 3XX XXXXXXX" />
           </Field>
-          <Field label="Country">
-            <select className="input-field" value={form.country} onChange={(e) => handleChange("country", e.target.value)}>
-              <option value="Pakistan">Pakistan</option>
-            </select>
-          </Field>
+          <CountryGenderFields
+            country={form.country}
+            setCountry={(v) => handleChange("country", v)}
+            gender={form.gender}
+            setGender={(v) => handleChange("gender", v)}
+            errors={errors}
+          />
           <Field label="National ID" error={errors.nationalId}>
             <input className="input-field" value={form.nationalId} onChange={(e) => handleChange("nationalId", e.target.value)} placeholder="XXXXX-XXXXXXX-X" />
           </Field>
