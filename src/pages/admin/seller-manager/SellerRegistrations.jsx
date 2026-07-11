@@ -8,6 +8,7 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../config/firebase";
+import { formatPrice } from "../../../utils/countries";
 import "../../../styles/theme.css";
 
 export default function SellerRegistrations({ user }) {
@@ -228,7 +229,7 @@ export default function SellerRegistrations({ user }) {
               <DetailRow label="National ID (CNIC)" value={selected.nationalId} />
               <DetailRow label="Business Category" value={selected.businessCategory} />
               <DetailRow label="Business Type" value={selected.businessType} />
-              <DetailRow label="Monthly Volume" value={selected.monthlyVolume ? `Rs ${Number(selected.monthlyVolume).toLocaleString()}` : null} />
+              <DetailRow label="Monthly Volume" value={selected.monthlyVolume ? formatPrice(Number(selected.monthlyVolume), selected.country) : null} />
               <DetailRow label="Payment Account" value={selected.paymentDetails?.account} />
             </div>
 
