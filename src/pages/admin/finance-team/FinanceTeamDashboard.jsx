@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, query, where } from "firebase/firestore";
 import { db } from "../../../config/firebase";
 import { useAdminCountry } from "../../../context/AdminCountryContext";
 import { formatPrice } from "../../../utils/countries";
@@ -10,29 +10,64 @@ export default function FinanceTeamDashboard({ onNavigate }) {
   const [stats, setStats] = useState({ pendingWithdrawals: 0, totalOrders: 0, taxCollected: 0, websiteEarnings: 0 });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (!country) return;
+    load();
+  }, [country]);
 
   const load = async () => {
     setLoading(true);
     try {
+      // Orders — filtered directly (orders carry their own country field)
+      const oSnap = await getDocs(query(collection(db, "orders"), where("country", "==", country)));
+
+      // Withdrawal requests — look up each requester's country, since the
+      // request itself doesn't store one, then keep only matches
       const wSnap = await getDocs(query(collection(db, "withdrawalRequests"), where("status", "==", "pending")));
-      const oSnap = await getDocs(collection(db, "orders"));
+      const withdrawalCountries = await Promise.all(
+        wSnap.docs.map(async (d) => {
+          try {
+            const uSnap = await getDoc(doc(db, "users", d.data().userId));
+            return uSnap.exists() ? uSnap.data().country : null;
+          } catch { return null; }
+        })
+      );
+      const pendingWithdrawalsForCountry = withdrawalCountries.filter((c) => c === country).length;
+
+      // Tax/Website wallets are still global totals (not split per country yet)
       const taxSnap = await getDocs(collection(db, "wallets_tax"));
       const webSnap = await getDocs(collection(db, "wallets_website"));
       const taxTotal = taxSnap.docs.reduce((sum, d) => sum + (d.data().totalCollected || 0), 0);
       const webTotal = webSnap.docs.reduce((sum, d) => sum + (d.data().totalEarning || 0), 0);
-      setStats({ pendingWithdrawals: wSnap.size, totalOrders: oSnap.size, taxCollected: taxTotal, websiteEarnings: webTotal });
+
+      setStats({ pendingWithdrawals: pendingWithdrawalsForCountry, totalOrders: oSnap.size, taxCollected: taxTotal, websiteEarnings: webTotal });
     } catch (err) { console.error(err); }
     setLoading(false);
   };
+
+  if (!country) {
+    return (
+      <div style={s.page}>
+        <div style={s.header}>
+          <div style={s.title}>Finance Team</div>
+          <div style={s.sub}>Financial Overview</div>
+        </div>
+        <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its data.</p>
+      </div>
+    );
+  }
 
   return (
     <div style={s.page}>
       <div style={s.header}>
         <div style={s.title}>Finance Team</div>
-        <div style={s.sub}>Financial Overview</div>
+        <div style={s.sub}>Financial Overview — {country}</div>
       </div>
       <div style={s.body}>
+        {loading ? (
+          <p style={{ textAlign: "center", color: "#888", padding: 20 }}>Loading...</p>
+        ) : (
+          <>
         <div style={s.statsGrid}>
           <StatCard icon="💸" label="Pending Withdrawals" value={stats.pendingWithdrawals} color="#C0392B" />
           <StatCard icon="📦" label="Total Orders" value={stats.totalOrders} />
@@ -53,6 +88,8 @@ export default function FinanceTeamDashboard({ onNavigate }) {
           <ActionTile icon="📈" label="Financial Reports" onClick={() => onNavigate("reports")} />
           <ActionTile icon="⚖️" label="Reconciliation" onClick={() => onNavigate("reconciliation")} />
         </div>
+          </>
+        )}
       </div>
     </div>
   );
