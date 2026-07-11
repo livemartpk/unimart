@@ -186,6 +186,13 @@ export function getFlagEmoji(isoCode) {
   return String.fromCodePoint(...codePoints);
 }
 
+// Real flag image URL (flagcdn.com) — works reliably on every OS/browser,
+// unlike emoji flags which don't render on Windows.
+export function getFlagUrl(isoCode, width = 40) {
+  if (!isoCode || isoCode.length !== 2) return null;
+  return `https://flagcdn.com/w${width}/${isoCode.toLowerCase()}.png`;
+}
+
 // Format a price with the correct currency code for a given country
 // (e.g. "PKR 500", "SAR 100") — falls back to PKR if country is unknown.
 export function formatPrice(amount, country) {
