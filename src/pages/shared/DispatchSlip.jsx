@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import { formatPrice } from "../../utils/countries";
 import "../../styles/theme.css";
 
 export default function DispatchSlip({ orderId, onNavigate }) {
@@ -96,7 +97,7 @@ export default function DispatchSlip({ orderId, onNavigate }) {
         {order.paymentMethod === "cod" && (
           <div style={s.codBox}>
             <div style={s.codLabel}>COLLECT ON DELIVERY</div>
-            <div style={s.codAmount}>Rs {Number(order.grandTotal || 0).toLocaleString()}</div>
+            <div style={s.codAmount}>{formatPrice(Number(order.grandTotal || 0), order.country)}</div>
           </div>
         )}
 

@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import { formatPrice } from "../../utils/countries";
 import "../../styles/theme.css";
 
 export default function Invoice({ orderId, onNavigate }) {
@@ -107,8 +108,8 @@ export default function Invoice({ orderId, onNavigate }) {
                 <td style={s.td}>{i + 1}</td>
                 <td style={s.td}>{item.name}</td>
                 <td style={{ ...s.td, textAlign: "center" }}>{item.qty}</td>
-                <td style={{ ...s.td, textAlign: "right" }}>Rs {Number(item.price).toLocaleString()}</td>
-                <td style={{ ...s.td, textAlign: "right" }}>Rs {(item.price * item.qty).toLocaleString()}</td>
+                <td style={{ ...s.td, textAlign: "right" }}>{formatPrice(Number(item.price), order.country)}</td>
+                <td style={{ ...s.td, textAlign: "right" }}>{formatPrice(item.price * item.qty, order.country)}</td>
               </tr>
             ))}
           </tbody>
@@ -118,16 +119,16 @@ export default function Invoice({ orderId, onNavigate }) {
         <div style={s.totalsBox}>
           <div style={s.totalRow}>
             <span>Subtotal</span>
-            <span>Rs {subtotal.toLocaleString()}</span>
+            <span>{formatPrice(subtotal, order.country)}</span>
           </div>
           <div style={s.totalRow}>
             <span>Shipping</span>
-            <span>Rs {shipping.toLocaleString()}</span>
+            <span>{formatPrice(shipping, order.country)}</span>
           </div>
           <div style={s.divider} />
           <div style={s.grandTotalRow}>
             <span>Grand Total</span>
-            <span>Rs {total.toLocaleString()}</span>
+            <span>{formatPrice(total, order.country)}</span>
           </div>
         </div>
 
