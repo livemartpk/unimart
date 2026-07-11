@@ -116,6 +116,7 @@ export default function App() {
         image: item.image || item.images?.[0] || null,
         sellerId: item.sellerId,
         sellerName: item.sellerName || "Seller",
+        country: item.country,
         qty: addQty
       }];
     });
@@ -305,11 +306,11 @@ export default function App() {
       );
     }
     switch (page) {
-      case "product": return <ProductDetail productId={pageParam} user={firebaseUser} onNavigate={navigate} onAddToCart={addToCart} />;
+      case "product": return <ProductDetail productId={pageParam} user={userData} onNavigate={navigate} onAddToCart={addToCart} />;
       case "cart": return <Cart cartItems={cartItems} onUpdateQty={updateCartQty} onRemoveItem={removeFromCart} onNavigate={navigate} onCheckout={() => navigate("checkout")} />;
       case "checkout": return <Checkout user={userData} firebaseUser={firebaseUser} cartItems={cartItems} onNavigate={navigate} onOrderPlaced={clearCart} />;
       case "orders": return <MyOrders user={firebaseUser} onNavigate={navigate} />;
-      case "wallet": return <BuyerWallet user={firebaseUser} onNavigate={navigate} />;
+      case "wallet": return <BuyerWallet user={firebaseUser} country={userData.country} onNavigate={navigate} />;
       default: return <Homepage user={userData} onNavigate={navigate} onAddToCart={addToCart} cartCount={cartItems.length} />;
     }
   }
@@ -347,12 +348,12 @@ export default function App() {
       switch (page) {
         case "my-products": return <MyProducts user={firebaseUser} onNavigate={navigate} />;
         case "products": return <MyProducts user={firebaseUser} onNavigate={navigate} />;
-        case "add-product": return <AddProduct user={firebaseUser} sellerStoreName={userData.storeName} onSuccess={() => navigate("my-products")} onNavigate={navigate} />;
-        case "edit-product": return <AddProduct user={firebaseUser} sellerStoreName={userData.storeName} editProductId={pageParam} onSuccess={() => navigate("products")} onNavigate={navigate} />;
+        case "add-product": return <AddProduct user={firebaseUser} sellerStoreName={userData.storeName} sellerCountry={userData.country} onSuccess={() => navigate("my-products")} onNavigate={navigate} />;
+        case "edit-product": return <AddProduct user={firebaseUser} sellerStoreName={userData.storeName} sellerCountry={userData.country} editProductId={pageParam} onSuccess={() => navigate("products")} onNavigate={navigate} />;
         case "incoming-orders": return <IncomingOrders user={firebaseUser} onNavigate={navigate} />;
         case "orders": return <IncomingOrders user={firebaseUser} onNavigate={navigate} />;
-        case "seller-wallet": return <SellerWallet user={firebaseUser} onNavigate={navigate} />;
-        case "wallet": return <SellerWallet user={firebaseUser} onNavigate={navigate} />;
+        case "seller-wallet": return <SellerWallet user={firebaseUser} country={userData.country} onNavigate={navigate} />;
+        case "wallet": return <SellerWallet user={firebaseUser} country={userData.country} onNavigate={navigate} />;
         case "points-boost": return <PointsAndBoost user={firebaseUser} onNavigate={navigate} />;
         case "store-settings": return <StoreSettings user={firebaseUser} onNavigate={navigate} />;
         case "settings": return <StoreSettings user={firebaseUser} onNavigate={navigate} />;
@@ -383,9 +384,9 @@ export default function App() {
     }
     switch (page) {
       case "seller-tags": return <SellerTags user={firebaseUser} onNavigate={navigate} />;
-      case "wallet": return <AgentWallet user={firebaseUser} onNavigate={navigate} />;
+      case "wallet": return <AgentWallet user={firebaseUser} country={userData.country} onNavigate={navigate} />;
       case "leaderboard": return <Leaderboard user={firebaseUser} onNavigate={navigate} />;
-      default: return <AgentDashboard user={firebaseUser} onNavigate={navigate} />;
+      default: return <AgentDashboard user={firebaseUser} country={userData.country} onNavigate={navigate} />;
     }
   }
 
