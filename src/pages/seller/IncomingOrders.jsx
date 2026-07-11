@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import { formatPrice } from "../../utils/countries";
 import "../../styles/theme.css";
 
 const COURIERS = ["TCS", "Leopards", "M&P", "Pakistan Post", "Trax", "Swyft", "BlueEx", "Other"];
@@ -169,7 +170,7 @@ export default function IncomingOrders({ user, onNavigate }) {
                   </div>
                 </div>
 
-                <div style={s.orderTotal}>Rs {(o.grandTotal || 0).toLocaleString()}</div>
+                <div style={s.orderTotal}>{formatPrice(o.grandTotal || 0, o.country)}</div>
 
                 {/* Items preview */}
                 <div style={s.itemsPreview}>
@@ -246,18 +247,18 @@ export default function IncomingOrders({ user, onNavigate }) {
                       {item.size && <div style={s.itemMeta}>Size: {item.size}</div>}
                       <div style={s.itemMeta}>Qty: {item.qty}</div>
                     </div>
-                    <div style={s.itemPrice}>Rs {(item.price * item.qty).toLocaleString()}</div>
+                    <div style={s.itemPrice}>{formatPrice(item.price * item.qty, viewOrder.country)}</div>
                   </div>
                 ))}
               </Section>
 
               {/* Price Summary */}
               <Section title="💰 Price Summary">
-                <InfoRow label="Subtotal" value={`Rs ${(viewOrder.subtotal || 0).toLocaleString()}`} />
-                <InfoRow label="Shipping" value={`Rs ${(viewOrder.shippingCharge || 0).toLocaleString()}`} />
+                <InfoRow label="Subtotal" value={formatPrice(viewOrder.subtotal || 0, viewOrder.country)} />
+                <InfoRow label="Shipping" value={formatPrice(viewOrder.shippingCharge || 0, viewOrder.country)} />
                 <div style={s.grandTotalRow}>
                   <span>Grand Total</span>
-                  <span>Rs {(viewOrder.grandTotal || 0).toLocaleString()}</span>
+                  <span>{formatPrice(viewOrder.grandTotal || 0, viewOrder.country)}</span>
                 </div>
               </Section>
 

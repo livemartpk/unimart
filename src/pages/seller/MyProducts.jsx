@@ -6,6 +6,7 @@
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import { formatPrice } from "../../utils/countries";
 import "../../styles/theme.css";
 
 export default function MyProducts({ user, onNavigate }) {
@@ -84,7 +85,7 @@ export default function MyProducts({ user, onNavigate }) {
               </div>
               <div style={styles.productInfo}>
                 <div style={styles.productName}>{p.name}</div>
-                <div style={styles.productPrice}>Rs {Number(p.price).toLocaleString()}</div>
+                <div style={styles.productPrice}>{formatPrice(Number(p.price), p.country)}</div>
                 <div style={{ ...styles.stockBadge, ...((p.stock || 0) <= 5 ? styles.stockLow : {}) }}>
                   Stock: {p.stock || 0}
                 </div>
@@ -125,7 +126,7 @@ export default function MyProducts({ user, onNavigate }) {
             {/* Details */}
             <div style={styles.modalBody}>
               <div style={styles.modalProductName}>{viewProduct.name}</div>
-              <div style={styles.modalPrice}>Rs {Number(viewProduct.price).toLocaleString()}</div>
+              <div style={styles.modalPrice}>{formatPrice(Number(viewProduct.price), viewProduct.country)}</div>
 
               <div style={styles.detailGrid}>
                 <DetailItem label="Category" value={viewProduct.category} />

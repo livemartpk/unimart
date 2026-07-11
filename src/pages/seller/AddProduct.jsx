@@ -8,7 +8,7 @@ import { db } from "../../config/firebase";
 import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
 
-export default function AddProduct({ user, sellerStoreName, editProductId, onSuccess, onNavigate }) {
+export default function AddProduct({ user, sellerStoreName, sellerCountry, editProductId, onSuccess, onNavigate }) {
   const isEditMode = !!editProductId;
   const [form, setForm] = useState({
     name: "", category: "", price: "", mrp: "", stock: "",
@@ -163,6 +163,7 @@ export default function AddProduct({ user, sellerStoreName, editProductId, onSuc
           ...productData,
           sellerId: user.uid,
           sellerName: sellerStoreName || "Store",
+          country: sellerCountry || "Pakistan",
           status: "active",
           rating: 0,
           reviewCount: 0,

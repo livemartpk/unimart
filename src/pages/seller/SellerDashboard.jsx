@@ -7,6 +7,7 @@ import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, lim
 import { db } from "../../config/firebase";
 import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
+import { formatPrice } from "../../utils/countries";
 
 export default function SellerDashboard({ user, onNavigate }) {
   const [seller, setSeller] = useState(null);
@@ -108,7 +109,7 @@ export default function SellerDashboard({ user, onNavigate }) {
         <div style={styles.statsGrid}>
           <StatCard label="Total Products" value={stats.totalProducts} />
           <StatCard label="Total Orders" value={stats.totalOrders} />
-          <StatCard label="This Month Sales" value={`Rs ${stats.monthSales.toLocaleString()}`} />
+          <StatCard label="This Month Sales" value={formatPrice(stats.monthSales, seller?.country)} />
           <StatCard label="Store Rating" value={`⭐ ${seller?.rating || "New"}`} />
         </div>
 
@@ -116,11 +117,11 @@ export default function SellerDashboard({ user, onNavigate }) {
         <div style={styles.walletRow}>
           <div style={styles.walletCard}>
             <div style={styles.walletLabel}>Total Balance</div>
-            <div style={styles.walletValue}>Rs {(wallet?.totalBalance || 0).toLocaleString()}</div>
+            <div style={styles.walletValue}>{formatPrice(wallet?.totalBalance || 0, seller?.country)}</div>
           </div>
           <div style={styles.walletCard}>
             <div style={styles.walletLabel}>Available Balance</div>
-            <div style={styles.walletValue}>Rs {(wallet?.availableBalance || 0).toLocaleString()}</div>
+            <div style={styles.walletValue}>{formatPrice(wallet?.availableBalance || 0, seller?.country)}</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
@@ -165,7 +166,7 @@ export default function SellerDashboard({ user, onNavigate }) {
                 <div style={styles.orderBuyer}>{o.buyerName || "Buyer"}</div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={styles.orderAmount}>Rs {o.grandTotal || 0}</div>
+                <div style={styles.orderAmount}>{formatPrice(o.grandTotal || 0, seller?.country)}</div>
                 <div style={styles.orderStatus}>{o.status}</div>
               </div>
             </div>
