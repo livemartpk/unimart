@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../config/firebase";
+import { formatPrice } from "../../../utils/countries";
 import "../../../styles/theme.css";
 
 export default function ProductReviews({ user }) {
@@ -67,7 +68,7 @@ export default function ProductReviews({ user }) {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={s.cardName}>{p.name}</div>
-                <div style={s.cardMeta}>{p.sellerName} · Rs {p.price}</div>
+                <div style={s.cardMeta}>{p.sellerName} · {formatPrice(p.price, p.country)}</div>
               </div>
               <div style={s.viewBtn} onClick={() => setSelected(p)}>View</div>
             </div>
@@ -81,7 +82,7 @@ export default function ProductReviews({ user }) {
             <div style={s.modalTitle}>Product Detail</div>
             {selected.images?.[0] && <img src={selected.images[0]} alt={selected.name} style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 12, marginBottom: 14 }} />}
             <DetailRow label="Product Name" value={selected.name} />
-            <DetailRow label="Price" value={`Rs ${selected.price}`} />
+            <DetailRow label="Price" value={formatPrice(selected.price, selected.country)} />
             <DetailRow label="Seller" value={selected.sellerName} />
             <DetailRow label="Category" value={selected.category} />
             <DetailRow label="Description" value={selected.description} />
