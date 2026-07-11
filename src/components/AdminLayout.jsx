@@ -6,10 +6,11 @@
 //   with overlay (same as RHS admin dashboard)
 // ============================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut } from "firebase/auth";
-import { auth } from "../config/firebase";
-import { COUNTRIES } from "../utils/countries";
+import { collection, getDocs } from "firebase/firestore";
+import { auth, db } from "../config/firebase";
+import { COUNTRIES, getFlagUrl } from "../utils/countries";
 import { AdminCountryProvider, useAdminCountry } from "../context/AdminCountryContext";
 import "../styles/theme.css";
 
@@ -83,8 +84,32 @@ export default function AdminLayout(props) {
 function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { country, setCountry } = useAdminCountry();
+  const [activeCountryList, setActiveCountryList] = useState([]);
+  const [showCountryModal, setShowCountryModal] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
   const items = SIDEBAR_ITEMS[role] || [];
   const roleLabel = ROLE_LABELS[role] || "Admin";
+
+  useEffect(() => {
+    const loadActiveCountries = async () => {
+      try {
+        const snap = await getDocs(collection(db, "activeCountries"));
+        const activeCodes = new Set(snap.docs.filter((d) => d.data().active === true).map((d) => d.id));
+        setActiveCountryList(COUNTRIES.filter((c) => activeCodes.has(c.code)));
+      } catch (err) {
+        console.error("Failed to load active countries:", err);
+      }
+    };
+    loadActiveCountries();
+  }, []);
+
+  const selectedCountryData = COUNTRIES.find((c) => c.name === country);
+
+  const handleSelectCountry = (name) => {
+    setCountry(name);
+    setShowCountryModal(false);
+    setCountrySearch("");
+  };
 
   const handleLogout = async () => {
     try { await signOut(auth); } catch (err) { console.error("Logout failed:", err); }
@@ -161,16 +186,17 @@ function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
             {items.find(i => i.key === currentPage)?.label || roleLabel}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <select
-              style={{ ...s.adminChip, ...( !country ? s.countrySelectorEmpty : {}), border: "1px solid #BFE3CC", cursor: "pointer", fontFamily: "inherit" }}
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
+            <div
+              style={{ ...s.adminChip, ...(!country ? s.countrySelectorEmpty : {}), cursor: "pointer" }}
+              onClick={() => setShowCountryModal(true)}
             >
-              <option value="">🌍 Select country</option>
-              {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.name}>{c.name}</option>
-              ))}
-            </select>
+              {country && selectedCountryData ? (
+                <>
+                  <img src={getFlagUrl(selectedCountryData.code, 40)} alt="" style={s.flagIconSmall} />
+                  {country}
+                </>
+              ) : "🌍 Select country"}
+            </div>
             <div style={s.adminChip}>
               <span>👤</span> {roleLabel}
             </div>
@@ -187,6 +213,39 @@ function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
         </div>
 
       </div>
+
+      {/* ===== Country Picker Modal (only Active countries) ===== */}
+      {showCountryModal && (
+        <div style={s.countryModalOverlay} onClick={() => setShowCountryModal(false)}>
+          <div style={s.countryModal} onClick={(e) => e.stopPropagation()}>
+            <div style={s.countryModalTitle}>Select country</div>
+            <input
+              className="input-field"
+              style={{ marginBottom: 12 }}
+              placeholder="Search countries..."
+              value={countrySearch}
+              onChange={(e) => setCountrySearch(e.target.value)}
+              autoFocus
+            />
+            <div style={s.countryModalList}>
+              {activeCountryList
+                .filter((c) => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
+                .map((c) => (
+                  <div key={c.code} style={s.countryModalRow} onClick={() => handleSelectCountry(c.name)}>
+                    <img src={getFlagUrl(c.code, 40)} alt="" style={s.flagIconModal} />
+                    <span>{c.name}</span>
+                  </div>
+                ))}
+              {activeCountryList.length === 0 && (
+                <p style={{ fontSize: 12.5, color: "#888", textAlign: "center", padding: 20 }}>
+                  No countries are active yet — turn some on in Countries management.
+                </p>
+              )}
+            </div>
+            <div style={s.countryModalClose} onClick={() => setShowCountryModal(false)}>Close</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -320,6 +379,15 @@ const s = {
   countrySelectorEmpty: {
     background: "#FCEAEA", color: "#C0392B", border: "1px solid #f5c6c6"
   },
+  flagIconSmall: { width: 16, height: 16, borderRadius: "50%", objectFit: "cover", flexShrink: 0 },
+  flagIconModal: { width: 26, height: 26, borderRadius: "50%", objectFit: "cover", flexShrink: 0 },
+
+  countryModalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 400, display: "flex", alignItems: "flex-end", justifyContent: "center" },
+  countryModal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 22, width: "100%", maxWidth: 480, maxHeight: "75vh", display: "flex", flexDirection: "column" },
+  countryModalTitle: { fontSize: 17, fontFamily: "Georgia, serif", color: "#0B3D2E", fontWeight: 700, marginBottom: 14 },
+  countryModalList: { overflowY: "auto", flex: 1 },
+  countryModalRow: { display: "flex", alignItems: "center", gap: 10, padding: "10px 6px", borderBottom: "1px solid #f0f0f0", cursor: "pointer", fontSize: 13.5, color: "#1a1a1a" },
+  countryModalClose: { textAlign: "center", fontSize: 12.5, color: "#888", cursor: "pointer", padding: "12px 0 0" },
   topbarLogoutBtn: {
     background: "#FCEAEA",
     border: "1px solid #f5c6c6",
