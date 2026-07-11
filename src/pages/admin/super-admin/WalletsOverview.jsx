@@ -1,46 +1,63 @@
 // ============================================
 // UniMart - Wallets Overview (Super Admin)
-// View-only summary of all 5 wallets.
+// View-only summary of all 5 wallets — scoped to
+// whichever country is selected in the AdminLayout
+// dropdown, since different countries use different
+// currencies and can't be added together.
 // ============================================
 
 import { useState, useEffect } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, query, where } from "firebase/firestore";
 import { db } from "../../../config/firebase";
+import { useAdminCountry } from "../../../context/AdminCountryContext";
+import { formatPrice } from "../../../utils/countries";
 import "../../../styles/theme.css";
 
 const WALLET_COLLECTIONS = [
-  { key: "wallets_buyer", label: "Buyer Wallets" },
-  { key: "wallets_seller", label: "Seller Wallets" },
-  { key: "wallets_agent", label: "Agent Wallets" }
+  { key: "wallets_buyer", label: "Buyer Wallets", ownerCollection: "users", roleFilter: "buyer" },
+  { key: "wallets_seller", label: "Seller Wallets", ownerCollection: "sellers" },
+  { key: "wallets_agent", label: "Agent Wallets", ownerCollection: "agents" }
 ];
 
 export default function WalletsOverview() {
+  const { country } = useAdminCountry();
   const [totals, setTotals] = useState({});
   const [websiteTotal, setWebsiteTotal] = useState(0);
   const [taxTotal, setTaxTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!country) return;
     loadWallets();
-  }, []);
+  }, [country]);
 
   const loadWallets = async () => {
     setLoading(true);
     try {
       const newTotals = {};
       for (const w of WALLET_COLLECTIONS) {
+        // Find which owner IDs belong to the selected country
+        let ownerQuery = query(collection(db, w.ownerCollection), where("country", "==", country));
+        if (w.roleFilter) ownerQuery = query(collection(db, w.ownerCollection), where("country", "==", country), where("role", "==", w.roleFilter));
+        const ownerSnap = await getDocs(ownerQuery);
+        const ownerIds = new Set(ownerSnap.docs.map((d) => d.id));
+
         const snap = await getDocs(collection(db, w.key));
-        let total = 0, available = 0, pending = 0;
+        let total = 0, available = 0, pending = 0, count = 0;
         snap.docs.forEach((d) => {
+          if (!ownerIds.has(d.id)) return;
           const data = d.data();
           total += data.totalBalance || 0;
           available += data.availableBalance || 0;
           pending += data.pendingBalance || 0;
+          count++;
         });
-        newTotals[w.key] = { total, available, pending, count: snap.size };
+        newTotals[w.key] = { total, available, pending, count };
       }
       setTotals(newTotals);
 
+      // Website earning & tax wallets are single global docs today ("main") —
+      // shown as-is since they aren't split per-country yet.
       const websiteSnap = await getDocs(collection(db, "wallets_website"));
       setWebsiteTotal(websiteSnap.docs.reduce((sum, d) => sum + (d.data().totalEarning || 0), 0));
 
@@ -53,12 +70,21 @@ export default function WalletsOverview() {
     setLoading(false);
   };
 
+  if (!country) {
+    return (
+      <div className="page-shell" style={styles.page}>
+        <div style={styles.header}><div style={styles.headerTitle}>Wallets Overview</div></div>
+        <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its wallets.</p>
+      </div>
+    );
+  }
+
   if (loading) return <div className="page-shell" style={styles.page}><p style={{ padding: 20 }}>Loading wallets...</p></div>;
 
   return (
     <div className="page-shell" style={styles.page}>
       <div style={styles.header}>
-        <div style={styles.headerTitle}>Wallets Overview</div>
+        <div style={styles.headerTitle}>Wallets Overview — {country}</div>
       </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
@@ -69,32 +95,34 @@ export default function WalletsOverview() {
               <div style={styles.walletCount}>{totals[w.key]?.count || 0} accounts</div>
             </div>
             <div style={styles.balanceRow}>
-              <Balance label="Total" value={totals[w.key]?.total} />
-              <Balance label="Available" value={totals[w.key]?.available} />
-              <Balance label="Pending" value={totals[w.key]?.pending} />
+              <Balance label="Total" value={totals[w.key]?.total} country={country} />
+              <Balance label="Available" value={totals[w.key]?.available} country={country} />
+              <Balance label="Pending" value={totals[w.key]?.pending} country={country} />
             </div>
           </div>
         ))}
 
         <div style={{ ...styles.walletCard, background: "#0B3D2E" }}>
           <div style={{ ...styles.walletLabel, color: "#D4AF37" }}>Website Earning Wallet</div>
-          <div style={{ ...styles.bigValue, color: "#D4AF37" }}>Rs {websiteTotal.toLocaleString()}</div>
+          <div style={{ ...styles.bigValue, color: "#D4AF37" }}>{formatPrice(websiteTotal, country)}</div>
+          <p style={{ fontSize: 10.5, color: "#BFE3CC", marginTop: 4 }}>Global total — not yet split per country</p>
         </div>
 
         <div style={{ ...styles.walletCard, background: "#F0F5F0" }}>
           <div style={{ ...styles.walletLabel, color: "#0B3D2E" }}>Tax Collection Wallet</div>
-          <div style={{ ...styles.bigValue, color: "#0B3D2E" }}>Rs {taxTotal.toLocaleString()}</div>
+          <div style={{ ...styles.bigValue, color: "#0B3D2E" }}>{formatPrice(taxTotal, country)}</div>
+          <p style={{ fontSize: 10.5, color: "#888", marginTop: 4 }}>Global total — not yet split per country</p>
         </div>
       </div>
     </div>
   );
 }
 
-function Balance({ label, value }) {
+function Balance({ label, value, country }) {
   return (
     <div style={styles.balanceItem}>
       <div style={styles.balanceLabel}>{label}</div>
-      <div style={styles.balanceValue}>Rs {(value || 0).toLocaleString()}</div>
+      <div style={styles.balanceValue}>{formatPrice(value || 0, country)}</div>
     </div>
   );
 }
