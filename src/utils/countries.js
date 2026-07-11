@@ -179,3 +179,17 @@ export function getCurrencyForCountry(countryName) {
   const match = COUNTRIES.find((c) => c.name === countryName);
   return match?.currency || "";
 }
+
+export function getFlagEmoji(isoCode) {
+  if (!isoCode || isoCode.length !== 2) return "🌍";
+  const codePoints = [...isoCode.toUpperCase()].map((c) => 0x1f1e6 + (c.charCodeAt(0) - 65));
+  return String.fromCodePoint(...codePoints);
+}
+
+// Format a price with the correct currency code for a given country
+// (e.g. "PKR 500", "SAR 100") — falls back to PKR if country is unknown.
+export function formatPrice(amount, country) {
+  const currency = getCurrencyForCountry(country) || "PKR";
+  const num = typeof amount === "number" ? amount.toLocaleString() : amount;
+  return `${currency} ${num}`;
+}
