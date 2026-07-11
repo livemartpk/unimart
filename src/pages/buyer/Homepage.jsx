@@ -12,7 +12,7 @@ import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
 import { optimizeImage } from "../../utils/optimizeImage";
-import { COUNTRIES, getFlagEmoji, formatPrice } from "../../utils/countries";
+import { COUNTRIES, getFlagUrl, formatPrice } from "../../utils/countries";
 
 export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 }) {
   const [flashSaleProducts, setFlashSaleProducts] = useState([]);
@@ -266,7 +266,16 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
               ) : (
                 <>
                   <div style={styles.countryChip} onClick={() => setShowCountryModal(true)}>
-                    {guestCountry ? `${getFlagEmoji(COUNTRIES.find(c => c.name === guestCountry)?.code)} ${guestCountry}` : "🌍 Select country"}
+                    {guestCountry ? (
+                      <>
+                        <img
+                          src={getFlagUrl(COUNTRIES.find(c => c.name === guestCountry)?.code, 40)}
+                          alt=""
+                          style={styles.flagIconSmall}
+                        />
+                        {guestCountry}
+                      </>
+                    ) : "🌍 Select country"}
                   </div>
                   <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
                     👤 Login
@@ -479,7 +488,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
                 .filter((c) => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
                 .map((c) => (
                   <div key={c.code} style={styles.countryModalRow} onClick={() => handleSelectGuestCountry(c.name)}>
-                    <span style={{ fontSize: 20, marginRight: 10 }}>{getFlagEmoji(c.code)}</span>
+                    <img src={getFlagUrl(c.code, 40)} alt="" style={styles.flagIconModal} />
                     <span>{c.name}</span>
                   </div>
                 ))}
@@ -529,7 +538,9 @@ const styles = {
   logo: { color: "#FBF9F4", fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 900, flexShrink: 0, whiteSpace: "nowrap" },
   topIcons: { display: "flex", gap: 14, alignItems: "center" },
   loginIconBtn: { display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 12.5, padding: "8px 14px", borderRadius: 20, cursor: "pointer" },
-  countryChip: { display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 600, fontSize: 11.5, padding: "8px 12px", borderRadius: 20, cursor: "pointer", whiteSpace: "nowrap" },
+  countryChip: { display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 600, fontSize: 11.5, padding: "8px 12px", borderRadius: 20, cursor: "pointer", whiteSpace: "nowrap" },
+  flagIconSmall: { width: 16, height: 16, borderRadius: "50%", objectFit: "cover", flexShrink: 0 },
+  flagIconModal: { width: 26, height: 26, borderRadius: "50%", objectFit: "cover", marginRight: 10, flexShrink: 0 },
 
   countryModalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 400, display: "flex", alignItems: "flex-end", justifyContent: "center" },
   countryModal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 22, width: "100%", maxWidth: 480, maxHeight: "75vh", display: "flex", flexDirection: "column" },
