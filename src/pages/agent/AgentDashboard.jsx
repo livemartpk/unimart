@@ -7,6 +7,7 @@ import { doc, getDoc, collection, query, where, getDocs } from "firebase/firesto
 import { db } from "../../config/firebase";
 import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
+import { formatPrice } from "../../utils/countries";
 
 const TIER_COLORS = {
   bronze: { bg: "#E8D5C4", text: "#7a4f2a" },
@@ -15,7 +16,7 @@ const TIER_COLORS = {
   platinum: { bg: "#E8F0FF", text: "#2C6E91" }
 };
 
-export default function AgentDashboard({ user, onNavigate }) {
+export default function AgentDashboard({ user, country, onNavigate }) {
   const [agent, setAgent] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [taggedStoresCount, setTaggedStoresCount] = useState(0);
@@ -99,11 +100,11 @@ export default function AgentDashboard({ user, onNavigate }) {
         <div style={styles.walletRow}>
           <div style={styles.walletCard}>
             <div style={styles.walletLabel}>Total Earned</div>
-            <div style={styles.walletValue}>Rs {(wallet?.totalBalance || 0).toLocaleString()}</div>
+            <div style={styles.walletValue}>{formatPrice(wallet?.totalBalance || 0, country)}</div>
           </div>
           <div style={{ ...styles.walletCard, background: "#0B3D2E" }}>
             <div style={{ ...styles.walletLabel, color: "#cfe0d4" }}>Available</div>
-            <div style={{ ...styles.walletValue, color: "#D4AF37" }}>Rs {(wallet?.availableBalance || 0).toLocaleString()}</div>
+            <div style={{ ...styles.walletValue, color: "#D4AF37" }}>{formatPrice(wallet?.availableBalance || 0, country)}</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>

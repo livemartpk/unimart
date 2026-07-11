@@ -6,9 +6,10 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import { formatPrice } from "../../utils/countries";
 import "../../styles/theme.css";
 
-export default function AgentWallet({ user, onNavigate }) {
+export default function AgentWallet({ user, country, onNavigate }) {
   const [wallet, setWallet] = useState(null);
   const [grossLedger, setGrossLedger] = useState([]);
   const [netLedger, setNetLedger] = useState([]);
@@ -81,11 +82,11 @@ export default function AgentWallet({ user, onNavigate }) {
         <div style={styles.balanceRow}>
           <div style={styles.balanceCard}>
             <div style={styles.balanceLabel}>Total Earned</div>
-            <div style={styles.balanceValue}>Rs {(wallet?.totalBalance || 0).toLocaleString()}</div>
+            <div style={styles.balanceValue}>{formatPrice(wallet?.totalBalance || 0, country)}</div>
           </div>
           <div style={{ ...styles.balanceCard, background: "#0B3D2E" }}>
             <div style={{ ...styles.balanceLabel, color: "#cfe0d4" }}>Available</div>
-            <div style={{ ...styles.balanceValue, color: "#D4AF37" }}>Rs {(wallet?.availableBalance || 0).toLocaleString()}</div>
+            <div style={{ ...styles.balanceValue, color: "#D4AF37" }}>{formatPrice(wallet?.availableBalance || 0, country)}</div>
           </div>
         </div>
 
@@ -118,7 +119,7 @@ export default function AgentWallet({ user, onNavigate }) {
                 <div style={styles.ledgerDate}>{entry.createdAt?.toDate ? entry.createdAt.toDate().toLocaleDateString() : "—"}</div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={styles.ledgerAmount}>Rs {entry.amount}</div>
+                <div style={styles.ledgerAmount}>{formatPrice(entry.amount, country)}</div>
                 {entry.status && (
                   <div style={{ ...styles.ledgerStatus, color: entry.status === "paid" ? "#2E7D32" : "#D4AF37" }}>{entry.status}</div>
                 )}
