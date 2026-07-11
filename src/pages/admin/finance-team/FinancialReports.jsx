@@ -3,22 +3,26 @@
 // ============================================
 
 import { useState, useEffect } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../../config/firebase";
+import { useAdminCountry } from "../../../context/AdminCountryContext";
+import { formatPrice } from "../../../utils/countries";
 import "../../../styles/theme.css";
 
 export default function FinancialReports() {
+  const { country } = useAdminCountry();
   const [report, setReport] = useState({ thisMonth: 0, lastMonth: 0, taxCollected: 0, totalPayouts: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!country) return;
     loadReport();
-  }, []);
+  }, [country]);
 
   const loadReport = async () => {
     setLoading(true);
     try {
-      const ordersSnap = await getDocs(collection(db, "orders"));
+      const ordersSnap = await getDocs(query(collection(db, "orders"), where("country", "==", country)));
       const orders = ordersSnap.docs.map((d) => d.data());
 
       const now = new Date();
@@ -33,6 +37,7 @@ export default function FinancialReports() {
         .filter((o) => o.createdAt?.toDate && o.createdAt.toDate().getMonth() === lastMonth)
         .reduce((sum, o) => sum + (o.grandTotal || 0), 0);
 
+      // Note: tax wallet is currently a single global total, not split per country yet
       const taxSnap = await getDocs(collection(db, "wallets_tax"));
       const taxCollected = taxSnap.docs.reduce((sum, d) => sum + (d.data().totalCollected || 0), 0);
 
@@ -44,6 +49,15 @@ export default function FinancialReports() {
     setLoading(false);
   };
 
+  if (!country) {
+    return (
+      <div className="page-shell" style={styles.page}>
+        <div style={styles.header}><div style={styles.headerTitle}>Financial Reports</div></div>
+        <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its report.</p>
+      </div>
+    );
+  }
+
   if (loading) return <div className="page-shell" style={styles.page}><p style={{ padding: 20 }}>Loading reports...</p></div>;
 
   const growthPct = report.lastMonth > 0 ? Math.round(((report.thisMonth - report.lastMonth) / report.lastMonth) * 100) : 0;
@@ -51,18 +65,18 @@ export default function FinancialReports() {
   return (
     <div className="page-shell" style={styles.page}>
       <div style={styles.header}>
-        <div style={styles.headerTitle}>Financial Reports</div>
+        <div style={styles.headerTitle}>Financial Reports — {country}</div>
       </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         <div style={styles.compareCard}>
           <div style={styles.compareCol}>
             <div style={styles.compareLabel}>This Month</div>
-            <div style={styles.compareValue}>Rs {report.thisMonth.toLocaleString()}</div>
+            <div style={styles.compareValue}>{formatPrice(report.thisMonth, country)}</div>
           </div>
           <div style={styles.compareCol}>
             <div style={styles.compareLabel}>Last Month</div>
-            <div style={styles.compareValue}>Rs {report.lastMonth.toLocaleString()}</div>
+            <div style={styles.compareValue}>{formatPrice(report.lastMonth, country)}</div>
           </div>
         </div>
         <div style={{ ...styles.growthBadge, color: growthPct >= 0 ? "#2E7D32" : "#C0392B" }}>
@@ -70,8 +84,8 @@ export default function FinancialReports() {
         </div>
 
         <div style={styles.statRow}>
-          <StatCard label="Tax Collected" value={`Rs ${report.taxCollected.toLocaleString()}`} />
-          <StatCard label="Total Payouts" value={`Rs ${report.totalPayouts.toLocaleString()}`} />
+          <StatCard label="Tax Collected (global)" value={formatPrice(report.taxCollected, country)} />
+          <StatCard label="Total Payouts" value={formatPrice(report.totalPayouts, country)} />
         </div>
 
         <button className="btn-secondary" style={{ width: "100%", marginTop: 18 }} onClick={() => alert("Export feature: connect a CSV/PDF generator here.")}>

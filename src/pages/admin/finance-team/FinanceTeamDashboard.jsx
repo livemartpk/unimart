@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../../config/firebase";
+import { useAdminCountry } from "../../../context/AdminCountryContext";
+import { formatPrice } from "../../../utils/countries";
 import "../../../styles/theme.css";
 
 export default function FinanceTeamDashboard({ onNavigate }) {
+  const { country } = useAdminCountry();
   const [stats, setStats] = useState({ pendingWithdrawals: 0, totalOrders: 0, taxCollected: 0, websiteEarnings: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -33,8 +36,8 @@ export default function FinanceTeamDashboard({ onNavigate }) {
         <div style={s.statsGrid}>
           <StatCard icon="💸" label="Pending Withdrawals" value={stats.pendingWithdrawals} color="#C0392B" />
           <StatCard icon="📦" label="Total Orders" value={stats.totalOrders} />
-          <StatCard icon="🏦" label="Tax Collected" value={`Rs ${stats.taxCollected.toLocaleString()}`} color="#8a6d1f" />
-          <StatCard icon="💰" label="Website Earnings" value={`Rs ${stats.websiteEarnings.toLocaleString()}`} color="#2E7D32" />
+          <StatCard icon="🏦" label="Tax Collected (global)" value={formatPrice(stats.taxCollected, country)} color="#8a6d1f" />
+          <StatCard icon="💰" label="Website Earnings (global)" value={formatPrice(stats.websiteEarnings, country)} color="#2E7D32" />
         </div>
 
         <SectionTitle>⏳ Pending Actions</SectionTitle>

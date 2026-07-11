@@ -6,11 +6,14 @@
 // ============================================
 
 import { useState, useEffect } from "react";
-import { collection, query, where, getDocs, doc, updateDoc, increment, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, increment, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../config/firebase";
+import { useAdminCountry } from "../../../context/AdminCountryContext";
+import { formatPrice } from "../../../utils/countries";
 import "../../../styles/theme.css";
 
 export default function WithdrawalRequests({ user }) {
+  const { country } = useAdminCountry();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
@@ -20,14 +23,29 @@ export default function WithdrawalRequests({ user }) {
   const [paymentMethod, setPaymentMethod] = useState("Bank Transfer");
   const [paymentDate, setPaymentDate] = useState("");
 
-  useEffect(() => { loadRequests(); }, []);
+  useEffect(() => {
+    if (!country) return;
+    loadRequests();
+  }, [country]);
 
   const loadRequests = async () => {
     setLoading(true);
     try {
       const q = query(collection(db, "withdrawalRequests"), where("status", "==", "pending"));
       const snap = await getDocs(q);
-      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Attach each requester's country (for filtering + correct currency display)
+      const withCountry = await Promise.all(all.map(async (r) => {
+        try {
+          const uSnap = await getDoc(doc(db, "users", r.userId));
+          return { ...r, country: uSnap.exists() ? uSnap.data().country : null };
+        } catch {
+          return { ...r, country: null };
+        }
+      }));
+
+      setRequests(withCountry.filter((r) => r.country === country));
     } catch (err) { console.error(err); }
     setLoading(false);
   };
@@ -73,7 +91,7 @@ export default function WithdrawalRequests({ user }) {
         paidAt: serverTimestamp(),
         paidBy: user.uid
       });
-      await addDoc(collection(db, "notifications"), { userId: request.userId, type: "withdrawal_status", message: `Your withdrawal of Rs ${request.amount} has been paid via ${paymentMethod} (Ref: ${referenceNo}).`, read: false, createdAt: serverTimestamp() });
+      await addDoc(collection(db, "notifications"), { userId: request.userId, type: "withdrawal_status", message: `Your withdrawal of ${formatPrice(request.amount, request.country)} has been paid via ${paymentMethod} (Ref: ${referenceNo}).`, read: false, createdAt: serverTimestamp() });
       await addDoc(collection(db, "adminLogs"), { adminId: user.uid, adminRole: "finance_team", action: "marked_withdrawal_paid", targetId: request.id, timestamp: serverTimestamp() });
 
       setSelected(null);
@@ -85,10 +103,19 @@ export default function WithdrawalRequests({ user }) {
     setActionLoading(false);
   };
 
+  if (!country) {
+    return (
+      <div style={s.page}>
+        <div style={s.header}><div style={s.headerTitle}>Withdrawal Requests</div></div>
+        <p style={{ ...s.empty, textAlign: "center", paddingTop: 40 }}>🌍 Select a country from the dropdown above to view its requests.</p>
+      </div>
+    );
+  }
+
   return (
     <div style={s.page}>
       <div style={s.header}>
-        <div style={s.headerTitle}>Withdrawal Requests</div>
+        <div style={s.headerTitle}>Withdrawal Requests — {country}</div>
       </div>
 
       <div style={{ padding: "16px 16px 100px" }}>
@@ -97,7 +124,7 @@ export default function WithdrawalRequests({ user }) {
           : requests.map(r => (
             <div key={r.id} style={s.card}>
               <div>
-                <div style={s.cardName}>Rs {r.amount?.toLocaleString()}</div>
+                <div style={s.cardName}>{formatPrice(r.amount, r.country)}</div>
                 <div style={s.cardMeta}>{r.role} · {r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString() : "—"}</div>
               </div>
               <div style={s.viewBtn} onClick={() => openRequest(r)}>View Details</div>
@@ -110,7 +137,7 @@ export default function WithdrawalRequests({ user }) {
         <div style={s.overlay} onClick={() => setSelected(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
             <div style={s.modalTitle}>Withdrawal Request</div>
-            <DetailRow label="Amount" value={`Rs ${selected.amount?.toLocaleString()}`} />
+            <DetailRow label="Amount" value={formatPrice(selected.amount, selected.country)} />
             <DetailRow label="Role" value={selected.role} />
             <DetailRow label="Bank Name" value={selected.bankName} />
             <DetailRow label="Branch" value={selected.branchName} />

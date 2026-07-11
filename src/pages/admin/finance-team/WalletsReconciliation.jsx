@@ -28,6 +28,7 @@ import { db } from "../../../config/firebase";
 import "../../../styles/theme.css";
 
 import { useAdminCountry } from "../../../context/AdminCountryContext";
+import { formatPrice } from "../../../utils/countries";
 
 export default function WalletsReconciliation() {
   const { country } = useAdminCountry();
@@ -344,9 +345,9 @@ export default function WalletsReconciliation() {
                     {busyId === o.id ? "..." : "Credit"}
                   </button>
                 </div>
-                <div style={styles.payoutRow}>Product price: Rs {gross.toLocaleString()} (shipping Rs {shipping.toLocaleString()} not included) · Commission: Rs {commission.toLocaleString()}</div>
-                <div style={styles.payoutRow}>Tax: Rs {tax.toLocaleString()} · Website: Rs {websiteShare.toLocaleString()}{agentShare > 0 && ` · Agent: Rs ${agentShare.toLocaleString()}`}</div>
-                <div style={{ ...styles.payoutRow, fontWeight: 700, color: "#0B3D2E" }}>To Seller's Total Balance: Rs {sellerNet.toLocaleString()}</div>
+                <div style={styles.payoutRow}>Product price: {formatPrice(gross, country)} (shipping {formatPrice(shipping, country)} not included) · Commission: {formatPrice(commission, country)}</div>
+                <div style={styles.payoutRow}>Tax: {formatPrice(tax, country)} · Website: {formatPrice(websiteShare, country)}{agentShare > 0 && ` · Agent: ${formatPrice(agentShare, country)}`}</div>
+                <div style={{ ...styles.payoutRow, fontWeight: 700, color: "#0B3D2E" }}>To Seller's Total Balance: {formatPrice(sellerNet, country)}</div>
               </div>
             );
           })
@@ -376,7 +377,7 @@ export default function WalletsReconciliation() {
                 </button>
               </div>
               <div style={{ ...styles.payoutRow, fontWeight: 700, color: "#0B3D2E" }}>
-                To Available Balance: Rs {(o.payoutSplit?.sellerNet ?? splitFor(o).sellerNet).toLocaleString()}
+                To Available Balance: {formatPrice(o.payoutSplit?.sellerNet ?? splitFor(o).sellerNet, country)}
               </div>
             </div>
           ))
@@ -410,8 +411,8 @@ export default function WalletsReconciliation() {
                   {s.matches ? "✓ Balanced" : "⚠ Mismatch"}
                 </div>
               </div>
-              <div style={styles.row}>Total: Rs {s.total.toLocaleString()}</div>
-              <div style={styles.row}>Available + Pending: Rs {(s.available + s.pending).toLocaleString()}</div>
+              <div style={styles.row}>Total: {formatPrice(s.total, country)}</div>
+              <div style={styles.row}>Available + Pending: {formatPrice(s.available + s.pending, country)}</div>
             </div>
           ))
         )}
