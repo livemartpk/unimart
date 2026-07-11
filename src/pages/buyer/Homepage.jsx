@@ -12,6 +12,7 @@ import { db, auth } from "../../config/firebase";
 import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
 import { optimizeImage } from "../../utils/optimizeImage";
+import { COUNTRIES, getFlagEmoji, formatPrice } from "../../utils/countries";
 
 export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 }) {
   const [flashSaleProducts, setFlashSaleProducts] = useState([]);
@@ -42,10 +43,78 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [guestCountry, setGuestCountry] = useState(() => localStorage.getItem("unimart_guest_country") || "");
+  const [showCountryModal, setShowCountryModal] = useState(false);
+  const [activeCountryList, setActiveCountryList] = useState([]);
+  const [countrySearch, setCountrySearch] = useState("");
 
   useEffect(() => {
     loadHomepageData();
+  }, [guestCountry]);
+
+  // Guest country detection: GPS first, then IP-based, so the homepage can
+  // still filter products by country before the guest ever logs in.
+  useEffect(() => {
+    if (user || guestCountry) return; // logged-in users use their profile; already-detected guests skip this
+
+    const tryIP = async () => {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+        if (data?.country_name) {
+          setGuestCountry(data.country_name);
+          localStorage.setItem("unimart_guest_country", data.country_name);
+        }
+      } catch (err) {
+        console.error("IP-based location detection failed:", err);
+      }
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const { latitude, longitude } = pos.coords;
+            const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+            const data = await res.json();
+            if (data?.countryName) {
+              setGuestCountry(data.countryName);
+              localStorage.setItem("unimart_guest_country", data.countryName);
+            } else {
+              await tryIP();
+            }
+          } catch (err) {
+            await tryIP();
+          }
+        },
+        async () => { await tryIP(); }, // permission denied or GPS failed
+        { timeout: 6000 }
+      );
+    } else {
+      tryIP();
+    }
+  }, [user]);
+
+  // Load the Active countries list for the manual picker modal
+  useEffect(() => {
+    const loadActive = async () => {
+      try {
+        const snap = await getDocs(collection(db, "activeCountries"));
+        const activeCodes = new Set(snap.docs.filter((d) => d.data().active === true).map((d) => d.id));
+        setActiveCountryList(COUNTRIES.filter((c) => activeCodes.has(c.code)));
+      } catch (err) {
+        console.error("Failed to load active countries:", err);
+      }
+    };
+    loadActive();
   }, []);
+
+  const handleSelectGuestCountry = (countryName) => {
+    setGuestCountry(countryName);
+    localStorage.setItem("unimart_guest_country", countryName);
+    setShowCountryModal(false);
+    setCountrySearch("");
+  };
 
   useEffect(() => {
     if (flashBanners.length < 2) return;
@@ -80,7 +149,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
       // Country-matching: buyer only ever sees sellers/products from their own
       // country. Guests default to Pakistan until location auto-detection is
       // built (a later step) — this keeps behavior consistent in the meantime.
-      const buyerCountry = user?.country || "Pakistan";
+      const buyerCountry = user?.country || guestCountry || "Pakistan";
 
       // Flash Sale products
       const flashQuery = query(
@@ -195,9 +264,14 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
                   </div>
                 </>
               ) : (
-                <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
-                  👤 Login
-                </div>
+                <>
+                  <div style={styles.countryChip} onClick={() => setShowCountryModal(true)}>
+                    {guestCountry ? `${getFlagEmoji(COUNTRIES.find(c => c.name === guestCountry)?.code)} ${guestCountry}` : "🌍 Select country"}
+                  </div>
+                  <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
+                    👤 Login
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -318,7 +392,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
                 <div style={styles.flashInfo}>
                   <div style={styles.flashName}>{p.name}</div>
                   <div style={styles.flashPriceRow}>
-                    <span style={styles.flashPrice}>Rs {p.price}</span>
+                    <span style={styles.flashPrice}>{formatPrice(p.price, p.country)}</span>
                     {p.mrp && <span style={styles.flashOld}>{p.mrp}</span>}
                   </div>
                 </div>
@@ -360,7 +434,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
               <div style={styles.pinfo}>
                 <div style={styles.pname}>{p.name}</div>
                 <div style={styles.priceRow}>
-                  <span style={styles.pprice}>Rs {p.price}</span>
+                  <span style={styles.pprice}>{formatPrice(p.price, p.country)}</span>
                   {p.mrp > p.price && <span style={styles.pdiscount}>-{Math.round((1 - p.price / p.mrp) * 100)}%</span>}
                 </div>
                 <div style={styles.pratingRow}>⭐ {p.rating || "New"}</div>
@@ -373,6 +447,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
                       image: p.images?.[0] || null,
                       sellerId: p.sellerId,
                       sellerName: p.sellerName || "Store",
+                      country: p.country,
                       qty: 1
                     });
                     // If guest, redirect to login
@@ -383,6 +458,37 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Manual country picker — for guests, either as override or when auto-detection fails */}
+      {showCountryModal && (
+        <div style={styles.countryModalOverlay} onClick={() => setShowCountryModal(false)}>
+          <div style={styles.countryModal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.countryModalTitle}>Select your country</div>
+            <input
+              className="input-field"
+              style={{ marginBottom: 12 }}
+              placeholder="Search countries..."
+              value={countrySearch}
+              onChange={(e) => setCountrySearch(e.target.value)}
+              autoFocus
+            />
+            <div style={styles.countryModalList}>
+              {activeCountryList
+                .filter((c) => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
+                .map((c) => (
+                  <div key={c.code} style={styles.countryModalRow} onClick={() => handleSelectGuestCountry(c.name)}>
+                    <span style={{ fontSize: 20, marginRight: 10 }}>{getFlagEmoji(c.code)}</span>
+                    <span>{c.name}</span>
+                  </div>
+                ))}
+              {activeCountryList.length === 0 && (
+                <p style={{ fontSize: 12.5, color: "#888", textAlign: "center", padding: 20 }}>No countries available yet.</p>
+              )}
+            </div>
+            <div style={styles.countryModalClose} onClick={() => setShowCountryModal(false)}>Close</div>
+          </div>
         </div>
       )}
     </div>
@@ -423,6 +529,14 @@ const styles = {
   logo: { color: "#FBF9F4", fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 900, flexShrink: 0, whiteSpace: "nowrap" },
   topIcons: { display: "flex", gap: 14, alignItems: "center" },
   loginIconBtn: { display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 12.5, padding: "8px 14px", borderRadius: 20, cursor: "pointer" },
+  countryChip: { display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 600, fontSize: 11.5, padding: "8px 12px", borderRadius: 20, cursor: "pointer", whiteSpace: "nowrap" },
+
+  countryModalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 400, display: "flex", alignItems: "flex-end", justifyContent: "center" },
+  countryModal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 22, width: "100%", maxWidth: 480, maxHeight: "75vh", display: "flex", flexDirection: "column" },
+  countryModalTitle: { fontSize: 17, fontFamily: "Georgia, serif", color: "#0B3D2E", fontWeight: 700, marginBottom: 14 },
+  countryModalList: { overflowY: "auto", flex: 1 },
+  countryModalRow: { display: "flex", alignItems: "center", padding: "10px 6px", borderBottom: "1px solid #f0f0f0", cursor: "pointer", fontSize: 13.5, color: "#1a1a1a" },
+  countryModalClose: { textAlign: "center", fontSize: 12.5, color: "#888", cursor: "pointer", padding: "12px 0 0" },
   logoutIconBtn: { background: "rgba(255,90,90,0.18)", border: "1px solid rgba(255,90,90,0.3)", color: "#fff", fontSize: 15, width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
   cartBadge: { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, background: "#D4AF37", color: "#0B3D2E", borderRadius: 999, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", border: "1.5px solid #0B3D2E" },
   iconBtnWrap: { display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer" },
