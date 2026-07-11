@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import { formatPrice } from "../../utils/countries";
 import "../../styles/theme.css";
 
 const CLOUD_NAME = "eez9oojf";
@@ -320,7 +321,7 @@ export default function MyOrders({ user, onNavigate }) {
                           )
                         )}
                       </div>
-                      <div style={s.itemPrice}>Rs {(item.price * item.qty).toLocaleString()}</div>
+                      <div style={s.itemPrice}>{formatPrice(item.price * item.qty, order.country)}</div>
                     </div>
                   ))}
 
@@ -351,7 +352,7 @@ export default function MyOrders({ user, onNavigate }) {
                   {/* Total */}
                   <div style={s.totalRow}>
                     <span style={{ color: "#888" }}>Grand Total</span>
-                    <span style={{ fontWeight: 800, color: "#0B3D2E" }}>Rs {order.grandTotal?.toLocaleString()}</span>
+                    <span style={{ fontWeight: 800, color: "#0B3D2E" }}>{formatPrice(order.grandTotal, order.country)}</span>
                   </div>
                 </div>
               )}

@@ -9,9 +9,10 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc, collection, query, orderBy, getDocs, addDoc, serverTimestamp, updateDoc, increment } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import { formatPrice } from "../../utils/countries";
 import "../../styles/theme.css";
 
-export default function BuyerWallet({ user, onNavigate }) {
+export default function BuyerWallet({ user, country, onNavigate }) {
   const [wallet, setWallet] = useState({ totalBalance: 0, availableBalance: 0, pendingWithdrawal: 0 });
   const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -114,9 +115,9 @@ export default function BuyerWallet({ user, onNavigate }) {
         {/* Balance cards */}
         <div style={styles.balanceCard}>
           <div style={styles.balanceLabel}>Available Balance</div>
-          <div style={styles.balanceValue}>Rs {wallet.availableBalance || 0}</div>
+          <div style={styles.balanceValue}>{formatPrice(wallet.availableBalance || 0, country)}</div>
           {wallet.pendingWithdrawal > 0 && (
-            <div style={styles.pendingNote}>Rs {wallet.pendingWithdrawal} pending withdrawal</div>
+            <div style={styles.pendingNote}>{formatPrice(wallet.pendingWithdrawal, country)} pending withdrawal</div>
           )}
           <button
             className="btn-gold"
@@ -190,7 +191,7 @@ export default function BuyerWallet({ user, onNavigate }) {
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={styles.ledgerAmount}>
-                  {entry.type === "refund" ? "+" : "-"}Rs {entry.amount}
+                  {entry.type === "refund" ? "+" : "-"}{formatPrice(entry.amount, country)}
                 </div>
                 {entry.status && (
                   <div style={{ ...styles.ledgerStatus, color: entry.status === "paid" ? "#2E7D32" : "#D4AF37" }}>

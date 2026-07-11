@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { collection, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
+import { formatPrice } from "../../utils/countries";
 import "../../styles/theme.css";
 
 const SHIPPING_PER_SELLER = 150;
@@ -36,6 +37,7 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
   );
 
   const subtotal = cartItems.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const checkoutCountry = cartItems[0]?.country || user?.country;
   const totalShipping = groupedBySeller.length * SHIPPING_PER_SELLER;
   const grandTotal = subtotal + totalShipping;
 
@@ -88,7 +90,7 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
         await addDoc(collection(db, "notifications"), {
           userId: group.sellerId,
           type: "order_update",
-          message: `New order received! Order #${orderRef.id.slice(0,8)} — Rs ${sellerSubtotal + SHIPPING_PER_SELLER}`,
+          message: `New order received! Order #${orderRef.id.slice(0,8)} — ${formatPrice(sellerSubtotal + SHIPPING_PER_SELLER, checkoutCountry)}`,
           orderId: orderRef.id,
           read: false,
           createdAt: serverTimestamp()
@@ -227,12 +229,12 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
                   <div style={s.itemName}>{item.name}</div>
                   <div style={s.itemQty}>Qty: {item.qty}</div>
                 </div>
-                <div style={s.itemPrice}>Rs {(item.price * item.qty).toLocaleString()}</div>
+                <div style={s.itemPrice}>{formatPrice(item.price * item.qty, checkoutCountry)}</div>
               </div>
             ))}
             <div style={s.shippingRow}>
               <span style={{ color: "#888", fontSize: 12 }}>Shipping</span>
-              <span style={{ color: "#888", fontSize: 12 }}>Rs {SHIPPING_PER_SELLER}</span>
+              <span style={{ color: "#888", fontSize: 12 }}>{formatPrice(SHIPPING_PER_SELLER, checkoutCountry)}</span>
             </div>
           </div>
         ))}
@@ -253,10 +255,10 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
         {/* ===== Summary ===== */}
         <div style={s.card}>
           <div style={s.cardTitle}>🧾 Order Summary</div>
-          <div style={s.summaryRow}><span>Subtotal</span><span>Rs {subtotal.toLocaleString()}</span></div>
-          <div style={s.summaryRow}><span>Shipping ({groupedBySeller.length} seller{groupedBySeller.length > 1 ? "s" : ""})</span><span>Rs {totalShipping}</span></div>
+          <div style={s.summaryRow}><span>Subtotal</span><span>{formatPrice(subtotal, checkoutCountry)}</span></div>
+          <div style={s.summaryRow}><span>Shipping ({groupedBySeller.length} seller{groupedBySeller.length > 1 ? "s" : ""})</span><span>{formatPrice(totalShipping, checkoutCountry)}</span></div>
           <div style={s.summaryDivider} />
-          <div style={s.summaryTotal}><span>Grand Total</span><span>Rs {grandTotal.toLocaleString()}</span></div>
+          <div style={s.summaryTotal}><span>Grand Total</span><span>{formatPrice(grandTotal, checkoutCountry)}</span></div>
         </div>
 
         {error && <p className="error-text">{error}</p>}
@@ -265,7 +267,7 @@ export default function Checkout({ user, firebaseUser, cartItems = [], onNavigat
       {/* Place Order Button */}
       <div style={s.bottomBar}>
         <button className="btn-primary" style={{ width: "100%", fontSize: 15 }} onClick={handlePlaceOrder} disabled={placing}>
-          {placing ? "Placing order..." : `🛒 Place Order — Rs ${grandTotal.toLocaleString()}`}
+          {placing ? "Placing order..." : `🛒 Place Order — ${formatPrice(grandTotal, checkoutCountry)}`}
         </button>
       </div>
 

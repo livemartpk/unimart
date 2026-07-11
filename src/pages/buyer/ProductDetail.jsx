@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import { doc, getDoc, collection, query, where, limit, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { db, auth } from "../../config/firebase";
+import { formatPrice } from "../../utils/countries";
 import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
 import { optimizeImage } from "../../utils/optimizeImage";
@@ -148,6 +149,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
         image: product.images?.[0] || null,
         sellerId: product.sellerId,
         sellerName: seller?.storeName || "Store",
+        country: product.country,
         selectedColor,
         selectedSize,
         qty: 1
@@ -165,6 +167,16 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
     return (
       <div style={styles.centerMsg}>
         <p>This product could not be found.</p>
+        <button className="btn-secondary" onClick={() => onNavigate && onNavigate("home")}>Back to Home</button>
+      </div>
+    );
+  }
+
+  const buyerCountry = user?.country || "Pakistan";
+  if (product.country && buyerCountry !== product.country) {
+    return (
+      <div style={styles.centerMsg}>
+        <p>This product isn't available in your country ({buyerCountry}). It's listed for {product.country}.</p>
         <button className="btn-secondary" onClick={() => onNavigate && onNavigate("home")}>Back to Home</button>
       </div>
     );
@@ -279,8 +291,8 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
         <h1 style={styles.productName}>{product.name}</h1>
 
         <div style={styles.priceRow}>
-          <span style={styles.price}>Rs {product.price}</span>
-          {product.mrp && <span style={styles.mrp}>Rs {product.mrp}</span>}
+          <span style={styles.price}>{formatPrice(product.price, product.country)}</span>
+          {product.mrp && <span style={styles.mrp}>{formatPrice(product.mrp, product.country)}</span>}
           {reviews.length > 0 && (
             <span style={styles.rating}>
               ⭐ {(reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)} ({reviews.length})
@@ -405,7 +417,7 @@ export default function ProductDetail({ productId, user, onNavigate, onAddToCart
                     )}
                   </div>
                   <p style={styles.recName}>{p.name}</p>
-                  <p style={styles.recPrice}>Rs {p.price}</p>
+                  <p style={styles.recPrice}>{formatPrice(p.price, p.country)}</p>
                 </div>
               ))}
             </div>

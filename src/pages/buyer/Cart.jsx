@@ -6,9 +6,10 @@
 // ============================================
 
 import { useState, useMemo } from "react";
+import { formatPrice } from "../../utils/countries";
 import "../../styles/theme.css";
 
-// Each cart item: { productId, name, price, image, sellerId, sellerName, selectedColor, selectedSize, qty }
+// Each cart item: { productId, name, price, image, sellerId, sellerName, country, selectedColor, selectedSize, qty }
 
 export default function Cart({ cartItems = [], onUpdateQty, onRemoveItem, onNavigate, onCheckout }) {
   // Group items by seller
@@ -22,6 +23,10 @@ export default function Cart({ cartItems = [], onUpdateQty, onRemoveItem, onNavi
     });
     return Object.values(groups);
   }, [cartItems]);
+
+  // All cart items are guaranteed to be from the same country (buyers only
+  // ever add same-country products), so one currency applies to the whole cart.
+  const cartCountry = cartItems[0]?.country;
 
   const SHIPPING_PER_SELLER = 150; // placeholder flat rate — real logic comes from seller/location rules later
 
@@ -70,7 +75,7 @@ export default function Cart({ cartItems = [], onUpdateQty, onRemoveItem, onNavi
                       {item.selectedColor}{item.selectedColor && item.selectedSize ? " · " : ""}{item.selectedSize}
                     </div>
                   )}
-                  <div style={styles.itemPrice}>Rs {item.price}</div>
+                  <div style={styles.itemPrice}>{formatPrice(item.price, item.country)}</div>
 
                   <div style={styles.qtyRow}>
                     <div style={styles.qtyControls}>
@@ -86,17 +91,17 @@ export default function Cart({ cartItems = [], onUpdateQty, onRemoveItem, onNavi
 
             <div style={styles.shippingRow}>
               <span>Shipping for this seller</span>
-              <span>Rs {SHIPPING_PER_SELLER}</span>
+              <span>{formatPrice(SHIPPING_PER_SELLER, cartCountry)}</span>
             </div>
           </div>
         ))}
 
         {/* Order summary */}
         <div style={styles.summaryCard}>
-          <div style={styles.summaryRow}><span>Subtotal</span><span>Rs {subtotal}</span></div>
-          <div style={styles.summaryRow}><span>Shipping ({groupedBySeller.length} seller{groupedBySeller.length > 1 ? "s" : ""})</span><span>Rs {totalShipping}</span></div>
+          <div style={styles.summaryRow}><span>Subtotal</span><span>{formatPrice(subtotal, cartCountry)}</span></div>
+          <div style={styles.summaryRow}><span>Shipping ({groupedBySeller.length} seller{groupedBySeller.length > 1 ? "s" : ""})</span><span>{formatPrice(totalShipping, cartCountry)}</span></div>
           <div style={styles.summaryDivider} />
-          <div style={styles.summaryTotal}><span>Total</span><span>Rs {grandTotal}</span></div>
+          <div style={styles.summaryTotal}><span>Total</span><span>{formatPrice(grandTotal, cartCountry)}</span></div>
         </div>
       </div>
 
@@ -105,7 +110,7 @@ export default function Cart({ cartItems = [], onUpdateQty, onRemoveItem, onNavi
         <div style={styles.bottomBarInner}>
           <div>
             <div style={styles.bottomTotalLabel}>Total</div>
-            <div style={styles.bottomTotalValue}>Rs {grandTotal}</div>
+            <div style={styles.bottomTotalValue}>{formatPrice(grandTotal, cartCountry)}</div>
           </div>
           <button className="btn-primary" style={{ flex: 1, marginLeft: 16 }} onClick={() => onCheckout && onCheckout({ groupedBySeller, subtotal, totalShipping, grandTotal })}>
             Checkout
