@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../config/firebase";
+import { formatPrice } from "../../../utils/countries";
 import "../../../styles/theme.css";
 
 export default function NewSellerProductReview({ user }) {
@@ -62,7 +63,7 @@ export default function NewSellerProductReview({ user }) {
               <div style={styles.productImg}>{p.images?.[0] ? <img src={p.images[0]} alt={p.name} style={styles.imgFit} /> : "🛍️"}</div>
               <div style={{ flex: 1 }}>
                 <div style={styles.productName}>{p.name}</div>
-                <div style={styles.productMeta}>{p.sellerName} · Rs {p.price}</div>
+                <div style={styles.productMeta}>{p.sellerName} · {formatPrice(p.price, p.country)}</div>
                 <div style={styles.actionsRow}>
                   <button className="btn-secondary" style={styles.smallBtn} onClick={() => handleReject(p.id)}>Reject</button>
                   <button className="btn-primary" style={styles.smallBtn} onClick={() => handleApprove(p.id)}>Approve</button>
