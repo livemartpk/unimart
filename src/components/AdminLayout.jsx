@@ -172,7 +172,7 @@ function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
       {/* ===== Main Content ===== */}
       <div className="admin-main-content" style={s.mainContent}>
 
-        {/* Topbar (mobile + desktop) */}
+        {/* Topbar — same dark green as page headers, no white strip */}
         <div style={s.topbar}>
           {/* Hamburger — mobile only */}
           <button
@@ -182,9 +182,7 @@ function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
           >
             ☰
           </button>
-          <div style={s.pageTitle}>
-            {items.find(i => i.key === currentPage)?.label || roleLabel}
-          </div>
+          <div style={{ flex: 1 }} />
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div
               style={{ ...s.adminChip, ...(!country ? s.countrySelectorEmpty : {}), cursor: "pointer" }}
@@ -346,13 +344,12 @@ const s = {
   },
 
   topbar: {
-    background: "#fff",
-    padding: "0 24px",
-    height: 62,
+    background: "#0B3D2E",
+    padding: "10px 16px",
+    minHeight: 46,
     display: "flex",
     alignItems: "center",
     gap: 16,
-    borderBottom: "1px solid #E7DFD2",
     position: "sticky",
     top: 0,
     zIndex: 40
@@ -360,7 +357,7 @@ const s = {
   menuToggle: {
     background: "none", border: "none",
     fontSize: 20, cursor: "pointer",
-    color: "#1F2E2B", display: "none"
+    color: "#fff", display: "none"
   },
   pageTitle: {
     fontFamily: "Georgia, serif",
@@ -370,11 +367,12 @@ const s = {
     fontWeight: 700
   },
   adminChip: {
-    background: "#EEF8F1", color: "#1F7A45",
-    border: "1px solid #BFE3CC",
+    background: "rgba(255,255,255,0.15)", color: "#fff",
+    border: "1px solid rgba(255,255,255,0.2)",
     padding: "6px 14px", borderRadius: 999,
-    fontSize: 13, fontWeight: 600,
-    display: "flex", alignItems: "center", gap: 7
+    fontSize: 12.5, fontWeight: 600,
+    display: "flex", alignItems: "center", gap: 7,
+    whiteSpace: "nowrap"
   },
   countrySelectorEmpty: {
     background: "#FCEAEA", color: "#C0392B", border: "1px solid #f5c6c6"
@@ -389,13 +387,13 @@ const s = {
   countryModalRow: { display: "flex", alignItems: "center", gap: 10, padding: "10px 6px", borderBottom: "1px solid #f0f0f0", cursor: "pointer", fontSize: 13.5, color: "#1a1a1a" },
   countryModalClose: { textAlign: "center", fontSize: 12.5, color: "#888", cursor: "pointer", padding: "12px 0 0" },
   topbarLogoutBtn: {
-    background: "#FCEAEA",
-    border: "1px solid #f5c6c6",
+    background: "rgba(255,255,255,0.15)",
+    border: "1px solid rgba(255,255,255,0.2)",
     borderRadius: 10,
     padding: "8px 12px",
     fontSize: 16,
     cursor: "pointer",
-    color: "#C0392B",
+    color: "#fff",
     fontFamily: "inherit",
     display: "flex",
     alignItems: "center"
