@@ -53,10 +53,6 @@ export default function ProductReviews({ user }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.headerTitle}>Product Reviews</div>
-        <div style={s.headerSub}>First-batch products from new sellers</div>
-      </div>
 
       <div style={{ padding: "16px 16px 100px" }}>
         {loading ? <p style={s.empty}>Loading...</p>

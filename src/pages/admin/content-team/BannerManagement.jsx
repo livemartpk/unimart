@@ -52,12 +52,10 @@ export default function BannerManagement({ user }) {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Banner Management</div>
-        <div style={styles.addBtn} onClick={() => setShowAddModal(true)}>+ New Banner</div>
-      </div>
-
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+          <div style={styles.addBtn} onClick={() => setShowAddModal(true)}>+ New Banner</div>
+        </div>
         {loading ? (
           <p style={styles.emptyText}>Loading banners...</p>
         ) : banners.length === 0 ? (

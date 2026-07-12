@@ -35,10 +35,6 @@ export default function ContentTeamDashboard({ onNavigate }) {
   if (!country) {
     return (
       <div style={s.page}>
-        <div style={s.header}>
-          <div style={s.title}>Content Team</div>
-          <div style={s.sub}>Content Moderation Overview</div>
-        </div>
         <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its data.</p>
       </div>
     );
@@ -46,10 +42,6 @@ export default function ContentTeamDashboard({ onNavigate }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.title}>Content Team</div>
-        <div style={s.sub}>Content Moderation Overview — {country}</div>
-      </div>
       <div style={s.body}>
         <div style={s.statsGrid}>
           <StatCard icon="📦" label="Pending Reviews" value={stats.pendingReviews} color="#8a6d1f" />
