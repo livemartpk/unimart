@@ -33,9 +33,6 @@ export default function ReferralFraudMonitor() {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Referral Fraud Monitor</div>
-      </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         <div style={styles.infoNote}>

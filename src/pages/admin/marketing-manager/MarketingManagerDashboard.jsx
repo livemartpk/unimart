@@ -35,10 +35,6 @@ export default function MarketingManagerDashboard({ onNavigate }) {
   if (!country) {
     return (
       <div style={s.page}>
-        <div style={s.header}>
-          <div style={s.title}>Marketing Manager</div>
-          <div style={s.sub}>Agent Network Overview</div>
-        </div>
         <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its data.</p>
       </div>
     );
@@ -46,10 +42,6 @@ export default function MarketingManagerDashboard({ onNavigate }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.title}>Marketing Manager</div>
-        <div style={s.sub}>Agent Network Overview — {country}</div>
-      </div>
       <div style={s.body}>
         <div style={s.statsGrid}>
           <StatCard icon="🤝" label="Total Agents" value={stats.total} />

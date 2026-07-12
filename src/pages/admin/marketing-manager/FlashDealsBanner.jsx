@@ -116,12 +116,10 @@ export default function FlashDealsBanner({ user }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.headerTitle}>Flash Deals Banners</div>
-        <div style={s.addBtn} onClick={openAdd}>+ Add</div>
-      </div>
-
       <div style={{ padding: 16, paddingBottom: 60 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+          <div style={s.addBtn} onClick={openAdd}>+ Add</div>
+        </div>
         <p style={s.helper}>
           Every banner here becomes a slide in the homepage's Flash Deals slideshow (auto-rotating).
           Add as many as you like — any image size or shape works, it's automatically cropped to fit.

@@ -58,9 +58,6 @@ export default function AgentManagement({ user }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.headerTitle}>Agent Management</div>
-      </div>
 
       {/* Tabs */}
       <div style={s.tabRow}>
