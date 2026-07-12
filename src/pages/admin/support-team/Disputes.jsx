@@ -47,9 +47,6 @@ export default function Disputes({ user }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.headerTitle}>Disputes</div>
-      </div>
 
       <div style={s.tabRow}>
         {["open", "resolved_buyer", "resolved_seller"].map(t => (

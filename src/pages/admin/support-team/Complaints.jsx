@@ -37,9 +37,6 @@ export default function Complaints({ user }) {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Complaints</div>
-      </div>
 
       <div style={styles.tabRow}>
         <Tab label="Open" active={tab === "open"} onClick={() => setTab("open")} />

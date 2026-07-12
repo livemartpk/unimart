@@ -41,9 +41,6 @@ export default function ReturnRefundTracker() {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Return / Refund Tracker</div>
-      </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         {loading ? (

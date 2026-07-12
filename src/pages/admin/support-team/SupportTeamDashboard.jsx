@@ -33,10 +33,6 @@ export default function SupportTeamDashboard({ onNavigate }) {
   if (!country) {
     return (
       <div style={s.page}>
-        <div style={s.header}>
-          <div style={s.title}>Support Team</div>
-          <div style={s.sub}>Customer Support Overview</div>
-        </div>
         <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its data.</p>
       </div>
     );
@@ -44,10 +40,6 @@ export default function SupportTeamDashboard({ onNavigate }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.title}>Support Team</div>
-        <div style={s.sub}>Customer Support Overview — {country}</div>
-      </div>
       <div style={s.body}>
         <div style={s.statsGrid}>
           <StatCard icon="⚔️" label="Open Disputes" value={stats.openDisputes} color="#C0392B" />
