@@ -172,7 +172,7 @@ function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
       {/* ===== Main Content ===== */}
       <div className="admin-main-content" style={s.mainContent}>
 
-        {/* Topbar — same dark green as page headers, no white strip */}
+        {/* Topbar — fixed in place (flex layout keeps it out of the scroll area), one line: title + icons */}
         <div style={s.topbar}>
           {/* Hamburger — mobile only */}
           <button
@@ -182,8 +182,10 @@ function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
           >
             ☰
           </button>
-          <div style={{ flex: 1 }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={s.pageTitle}>
+            {items.find(i => i.key === currentPage)?.label || roleLabel}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
             <div
               style={{ ...s.adminChip, ...(!country ? s.countrySelectorEmpty : {}), cursor: "pointer" }}
               onClick={() => setShowCountryModal(true)}
@@ -194,9 +196,6 @@ function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
                   {country}
                 </>
               ) : "🌍 Select country"}
-            </div>
-            <div style={s.adminChip}>
-              <span>👤</span> {roleLabel}
             </div>
             {/* Logout button — visible on both mobile and desktop */}
             <button style={s.topbarLogoutBtn} onClick={handleLogout} title="Logout">
@@ -256,9 +255,13 @@ const s = {
     fontFamily: "var(--font-body)"
   },
   brand: {
-    padding: "20px 18px",
+    padding: "0 18px",
+    height: 64,
     borderBottom: "1px solid rgba(255,255,255,0.12)",
-    flexShrink: 0
+    flexShrink: 0,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center"
   },
   logo: {
     fontFamily: "Georgia, serif",
@@ -345,7 +348,8 @@ const s = {
 
   topbar: {
     background: "#0B3D2E",
-    padding: "20px 18px",
+    padding: "0 18px",
+    height: 64,
     display: "flex",
     alignItems: "center",
     gap: 16,
@@ -358,10 +362,13 @@ const s = {
   },
   pageTitle: {
     fontFamily: "Georgia, serif",
-    fontSize: 18,
-    color: "#0B3D2E",
+    fontSize: 15,
+    color: "#fff",
     flex: 1,
-    fontWeight: 700
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis"
   },
   adminChip: {
     background: "rgba(255,255,255,0.15)", color: "#fff",
