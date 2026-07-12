@@ -80,14 +80,12 @@ export default function SellerLayout({ currentPage, onNavigate, storeName, child
       {/* ===== Main Content ===== */}
       <div className="admin-main-content" style={s.mainContent}>
 
-        {/* Topbar */}
+        {/* Topbar — same dark green as page headers, so there's no white strip */}
         <div style={s.topbar}>
           <button className="admin-menu-toggle" style={s.menuToggle} onClick={() => setSidebarOpen(!sidebarOpen)}>
             ☰
           </button>
-          <div style={s.pageTitle}>
-            {SIDEBAR_ITEMS.find(i => i.key === currentPage)?.label || "Seller Dashboard"}
-          </div>
+          <div style={{ flex: 1 }} />
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={s.sellerChip}>
               🏪 {storeName || "My Store"}
@@ -122,9 +120,8 @@ const s = {
   logoutBtn: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(255,80,80,0.13)", border: "1px solid rgba(255,100,100,0.2)", color: "rgba(255,180,180,0.9)", fontSize: 13.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", width: "100%" },
   overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 99 },
   mainContent: { marginLeft: 240, flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh", width: "calc(100% - 240px)", overflowX: "hidden" },
-  topbar: { background: "#fff", padding: "0 24px", height: 62, display: "flex", alignItems: "center", gap: 16, borderBottom: "1px solid #E7DFD2", position: "sticky", top: 0, zIndex: 40 },
-  menuToggle: { background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#1F2E2B", display: "none" },
-  pageTitle: { fontFamily: "Georgia, serif", fontSize: 18, color: "#0B3D2E", flex: 1, fontWeight: 700 },
-  sellerChip: { background: "#EEF8F1", color: "#1F7A45", border: "1px solid #BFE3CC", padding: "6px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600 },
-  topbarLogoutBtn: { background: "#FCEAEA", border: "1px solid #f5c6c6", borderRadius: 10, padding: "8px 12px", fontSize: 16, cursor: "pointer", color: "#C0392B", fontFamily: "inherit" }
+  topbar: { background: "#0B3D2E", padding: "10px 16px", minHeight: 46, display: "flex", alignItems: "center", gap: 16, position: "sticky", top: 0, zIndex: 40 },
+  menuToggle: { background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#fff", display: "none" },
+  sellerChip: { background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", padding: "6px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap" },
+  topbarLogoutBtn: { background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 10, padding: "8px 12px", fontSize: 16, cursor: "pointer", color: "#fff", fontFamily: "inherit" }
 };
