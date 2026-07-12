@@ -43,7 +43,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [guestCountry, setGuestCountry] = useState(() => localStorage.getItem("unimart_guest_country") || "");
+  const [guestCountry, setGuestCountry] = useState("");
   const [showCountryModal, setShowCountryModal] = useState(false);
   const [activeCountryList, setActiveCountryList] = useState([]);
   const [countrySearch, setCountrySearch] = useState("");
@@ -55,7 +55,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   // Guest country detection: GPS first, then IP-based, so the homepage can
   // still filter products by country before the guest ever logs in.
   useEffect(() => {
-    if (user || guestCountry) return; // logged-in users use their profile; already-detected guests skip this
+    if (user) return; // logged-in users use their profile's country, not location detection
 
     const tryIP = async () => {
       try {
