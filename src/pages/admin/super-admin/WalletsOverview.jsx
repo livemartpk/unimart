@@ -73,7 +73,6 @@ export default function WalletsOverview() {
   if (!country) {
     return (
       <div className="page-shell" style={styles.page}>
-        <div style={styles.header}><div style={styles.headerTitle}>Wallets Overview</div></div>
         <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its wallets.</p>
       </div>
     );
@@ -83,9 +82,6 @@ export default function WalletsOverview() {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Wallets Overview — {country}</div>
-      </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         {WALLET_COLLECTIONS.map((w) => (

@@ -94,9 +94,6 @@ export default function BackfillCountries() {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.headerTitle}>Backfill Countries</div>
-      </div>
 
       <div style={{ padding: 16, paddingBottom: 60 }}>
         <div style={s.infoBox}>

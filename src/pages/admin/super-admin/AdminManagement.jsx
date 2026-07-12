@@ -87,12 +87,10 @@ export default function AdminManagement({ user }) {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Admin Management</div>
-        <div style={styles.addBtn} onClick={() => setShowCreateModal(true)}>+ New Admin</div>
-      </div>
-
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+          <div style={styles.addBtn} onClick={() => setShowCreateModal(true)}>+ New Admin</div>
+        </div>
         {loading ? (
           <p style={styles.emptyText}>Loading admins...</p>
         ) : admins.length === 0 ? (

@@ -56,10 +56,6 @@ export default function SuperAdminDashboard({ user, onNavigate }) {
   if (!country) {
     return (
       <div className="page-shell" style={styles.page}>
-        <div style={styles.header}>
-          <div style={styles.headerTitle}>Super Admin</div>
-          <div style={styles.headerSub}>Platform Overview</div>
-        </div>
         <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its data.</p>
       </div>
     );
@@ -67,10 +63,6 @@ export default function SuperAdminDashboard({ user, onNavigate }) {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Super Admin</div>
-        <div style={styles.headerSub}>Platform Overview — {country}</div>
-      </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         <div style={styles.statsGrid}>

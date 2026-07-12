@@ -66,10 +66,6 @@ export default function CountryManagement() {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.headerTitle}>Countries</div>
-        <div style={s.headerSub}>{activeCount} of {COUNTRIES.length} active</div>
-      </div>
 
       <div style={{ padding: 16, paddingBottom: 60 }}>
         <p style={s.helper}>

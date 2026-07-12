@@ -53,9 +53,6 @@ export default function CategoryManagement({ user }) {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Category Management</div>
-      </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
