@@ -91,9 +91,9 @@ function SectionTitle({ children }) {
 
 const s = {
   page: { minHeight: "100vh", background: "var(--color-bg)" },
-  header: { background: "#0B3D2E", padding: "20px 16px" },
-  title: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700 },
-  sub: { color: "#cfe0d4", fontSize: 12, marginTop: 2 },
+  header: { padding: "20px 16px", borderBottom: "1px solid #eee0c0" },
+  title: { color: "#0B3D2E", fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700 },
+  sub: { color: "#888", fontSize: 12, marginTop: 2 },
   body: { padding: "16px 16px 100px" },
   sectionTitle: { fontSize: 14, fontFamily: "Georgia, serif", color: "#0B3D2E", fontWeight: 700, marginBottom: 10, marginTop: 4 },
   statsGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 22 },
