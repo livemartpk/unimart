@@ -1,19 +1,25 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../../config/firebase";
+import { useAdminCountry } from "../../../context/AdminCountryContext";
 import "../../../styles/theme.css";
 
 export default function ContentTeamDashboard({ onNavigate }) {
+  const { country } = useAdminCountry();
   const [stats, setStats] = useState({ pendingReviews: 0, flaggedListings: 0, activeBanners: 0, pendingBanners: 0 });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (!country) return;
+    load();
+  }, [country]);
 
   const load = async () => {
     setLoading(true);
     try {
-      const prSnap = await getDocs(query(collection(db, "products"), where("status", "==", "pending_review")));
-      const flSnap = await getDocs(query(collection(db, "products"), where("flagged", "==", true)));
+      const prSnap = await getDocs(query(collection(db, "products"), where("status", "==", "pending_review"), where("country", "==", country)));
+      const flSnap = await getDocs(query(collection(db, "products"), where("flagged", "==", true), where("country", "==", country)));
+      // Banners are site-wide (not per-country), so this stays global
       const banSnap = await getDocs(collection(db, "banners"));
       const banners = banSnap.docs.map(d => d.data());
       setStats({
@@ -26,11 +32,23 @@ export default function ContentTeamDashboard({ onNavigate }) {
     setLoading(false);
   };
 
+  if (!country) {
+    return (
+      <div style={s.page}>
+        <div style={s.header}>
+          <div style={s.title}>Content Team</div>
+          <div style={s.sub}>Content Moderation Overview</div>
+        </div>
+        <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its data.</p>
+      </div>
+    );
+  }
+
   return (
     <div style={s.page}>
       <div style={s.header}>
         <div style={s.title}>Content Team</div>
-        <div style={s.sub}>Content Moderation Overview</div>
+        <div style={s.sub}>Content Moderation Overview — {country}</div>
       </div>
       <div style={s.body}>
         <div style={s.statsGrid}>
