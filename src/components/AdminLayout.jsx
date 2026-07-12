@@ -205,8 +205,8 @@ function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
           </div>
         </div>
 
-        {/* Page Content */}
-        <div style={{ flex: 1, paddingBottom: 30 }}>
+        {/* Page Content — this is the only part that scrolls */}
+        <div style={{ flex: 1, overflowY: "auto", paddingBottom: 30 }}>
           {children}
         </div>
 
@@ -251,7 +251,7 @@ function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
 const s = {
   shell: {
     display: "flex",
-    minHeight: "100vh",
+    height: "100vh",
     background: "#F0F4F3",
     fontFamily: "var(--font-body)"
   },
@@ -338,21 +338,18 @@ const s = {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    minHeight: "100vh",
+    height: "100vh",
     width: "calc(100% - 240px)",
-    overflowX: "hidden"
+    overflow: "hidden"
   },
 
   topbar: {
     background: "#0B3D2E",
-    padding: "10px 16px",
-    minHeight: 46,
+    padding: "20px 18px",
     display: "flex",
     alignItems: "center",
     gap: 16,
-    position: "sticky",
-    top: 0,
-    zIndex: 40
+    flexShrink: 0
   },
   menuToggle: {
     background: "none", border: "none",

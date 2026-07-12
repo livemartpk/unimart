@@ -3,11 +3,14 @@
 // Same pattern as AdminLayout:
 // Fixed left sidebar on desktop
 // Hamburger slide menu on mobile
+// Green topbar stays fixed in place — only the
+// white page content below it scrolls.
 // ============================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut } from "firebase/auth";
-import { auth } from "../config/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../config/firebase";
 import "../styles/theme.css";
 
 const SIDEBAR_ITEMS = [
@@ -20,8 +23,22 @@ const SIDEBAR_ITEMS = [
   { key: "store-settings", icon: "⚙️", label: "Store Settings" },
 ];
 
-export default function SellerLayout({ currentPage, onNavigate, storeName, children }) {
+export default function SellerLayout({ currentPage, onNavigate, storeName, user, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [storeStatus, setStoreStatus] = useState(null);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    const loadStatus = async () => {
+      try {
+        const snap = await getDoc(doc(db, "sellers", user.uid));
+        if (snap.exists()) setStoreStatus(snap.data().storeStatus);
+      } catch (err) {
+        console.error("Failed to load store status:", err);
+      }
+    };
+    loadStatus();
+  }, [user?.uid]);
 
   const handleLogout = async () => {
     try { await signOut(auth); } catch (err) { console.error(err); }
@@ -31,6 +48,9 @@ export default function SellerLayout({ currentPage, onNavigate, storeName, child
     setSidebarOpen(false);
     onNavigate && onNavigate(key);
   };
+
+  const statusLabel = storeStatus === "vacation" ? "On Vacation" : storeStatus === "approved" ? "Active" : storeStatus === "pending" ? "Pending" : null;
+  const statusStyle = storeStatus === "vacation" ? s.statusVacation : storeStatus === "approved" ? s.statusActive : s.statusPending;
 
   return (
     <div style={s.shell}>
@@ -80,24 +100,22 @@ export default function SellerLayout({ currentPage, onNavigate, storeName, child
       {/* ===== Main Content ===== */}
       <div className="admin-main-content" style={s.mainContent}>
 
-        {/* Topbar — same dark green as page headers, so there's no white strip */}
+        {/* Topbar — fixed in place, matches sidebar brand height, no white strip */}
         <div style={s.topbar}>
           <button className="admin-menu-toggle" style={s.menuToggle} onClick={() => setSidebarOpen(!sidebarOpen)}>
             ☰
           </button>
           <div style={{ flex: 1 }} />
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={s.sellerChip}>
-              🏪 {storeName || "My Store"}
-            </div>
+            {statusLabel && <div style={{ ...s.statusBadge, ...statusStyle }}>{statusLabel}</div>}
             <button style={s.topbarLogoutBtn} onClick={handleLogout} title="Logout">
               🚪
             </button>
           </div>
         </div>
 
-        {/* Page Content */}
-        <div style={{ flex: 1, paddingBottom: 30 }}>
+        {/* Page Content — this is the only part that scrolls */}
+        <div style={s.scrollArea}>
           {children}
         </div>
 
@@ -107,7 +125,7 @@ export default function SellerLayout({ currentPage, onNavigate, storeName, child
 }
 
 const s = {
-  shell: { display: "flex", minHeight: "100vh", background: "#F0F4F3", fontFamily: "var(--font-body)" },
+  shell: { display: "flex", height: "100vh", background: "#F0F4F3", fontFamily: "var(--font-body)" },
   brand: { padding: "20px 18px", borderBottom: "1px solid rgba(255,255,255,0.12)", flexShrink: 0 },
   logo: { fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 800, color: "#fff" },
   roleLabel: { fontSize: 11, color: "#D4AF37", fontWeight: 700, letterSpacing: 0.5, marginTop: 3 },
@@ -119,9 +137,13 @@ const s = {
   viewWebsiteBtn: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "none", border: "none", color: "rgba(255,255,255,0.65)", fontSize: 13.5, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", width: "100%" },
   logoutBtn: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(255,80,80,0.13)", border: "1px solid rgba(255,100,100,0.2)", color: "rgba(255,180,180,0.9)", fontSize: 13.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", width: "100%" },
   overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 99 },
-  mainContent: { marginLeft: 240, flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh", width: "calc(100% - 240px)", overflowX: "hidden" },
-  topbar: { background: "#0B3D2E", padding: "10px 16px", minHeight: 46, display: "flex", alignItems: "center", gap: 16, position: "sticky", top: 0, zIndex: 40 },
+  mainContent: { marginLeft: 240, flex: 1, display: "flex", flexDirection: "column", height: "100vh", width: "calc(100% - 240px)", overflow: "hidden" },
+  topbar: { background: "#0B3D2E", padding: "20px 18px", display: "flex", alignItems: "center", gap: 16, flexShrink: 0 },
+  scrollArea: { flex: 1, overflowY: "auto", paddingBottom: 30 },
   menuToggle: { background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#fff", display: "none" },
-  sellerChip: { background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", padding: "6px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap" },
-  topbarLogoutBtn: { background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 10, padding: "8px 12px", fontSize: 16, cursor: "pointer", color: "#fff", fontFamily: "inherit" }
+  topbarLogoutBtn: { background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 10, padding: "8px 12px", fontSize: 16, cursor: "pointer", color: "#fff", fontFamily: "inherit" },
+  statusBadge: { fontSize: 10.5, fontWeight: 800, padding: "6px 12px", borderRadius: 20, textTransform: "uppercase" },
+  statusActive: { background: "#D4AF37", color: "#0B3D2E" },
+  statusVacation: { background: "rgba(255,255,255,0.2)", color: "#fff" },
+  statusPending: { background: "rgba(255,255,255,0.15)", color: "#FBF1DA" }
 };
