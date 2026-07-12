@@ -368,6 +368,7 @@ export default function App() {
         currentPage={page}
         onNavigate={navigate}
         storeName={userData.storeName}
+        user={firebaseUser}
       >
         {getSellerPage()}
       </SellerLayout>
