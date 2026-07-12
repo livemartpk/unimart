@@ -5,22 +5,25 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
 import { db } from "../../../config/firebase";
+import { useAdminCountry } from "../../../context/AdminCountryContext";
 import "../../../styles/theme.css";
 
 export default function SuperAdminDashboard({ user, onNavigate }) {
+  const { country } = useAdminCountry();
   const [stats, setStats] = useState({ buyers: 0, sellers: 0, agents: 0, orders: 0 });
   const [pendingCounts, setPendingCounts] = useState({ sellers: 0, agents: 0, withdrawals: 0 });
   const [recentLogs, setRecentLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!country) return;
     loadDashboard();
-  }, []);
+  }, [country]);
 
   const loadDashboard = async () => {
     setLoading(true);
     try {
-      const usersSnap = await getDocs(collection(db, "users"));
+      const usersSnap = await getDocs(query(collection(db, "users"), where("country", "==", country)));
       const users = usersSnap.docs.map((d) => d.data());
       setStats({
         buyers: users.filter((u) => u.role === "buyer").length,
@@ -29,17 +32,18 @@ export default function SuperAdminDashboard({ user, onNavigate }) {
         orders: 0
       });
 
-      const ordersSnap = await getDocs(collection(db, "orders"));
+      const ordersSnap = await getDocs(query(collection(db, "orders"), where("country", "==", country)));
       setStats((s) => ({ ...s, orders: ordersSnap.size }));
 
-      const pendingSellersSnap = await getDocs(query(collection(db, "sellers"), where("storeStatus", "==", "pending")));
-      const pendingAgentsSnap = await getDocs(query(collection(db, "agents"), where("status", "==", "pending")));
+      const pendingSellersSnap = await getDocs(query(collection(db, "sellers"), where("storeStatus", "==", "pending"), where("country", "==", country)));
+      const pendingAgentsSnap = await getDocs(query(collection(db, "agents"), where("status", "==", "pending"), where("country", "==", country)));
       setPendingCounts({
         sellers: pendingSellersSnap.size,
         agents: pendingAgentsSnap.size,
         withdrawals: 0 // would aggregate across wallets in production
       });
 
+      // Admin activity logs stay global (cross-cutting audit trail, not tied to one country)
       const logsSnap = await getDocs(query(collection(db, "adminLogs"), orderBy("timestamp", "desc"), limit(10)));
       setRecentLogs(logsSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
 
@@ -49,11 +53,23 @@ export default function SuperAdminDashboard({ user, onNavigate }) {
     setLoading(false);
   };
 
+  if (!country) {
+    return (
+      <div className="page-shell" style={styles.page}>
+        <div style={styles.header}>
+          <div style={styles.headerTitle}>Super Admin</div>
+          <div style={styles.headerSub}>Platform Overview</div>
+        </div>
+        <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its data.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="page-shell" style={styles.page}>
       <div style={styles.header}>
         <div style={styles.headerTitle}>Super Admin</div>
-        <div style={styles.headerSub}>Platform Overview</div>
+        <div style={styles.headerSub}>Platform Overview — {country}</div>
       </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
@@ -126,9 +142,9 @@ function ActionTile({ icon, label, onClick }) {
 
 const styles = {
   page: { minHeight: "100vh", background: "var(--color-bg)", margin: "0 auto" },
-  header: { background: "#0B3D2E", padding: "20px 16px" },
-  headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700 },
-  headerSub: { color: "#cfe0d4", fontSize: 12, marginTop: 2 },
+  header: { padding: "20px 16px", borderBottom: "1px solid #eee0c0" },
+  headerTitle: { color: "#0B3D2E", fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700 },
+  headerSub: { color: "#888", fontSize: 12, marginTop: 2 },
 
   statsGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 22 },
   statCard: { background: "#fff", border: "1px solid #eee0c0", borderRadius: 14, padding: 16 },
