@@ -48,10 +48,6 @@ export default function FinanceTeamDashboard({ onNavigate }) {
   if (!country) {
     return (
       <div style={s.page}>
-        <div style={s.header}>
-          <div style={s.title}>Finance Team</div>
-          <div style={s.sub}>Financial Overview</div>
-        </div>
         <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its data.</p>
       </div>
     );
@@ -59,10 +55,6 @@ export default function FinanceTeamDashboard({ onNavigate }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.title}>Finance Team</div>
-        <div style={s.sub}>Financial Overview — {country}</div>
-      </div>
       <div style={s.body}>
         {loading ? (
           <p style={{ textAlign: "center", color: "#888", padding: 20 }}>Loading...</p>

@@ -106,7 +106,6 @@ export default function WithdrawalRequests({ user }) {
   if (!country) {
     return (
       <div style={s.page}>
-        <div style={s.header}><div style={s.headerTitle}>Withdrawal Requests</div></div>
         <p style={{ ...s.empty, textAlign: "center", paddingTop: 40 }}>🌍 Select a country from the dropdown above to view its requests.</p>
       </div>
     );
@@ -114,9 +113,6 @@ export default function WithdrawalRequests({ user }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.headerTitle}>Withdrawal Requests — {country}</div>
-      </div>
 
       <div style={{ padding: "16px 16px 100px" }}>
         {loading ? <p style={s.empty}>Loading...</p>

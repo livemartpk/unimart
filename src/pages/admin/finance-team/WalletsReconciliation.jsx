@@ -302,9 +302,6 @@ export default function WalletsReconciliation() {
   if (!country) {
     return (
       <div className="page-shell" style={styles.page}>
-        <div style={styles.header}>
-          <div style={styles.headerTitle}>Wallets Reconciliation</div>
-        </div>
         <div className="container" style={{ paddingTop: 40, textAlign: "center" }}>
           <p style={styles.emptyText}>🌍 Select a country from the dropdown above to view its wallet data.</p>
         </div>
@@ -314,9 +311,6 @@ export default function WalletsReconciliation() {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Wallets Reconciliation — {country}</div>
-      </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         {/* STAGE 1 */}

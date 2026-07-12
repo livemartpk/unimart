@@ -52,7 +52,6 @@ export default function FinancialReports() {
   if (!country) {
     return (
       <div className="page-shell" style={styles.page}>
-        <div style={styles.header}><div style={styles.headerTitle}>Financial Reports</div></div>
         <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its report.</p>
       </div>
     );
@@ -64,9 +63,6 @@ export default function FinancialReports() {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Financial Reports — {country}</div>
-      </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         <div style={styles.compareCard}>
