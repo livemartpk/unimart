@@ -88,9 +88,6 @@ export default function SellerDashboard({ user, onNavigate }) {
           <div style={styles.welcomeText}>Welcome back,</div>
           <div style={styles.storeName}>{seller?.storeName || "Your Store"}</div>
         </div>
-        <div style={{ ...styles.statusBadge, ...(onVacation ? styles.statusVacation : seller?.storeStatus === "approved" ? styles.statusActive : styles.statusPending) }}>
-          {onVacation ? "On Vacation" : seller?.storeStatus === "approved" ? "Active" : "Pending Approval"}
-        </div>
       </div>
 
       <div className="container" style={{ paddingTop: 16 }}>
@@ -206,9 +203,9 @@ function NavItem({ icon, label, active, onClick }) {
 
 const styles = {
   page: { minHeight: "100vh", background: "var(--color-bg)", paddingBottom: 80, margin: "0 auto" },
-  header: { background: "#0B3D2E", padding: "20px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" },
-  welcomeText: { color: "#cfe0d4", fontSize: 12 },
-  storeName: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700 },
+  header: { padding: "20px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #eee0c0" },
+  welcomeText: { color: "#888", fontSize: 12 },
+  storeName: { color: "#0B3D2E", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700 },
   statusBadge: { fontSize: 10, fontWeight: 800, padding: "5px 10px", borderRadius: 20, textTransform: "uppercase" },
   statusActive: { background: "#D4AF37", color: "#0B3D2E" },
   statusPending: { background: "#fff", color: "#888" },
