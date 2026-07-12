@@ -1,20 +1,25 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../../config/firebase";
+import { useAdminCountry } from "../../../context/AdminCountryContext";
 import "../../../styles/theme.css";
 
 export default function SupportTeamDashboard({ onNavigate }) {
+  const { country } = useAdminCountry();
   const [stats, setStats] = useState({ openDisputes: 0, openComplaints: 0, activeReturns: 0, resolvedToday: 0 });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (!country) return;
+    load();
+  }, [country]);
 
   const load = async () => {
     setLoading(true);
     try {
-      const disputesSnap = await getDocs(query(collection(db, "disputes"), where("status", "==", "open")));
-      const complaintsSnap = await getDocs(query(collection(db, "complaints"), where("status", "==", "open")));
-      const returnsSnap = await getDocs(query(collection(db, "disputes"), where("status", "==", "resolved_buyer")));
+      const disputesSnap = await getDocs(query(collection(db, "disputes"), where("status", "==", "open"), where("country", "==", country)));
+      const complaintsSnap = await getDocs(query(collection(db, "complaints"), where("status", "==", "open"), where("country", "==", country)));
+      const returnsSnap = await getDocs(query(collection(db, "disputes"), where("status", "==", "resolved_buyer"), where("country", "==", country)));
       setStats({
         openDisputes: disputesSnap.size,
         openComplaints: complaintsSnap.size,
@@ -25,11 +30,23 @@ export default function SupportTeamDashboard({ onNavigate }) {
     setLoading(false);
   };
 
+  if (!country) {
+    return (
+      <div style={s.page}>
+        <div style={s.header}>
+          <div style={s.title}>Support Team</div>
+          <div style={s.sub}>Customer Support Overview</div>
+        </div>
+        <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its data.</p>
+      </div>
+    );
+  }
+
   return (
     <div style={s.page}>
       <div style={s.header}>
         <div style={s.title}>Support Team</div>
-        <div style={s.sub}>Customer Support Overview</div>
+        <div style={s.sub}>Customer Support Overview — {country}</div>
       </div>
       <div style={s.body}>
         <div style={s.statsGrid}>
