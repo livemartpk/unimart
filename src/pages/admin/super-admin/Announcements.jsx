@@ -6,9 +6,11 @@
 import { useState, useEffect } from "react";
 import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, where } from "firebase/firestore";
 import { db } from "../../../config/firebase";
+import { useAdminCountry } from "../../../context/AdminCountryContext";
 import "../../../styles/theme.css";
 
 export default function Announcements({ user }) {
+  const { country } = useAdminCountry();
   const [message, setMessage] = useState("");
   const [audience, setAudience] = useState("all");
   const [sending, setSending] = useState(false);
@@ -16,13 +18,14 @@ export default function Announcements({ user }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!country) return;
     loadHistory();
-  }, []);
+  }, [country]);
 
   const loadHistory = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"), limit(20));
+      const q = query(collection(db, "announcements"), where("country", "==", country), orderBy("createdAt", "desc"), limit(20));
       const snap = await getDocs(q);
       setHistory(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     } catch (err) {
@@ -38,14 +41,20 @@ export default function Announcements({ user }) {
       await addDoc(collection(db, "announcements"), {
         message,
         audience,
+        country,
         sentBy: user.uid,
         createdAt: serverTimestamp()
       });
 
-      // In production: this would fan out to a "notifications" doc per affected user,
-      // filtered by role (audience), so it shows in their notification bell.
+      // Fan out to a notification per affected user — filtered by BOTH role
+      // (audience) and country, so an announcement sent while "Pakistan" is
+      // selected never reaches users from other countries.
       const targetRoles = audience === "all" ? ["buyer", "seller", "agent"] : [audience];
-      const usersSnap = await getDocs(query(collection(db, "users"), where("role", "in", targetRoles)));
+      const usersSnap = await getDocs(query(
+        collection(db, "users"),
+        where("role", "in", targetRoles),
+        where("country", "==", country)
+      ));
       for (const userDoc of usersSnap.docs) {
         await addDoc(collection(db, "notifications"), {
           userId: userDoc.id,
@@ -58,7 +67,7 @@ export default function Announcements({ user }) {
 
       setMessage("");
       loadHistory();
-      alert(`Announcement sent to ${usersSnap.size} user(s).`);
+      alert(`Announcement sent to ${usersSnap.size} user(s) in ${country}.`);
 
     } catch (err) {
       console.error("Failed to send announcement:", err);
@@ -66,13 +75,26 @@ export default function Announcements({ user }) {
     setSending(false);
   };
 
+  if (!country) {
+    return (
+      <div className="page-shell" style={styles.page}>
+        <div style={styles.header}>
+          <div style={styles.headerTitle}>Platform Announcements</div>
+        </div>
+        <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to send an announcement.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="page-shell" style={styles.page}>
       <div style={styles.header}>
-        <div style={styles.headerTitle}>Platform Announcements</div>
+        <div style={styles.headerTitle}>Platform Announcements — {country}</div>
       </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
+        <p style={styles.helperText}>This will only reach users in <b>{country}</b>. Switch the country dropdown above to send to a different country.</p>
+
         <label className="input-label">Audience</label>
         <select className="input-field" style={{ marginBottom: 12 }} value={audience} onChange={(e) => setAudience(e.target.value)}>
           <option value="all">Everyone</option>
@@ -118,6 +140,7 @@ const styles = {
   header: { background: "#0B3D2E", padding: "18px 16px" },
   headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700 },
   sectionTitle: { fontSize: 15, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 10 },
+  helperText: { fontSize: 11.5, color: "#888", marginBottom: 16, lineHeight: 1.5 },
   emptyText: { fontSize: 13, color: "#888" },
 
   historyRow: { background: "#fff", border: "1px solid #f0f0f0", borderRadius: 10, padding: 12, marginBottom: 8 },
