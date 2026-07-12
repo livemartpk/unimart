@@ -37,10 +37,6 @@ export default function SellerManagerDashboard({ onNavigate }) {
   if (!country) {
     return (
       <div style={s.page}>
-        <div style={s.header}>
-          <div style={s.title}>Seller Manager</div>
-          <div style={s.sub}>Store Management Overview</div>
-        </div>
         <p style={{ padding: 30, textAlign: "center", color: "#888" }}>🌍 Select a country from the dropdown above to view its data.</p>
       </div>
     );
@@ -48,10 +44,6 @@ export default function SellerManagerDashboard({ onNavigate }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.title}>Seller Manager</div>
-        <div style={s.sub}>Store Management Overview — {country}</div>
-      </div>
       <div style={s.body}>
         <div style={s.statsGrid}>
           <StatCard icon="🏪" label="Total Sellers" value={stats.total} />

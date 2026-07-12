@@ -91,7 +91,6 @@ export default function AllSellers({ user }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}><div style={s.headerTitle}>All Sellers</div></div>
 
       <div style={{ padding: "16px 16px 0" }}>
         <input className="input-field" placeholder="Search store name or city..." value={search} onChange={e => setSearch(e.target.value)} style={{ marginBottom: 12 }} />

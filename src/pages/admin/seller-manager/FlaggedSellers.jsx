@@ -34,10 +34,6 @@ export default function FlaggedSellers() {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Flagged Sellers</div>
-        <div style={styles.headerSub}>Low-rating stores needing attention</div>
-      </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         {loading ? (

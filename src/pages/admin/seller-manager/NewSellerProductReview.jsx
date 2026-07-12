@@ -47,10 +47,6 @@ export default function NewSellerProductReview({ user }) {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>New Seller Product Checks</div>
-        <div style={styles.headerSub}>First 10 products from newly approved stores</div>
-      </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         {loading ? (

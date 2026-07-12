@@ -132,10 +132,6 @@ export default function SellerRegistrations({ user }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <div style={s.headerTitle}>Seller Registrations</div>
-      </div>
-
       {/* Status Tabs with Counts */}
       <div style={s.tabRow}>
         {TABS.map(t => (
