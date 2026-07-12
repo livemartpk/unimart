@@ -187,10 +187,8 @@ export default function AddProduct({ user, sellerStoreName, sellerCountry, editP
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.backBtn} onClick={() => onNavigate && onNavigate("products")}>←</div>
-        <div style={styles.headerTitle}>{isEditMode ? "Edit Product" : "Add Product"}</div>
-        <div style={{ width: 36 }} />
+      <div style={{ padding: "16px 16px 0" }}>
+        <div style={styles.backBtn} onClick={() => onNavigate && onNavigate("products")}>← Back</div>
       </div>
 
       <div className="container" style={{ paddingTop: 18, paddingBottom: 40 }}>
@@ -320,7 +318,7 @@ function Field({ label, error, children }) {
 const styles = {
   page: { minHeight: "100vh", background: "var(--color-bg)", margin: "0 auto" },
   header: { background: "#0B3D2E", padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between" },
-  backBtn: { color: "#fff", fontSize: 18, cursor: "pointer", width: 36 },
+  backBtn: { color: "#0B3D2E", fontSize: 14, fontWeight: 600, cursor: "pointer" },
   headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 },
   imgCount: { fontSize: 11.5, color: "#0B3D2E", marginTop: 6, fontWeight: 600 },
   helperText: { fontSize: 11, color: "#888", marginTop: 5 },

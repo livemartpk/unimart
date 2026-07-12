@@ -139,7 +139,6 @@ export default function IncomingOrders({ user, onNavigate }) {
 
   return (
     <div style={s.page}>
-      <div style={s.header}><div style={s.headerTitle}>Incoming Orders</div></div>
 
       {/* Filter Tabs */}
       <div style={s.filterRow}>

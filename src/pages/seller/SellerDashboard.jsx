@@ -82,14 +82,6 @@ export default function SellerDashboard({ user, onNavigate }) {
 
   return (
     <div className="page-shell" style={styles.page}>
-      {/* Top bar */}
-      <div style={styles.header}>
-        <div>
-          <div style={styles.welcomeText}>Welcome back,</div>
-          <div style={styles.storeName}>{seller?.storeName || "Your Store"}</div>
-        </div>
-      </div>
-
       <div className="container" style={{ paddingTop: 16 }}>
         {/* Vacation toggle */}
         <div style={styles.vacationCard}>

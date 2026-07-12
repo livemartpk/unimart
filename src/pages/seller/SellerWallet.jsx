@@ -94,9 +94,6 @@ export default function SellerWallet({ user, country, onNavigate }) {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Wallet & Ledger</div>
-      </div>
 
       <div className="container" style={{ paddingTop: 16 }}>
         {/* Balance cards */}

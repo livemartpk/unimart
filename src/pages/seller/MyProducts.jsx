@@ -56,8 +56,7 @@ export default function MyProducts({ user, onNavigate }) {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>My Products</div>
+      <div style={{ padding: "16px 16px 0", display: "flex", justifyContent: "flex-end" }}>
         <div style={styles.addBtn} onClick={() => onNavigate && onNavigate("add-product")}>+ Add</div>
       </div>
 

@@ -76,9 +76,6 @@ export default function PointsAndBoost({ user, onNavigate }) {
 
   return (
     <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.headerTitle}>Points & Boost</div>
-      </div>
 
       <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
         <div style={styles.pointsCard}>
