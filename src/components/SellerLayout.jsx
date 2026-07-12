@@ -126,7 +126,7 @@ export default function SellerLayout({ currentPage, onNavigate, storeName, user,
 
 const s = {
   shell: { display: "flex", height: "100vh", background: "#F0F4F3", fontFamily: "var(--font-body)" },
-  brand: { padding: "20px 18px", borderBottom: "1px solid rgba(255,255,255,0.12)", flexShrink: 0 },
+  brand: { padding: "0 18px", height: 64, borderBottom: "1px solid rgba(255,255,255,0.12)", flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center" },
   logo: { fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 800, color: "#fff" },
   roleLabel: { fontSize: 11, color: "#D4AF37", fontWeight: 700, letterSpacing: 0.5, marginTop: 3 },
   nav: { flex: 1, padding: "16px 10px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" },
@@ -138,7 +138,7 @@ const s = {
   logoutBtn: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(255,80,80,0.13)", border: "1px solid rgba(255,100,100,0.2)", color: "rgba(255,180,180,0.9)", fontSize: 13.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", width: "100%" },
   overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 99 },
   mainContent: { marginLeft: 240, flex: 1, display: "flex", flexDirection: "column", height: "100vh", width: "calc(100% - 240px)", overflow: "hidden" },
-  topbar: { background: "#0B3D2E", padding: "20px 18px", display: "flex", alignItems: "center", gap: 16, flexShrink: 0 },
+  topbar: { background: "#0B3D2E", padding: "0 18px", height: 64, display: "flex", alignItems: "center", gap: 16, flexShrink: 0 },
   scrollArea: { flex: 1, overflowY: "auto", paddingBottom: 30 },
   menuToggle: { background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#fff", display: "none" },
   topbarLogoutBtn: { background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 10, padding: "8px 12px", fontSize: 16, cursor: "pointer", color: "#fff", fontFamily: "inherit" },
