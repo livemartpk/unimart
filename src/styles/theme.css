@@ -6,7 +6,7 @@
 /* Fonts loaded via <link> in index.html (non-blocking) instead of @import here */
 
 :root {
-  /* Core Colors — unchanged, Emerald Trust identity */
+  /* Core Colors */
   --color-primary: #0B3D2E;       /* Deep Green */
   --color-accent: #D4AF37;        /* Gold */
   --color-bg: #FBF9F4;            /* Warm Off-White */
@@ -24,36 +24,15 @@
   --color-error: #C0392B;
   --color-info: #2C6E91;
 
-  /* Typography — unified restrained sans (was Georgia serif headings + Jakarta body).
-     Same Plus Jakarta Sans family throughout, Airbnb-style modest weights instead
-     of heavy/serif display type. No new font load required. */
-  --font-heading: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  /* Typography */
+  --font-heading: Georgia, 'Times New Roman', serif;
   --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
 
-  /* Type scale — Airbnb-style restraint: headlines stay modest (22-28px,
-     weight 500-600), one loud exception reserved for trust/rating numbers. */
-  --text-display-xl: 700 28px/1.4 var(--font-heading);
-  --text-display-lg: 600 22px/1.2 var(--font-heading);
-  --text-display-md: 600 21px/1.4 var(--font-heading);
-  --text-title-md: 600 16px/1.3 var(--font-body);
-  --text-title-sm: 500 16px/1.3 var(--font-body);
-  --text-body-md: 400 16px/1.5 var(--font-body);
-  --text-body-sm: 400 14px/1.43 var(--font-body);
-  --text-uppercase-tag: 700 11px/1 var(--font-body);
-
-  /* Shape scale — Airbnb-style radii mapped onto existing variable names
-     so every page/component using var(--radius-*) picks this up automatically. */
-  --radius-sm: 8px;    /* buttons, inputs */
-  --radius-md: 14px;   /* cards */
-  --radius-lg: 24px;   /* bento/category blocks, auth shell */
-  --radius-pill: 9999px; /* search bars, pill badges, avatar circles */
-
-  /* Elevation — Airbnb's layered soft-shadow formula, tinted faintly with
-     the brand green instead of pure black so it still reads as "ours". */
-  --shadow-card:
-    0 0 0 1px rgba(11, 61, 46, 0.03),
-    0 2px 6px rgba(11, 61, 46, 0.05),
-    0 4px 10px rgba(11, 61, 46, 0.09);
+  /* Spacing */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-card: 0 4px 16px rgba(11, 61, 46, 0.08);
 }
 
 * {
@@ -72,8 +51,6 @@ body {
 h1, h2, h3, h4 {
   font-family: var(--font-heading);
   color: var(--color-primary);
-  font-weight: 600;         /* was default browser bold via serif — now restrained */
-  letter-spacing: -0.01em;
 }
 
 a {
@@ -88,8 +65,8 @@ a {
   color: var(--color-accent);
   border: none;
   padding: 12px 24px;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
+  border-radius: var(--radius-md);
+  font-weight: 700;
   font-size: 14px;
   cursor: pointer;
   transition: opacity 0.2s;
@@ -102,7 +79,7 @@ a {
   color: var(--color-primary);
   border: 1.5px solid var(--color-primary);
   padding: 11px 24px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -113,31 +90,10 @@ a {
   color: var(--color-primary);
   border: none;
   padding: 12px 24px;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
+  border-radius: var(--radius-md);
+  font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-}
-
-/* Pill variant — for search bars, filter chips, avatar circles */
-.btn-pill {
-  border-radius: var(--radius-pill);
-}
-
-/* ===== Type-scale utilities (Airbnb-style restraint) =====
-   Optional — apply where a page wants the DLS scale explicitly.
-   Existing pages using inline styles or h1-h4 are unaffected. */
-.text-display-xl { font: var(--text-display-xl); color: var(--color-primary); }
-.text-display-lg { font: var(--text-display-lg); color: var(--color-primary); }
-.text-display-md { font: var(--text-display-md); color: var(--color-primary); }
-.text-title-md { font: var(--text-title-md); color: var(--color-text-primary); }
-.text-title-sm { font: var(--text-title-sm); color: var(--color-text-primary); }
-.text-body-md { font: var(--text-body-md); color: var(--color-text-primary); }
-.text-body-sm { font: var(--text-body-sm); color: var(--color-text-secondary); }
-.text-uppercase-tag {
-  font: var(--text-uppercase-tag);
-  letter-spacing: 0.32px;
-  text-transform: uppercase;
 }
 
 .card {
@@ -183,7 +139,7 @@ a {
   font-size: 9px;
   font-weight: 800;
   padding: 3px 8px;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   letter-spacing: 0.3px;
   text-transform: uppercase;
 }
@@ -252,7 +208,7 @@ a {
   .auth-shell {
     max-width: 480px !important;
     margin: 40px auto !important;
-    border-radius: var(--radius-lg);
+    border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(11,61,46,0.15);
   }
