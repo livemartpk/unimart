@@ -3,13 +3,13 @@
 // Sab roles (Buyer/Seller/Agent/Admin) isi page
 // se login karte hain. Login ke baad role check
 // karke sahi dashboard pe bhej diya jata hai.
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../config/firebase";
-import "../../styles/theme.css";
 
 export default function Login({ onLoginSuccess, onSwitchToSignUp, onForgotPassword, onBackToBrowsing, onSwitchToSellerSignUp, onSwitchToAgentSignUp }) {
   const [email, setEmail] = useState("");
@@ -24,11 +24,9 @@ export default function Login({ onLoginSuccess, onSwitchToSignUp, onForgotPasswo
     setLoading(true);
 
     try {
-      // 1. Authenticate with Firebase
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Fetch role from Firestore "users" collection
       const userDoc = await getDoc(doc(db, "users", user.uid));
 
       if (!userDoc.exists()) {
@@ -39,7 +37,6 @@ export default function Login({ onLoginSuccess, onSwitchToSignUp, onForgotPasswo
 
       const userData = userDoc.data();
 
-      // 3. Check account status
       if (userData.status === "blocked") {
         setError("This account has been blocked. Contact support for help.");
         setLoading(false);
@@ -53,7 +50,6 @@ export default function Login({ onLoginSuccess, onSwitchToSignUp, onForgotPasswo
 
       setLoading(false);
 
-      // 4. Redirect based on role
       if (onLoginSuccess) {
         onLoginSuccess({ user, role: userData.role, userData });
       }
@@ -75,95 +71,95 @@ export default function Login({ onLoginSuccess, onSwitchToSignUp, onForgotPasswo
   };
 
   return (
-    <div className="auth-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
+    <div className="min-h-screen bg-canvas">
+      {/* Top nav — clean white, hairline border, matches spec's top-nav component */}
+      <div className="h-nav flex items-center justify-center border-b border-hairline">
+        <div className="text-display-lg">
+          Uni<span className="text-rausch">Mart</span>
+        </div>
       </div>
 
-      <div className="container" style={styles.formWrap}>
+      <div className="max-w-[400px] mx-auto px-4 pt-8 pb-10">
         {onBackToBrowsing && (
-          <div style={styles.backToHomeBtn} onClick={onBackToBrowsing}>
+          <div
+            onClick={onBackToBrowsing}
+            className="flex items-center justify-center gap-2 py-3 px-5 mb-5 rounded-btn border border-hairline bg-surface-soft text-title-sm text-ink cursor-pointer hover:shadow-elevation transition-shadow"
+          >
             🏠 Back to Shopping
           </div>
         )}
-        <h2 style={styles.title}>Welcome back</h2>
-        <p style={styles.subtitle}>Log in to continue to your account.</p>
+
+        <h2 className="text-display-lg text-ink mb-2">Welcome back</h2>
+        <p className="text-body-sm text-muted mb-6">Log in to continue to your account.</p>
 
         <form onSubmit={handleLogin}>
-          <div style={{ marginBottom: 16 }}>
-            <label className="input-label">Email</label>
+          <div className="mb-4">
+            <label className="block text-title-sm text-ink mb-1.5">Email</label>
             <input
               type="email"
-              className="input-field"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="w-full h-12 px-4 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted focus:outline-none focus:border-ink focus:shadow-elevation transition-shadow"
             />
           </div>
 
-          <div style={{ marginBottom: 8 }}>
-            <label className="input-label">Password</label>
-            <div style={styles.passwordWrap}>
+          <div className="mb-2">
+            <label className="block text-title-sm text-ink mb-1.5">Password</label>
+            <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                className="input-field"
-                style={{ paddingRight: 44 }}
                 placeholder="Your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="w-full h-12 pl-4 pr-11 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted focus:outline-none focus:border-ink focus:shadow-elevation transition-shadow"
               />
-              <span style={styles.eyeIcon} onClick={() => setShowPassword((s) => !s)}>
+              <span
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-base select-none"
+              >
                 {showPassword ? "🙈" : "👁️"}
               </span>
             </div>
           </div>
 
-          <p style={styles.forgotLink} onClick={onForgotPassword}>Forgot password?</p>
+          <p onClick={onForgotPassword} className="text-right text-body-sm text-ink font-semibold cursor-pointer mb-1 hover:underline">
+            Forgot password?
+          </p>
 
-          {error && <p className="error-text">{error}</p>}
+          {error && <p className="text-rausch text-body-sm mt-2">{error}</p>}
 
-          <button type="submit" className="btn-primary" style={{ width: "100%", marginTop: 16 }} disabled={loading}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-4 h-12 rounded-btn bg-rausch hover:bg-rausch-active disabled:bg-rausch-disabled text-white text-title-sm font-semibold transition-colors"
+          >
             {loading ? "Logging in..." : "Log in"}
           </button>
         </form>
 
-        <p style={styles.switchText}>
+        <p className="text-center mt-5 text-body-sm text-muted">
           New to UniMart?{" "}
-          <span style={styles.switchLink} onClick={onSwitchToSignUp}>Create an account</span>
+          <span onClick={onSwitchToSignUp} className="text-ink font-semibold cursor-pointer hover:underline">
+            Create an account
+          </span>
         </p>
 
-        <div style={styles.sellerAgentBox}>
-          <p style={styles.sellerAgentText}>Want to sell on UniMart?</p>
-          <div style={styles.sellerAgentLinks}>
-            <span style={styles.sellerAgentLink} onClick={onSwitchToSellerSignUp}>Become a Seller</span>
-            <span style={styles.sellerAgentDivider}>·</span>
-            <span style={styles.sellerAgentLink} onClick={onSwitchToAgentSignUp}>Become an Agent</span>
+        <div className="mt-7 p-4 rounded-card bg-surface-soft text-center">
+          <p className="text-body-sm font-semibold text-body mb-2">Want to sell on UniMart?</p>
+          <div className="flex justify-center items-center gap-2.5">
+            <span onClick={onSwitchToSellerSignUp} className="text-body-sm text-ink font-semibold cursor-pointer hover:underline">
+              Become a Seller
+            </span>
+            <span className="text-muted">·</span>
+            <span onClick={onSwitchToAgentSignUp} className="text-body-sm text-ink font-semibold cursor-pointer hover:underline">
+              Become an Agent
+            </span>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)" },
-  header: { background: "#0B3D2E", padding: "20px 16px", textAlign: "center" },
-  logo: { fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, color: "#FBF9F4" },
-  formWrap: { paddingTop: 32, paddingBottom: 40 },
-  title: { fontSize: 22, marginBottom: 8 },
-  subtitle: { fontSize: 13.5, color: "#6b6b6b", marginBottom: 24 },
-  forgotLink: { textAlign: "right", fontSize: 12.5, color: "#0B3D2E", fontWeight: 600, cursor: "pointer", marginBottom: 4 },
-  switchText: { textAlign: "center", marginTop: 20, fontSize: 13, color: "#6b6b6b" },
-  switchLink: { color: "#0B3D2E", fontWeight: 700, cursor: "pointer" },
-  backLink: { fontSize: 12.5, color: "#0B3D2E", fontWeight: 600, cursor: "pointer", marginBottom: 16 },
-  backToHomeBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 20px", background: "#F0F5F0", border: "1.5px solid #eee0c0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#0B3D2E", cursor: "pointer", marginBottom: 20, textAlign: "center" },
-  passwordWrap: { position: "relative" },
-  eyeIcon: { position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", cursor: "pointer", fontSize: 16, userSelect: "none" },
-  sellerAgentBox: { marginTop: 28, padding: 16, background: "#F0F5F0", borderRadius: 12, textAlign: "center" },
-  sellerAgentText: { fontSize: 12, color: "#444", marginBottom: 8, fontWeight: 600 },
-  sellerAgentLinks: { display: "flex", justifyContent: "center", alignItems: "center", gap: 10 },
-  sellerAgentLink: { fontSize: 12.5, color: "#0B3D2E", fontWeight: 700, cursor: "pointer" },
-  sellerAgentDivider: { color: "#aaa" }
-};
