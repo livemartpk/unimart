@@ -2,6 +2,7 @@
 // UniMart - Buyer Sign Up (Quick Registration)
 // Logic: Sirf Email + Password se signup, baqi
 // details pehle order ke waqt mangi jayengi.
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
 import { useState } from "react";
@@ -13,7 +14,6 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../config/firebase";
 import { getCurrencyForCountry } from "../../utils/countries";
 import CountryGenderFields from "../../components/CountryGenderFields";
-import "../../styles/theme.css";
 
 export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsing }) {
   const [email, setEmail] = useState("");
@@ -47,14 +47,11 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
 
     setLoading(true);
     try {
-      // 1. Create Firebase Auth account
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Send email verification (verification happens later, not blocking signup)
       await sendEmailVerification(user);
 
-      // 3. Create base user document in Firestore
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         role: "buyer",
@@ -62,12 +59,11 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
         currency: getCurrencyForCountry(country),
         gender,
         emailVerified: false,
-        profileComplete: false,   // becomes true after first checkout details are filled
+        profileComplete: false,
         status: "active",
         createdAt: serverTimestamp()
       });
 
-      // 4. Create buyer-specific document (mostly empty, filled in later)
       await setDoc(doc(db, "buyers", user.uid), {
         wishlist: [],
         followedStores: [],
@@ -81,7 +77,6 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
 
     } catch (err) {
       setLoading(false);
-      // Friendly error messages
       if (err.code === "auth/email-already-in-use") {
         setError("This email is already registered. Try logging in instead.");
       } else if (err.code === "auth/invalid-email") {
@@ -100,12 +95,17 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
 
   if (registered) {
     return (
-      <div style={{ minHeight: "100vh", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-        <div style={styles.popup}>
-          <div style={{ fontSize: 48, textAlign: "center", marginBottom: 12 }}>🎉</div>
-          <h2 style={styles.popupTitle}>Congratulations!</h2>
-          <p style={styles.popupText}>Your UniMart account has been created successfully. You're all set to start shopping.</p>
-          <button className="btn-primary" style={{ width: "100%", marginTop: 8 }} onClick={() => onSuccess && onSuccess()}>
+      <div className="min-h-screen bg-black/50 flex items-center justify-center p-5">
+        <div className="bg-canvas rounded-card p-7 max-w-[400px] w-full shadow-elevation">
+          <div className="text-5xl text-center mb-3">🎉</div>
+          <h2 className="text-display-lg text-ink text-center mb-2.5">Congratulations!</h2>
+          <p className="text-body-sm text-body text-center leading-relaxed mb-4">
+            Your UniMart account has been created successfully. You're all set to start shopping.
+          </p>
+          <button
+            onClick={() => onSuccess && onSuccess()}
+            className="w-full h-12 rounded-btn bg-rausch hover:bg-rausch-active text-white text-title-sm font-semibold transition-colors"
+          >
             Continue Shopping →
           </button>
         </div>
@@ -114,64 +114,76 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
   }
 
   return (
-    <div className="auth-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
+    <div className="min-h-screen bg-canvas">
+      <div className="h-nav flex items-center justify-center border-b border-hairline">
+        <div className="text-display-lg">
+          Uni<span className="text-rausch">Mart</span>
+        </div>
       </div>
 
-      <div className="container" style={styles.formWrap}>
+      <div className="max-w-[400px] mx-auto px-4 pt-8 pb-10">
         {onBackToBrowsing && (
-          <div style={styles.backToHomeBtn} onClick={onBackToBrowsing}>
+          <div
+            onClick={onBackToBrowsing}
+            className="flex items-center justify-center gap-2 py-3 px-5 mb-5 rounded-btn border border-hairline bg-surface-soft text-title-sm text-ink cursor-pointer hover:shadow-elevation transition-shadow"
+          >
             🏠 Back to Shopping
           </div>
         )}
-        <h2 style={styles.title}>Create your account</h2>
-        <p style={styles.subtitle}>Browse and shop in seconds. We'll only ask for more details when you're ready to order.</p>
+
+        <h2 className="text-display-lg text-ink mb-2">Create your account</h2>
+        <p className="text-body-sm text-muted mb-6 leading-relaxed">
+          Browse and shop in seconds. We'll only ask for more details when you're ready to order.
+        </p>
 
         <form onSubmit={handleSignUp}>
-          <div style={{ marginBottom: 16 }}>
-            <label className="input-label">Email</label>
+          <div className="mb-4">
+            <label className="block text-title-sm text-ink mb-1.5">Email</label>
             <input
               type="email"
-              className="input-field"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="w-full h-12 px-4 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted focus:outline-none focus:border-ink focus:shadow-elevation transition-shadow"
             />
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <label className="input-label">Password</label>
-            <div style={styles.passwordWrap}>
+          <div className="mb-4">
+            <label className="block text-title-sm text-ink mb-1.5">Password</label>
+            <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                className="input-field"
-                style={{ paddingRight: 44 }}
                 placeholder="At least 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="w-full h-12 pl-4 pr-11 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted focus:outline-none focus:border-ink focus:shadow-elevation transition-shadow"
               />
-              <span style={styles.eyeIcon} onClick={() => setShowPassword((s) => !s)}>
+              <span
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-base select-none"
+              >
                 {showPassword ? "🙈" : "👁️"}
               </span>
             </div>
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <label className="input-label">Confirm Password</label>
-            <div style={styles.passwordWrap}>
+          <div className="mb-4">
+            <label className="block text-title-sm text-ink mb-1.5">Confirm Password</label>
+            <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                className="input-field"
-                style={{ paddingRight: 44 }}
                 placeholder="Re-enter your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                className="w-full h-12 pl-4 pr-11 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted focus:outline-none focus:border-ink focus:shadow-elevation transition-shadow"
               />
-              <span style={styles.eyeIcon} onClick={() => setShowPassword((s) => !s)}>
+              <span
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-base select-none"
+              >
                 {showPassword ? "🙈" : "👁️"}
               </span>
             </div>
@@ -179,35 +191,24 @@ export default function BuyerSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
 
           <CountryGenderFields country={country} setCountry={setCountry} gender={gender} setGender={setGender} />
 
-          {error && <p className="error-text">{error}</p>}
+          {error && <p className="text-rausch text-body-sm mt-2">{error}</p>}
 
-          <button type="submit" className="btn-primary" style={{ width: "100%", marginTop: 8 }} disabled={loading}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-2 h-12 rounded-btn bg-rausch hover:bg-rausch-active disabled:bg-rausch-disabled text-white text-title-sm font-semibold transition-colors"
+          >
             {loading ? "Creating account..." : "Create account"}
           </button>
         </form>
 
-        <p style={styles.switchText}>
+        <p className="text-center mt-5 text-body-sm text-muted">
           Already have an account?{" "}
-          <span style={styles.switchLink} onClick={onSwitchToLogin}>Log in</span>
+          <span onClick={onSwitchToLogin} className="text-ink font-semibold cursor-pointer hover:underline">
+            Log in
+          </span>
         </p>
       </div>
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)" },
-  header: { background: "#0B3D2E", padding: "20px 16px", textAlign: "center" },
-  logo: { fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, color: "#FBF9F4" },
-  formWrap: { paddingTop: 32, paddingBottom: 40 },
-  title: { fontSize: 22, marginBottom: 8 },
-  subtitle: { fontSize: 13.5, color: "#6b6b6b", marginBottom: 24, lineHeight: 1.5 },
-  switchText: { textAlign: "center", marginTop: 20, fontSize: 13, color: "#6b6b6b" },
-  switchLink: { color: "#0B3D2E", fontWeight: 700, cursor: "pointer" },
-  backToHomeBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 20px", background: "#F0F5F0", border: "1.5px solid #eee0c0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#0B3D2E", cursor: "pointer", marginBottom: 20, textAlign: "center" },
-  passwordWrap: { position: "relative" },
-  eyeIcon: { position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", cursor: "pointer", fontSize: 16, userSelect: "none" },
-  popup: { background: "#fff", borderRadius: 20, padding: 28, maxWidth: 400, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" },
-  popupTitle: { fontFamily: "Georgia, serif", fontSize: 20, color: "#0B3D2E", textAlign: "center", marginBottom: 10 },
-  popupText: { fontSize: 13.5, color: "#444", textAlign: "center", lineHeight: 1.5, marginBottom: 16 }
-};
