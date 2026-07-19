@@ -1,5 +1,6 @@
 // ============================================
 // UniMart - Agent Registration
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
 import { useState } from "react";
@@ -8,7 +9,6 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../config/firebase";
 import { getCurrencyForCountry } from "../../utils/countries";
 import CountryGenderFields from "../../components/CountryGenderFields";
-import "../../styles/theme.css";
 
 function generateReferralCode(name) {
   const base = (name || "AGENT").replace(/\s+/g, "").toUpperCase().slice(0, 6);
@@ -138,23 +138,33 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
 
   if (registered) {
     return (
-      <div style={{ minHeight: "100vh", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-        <div style={styles.popup}>
-          <div style={{ fontSize: 48, textAlign: "center", marginBottom: 12 }}>🎉</div>
-          <h2 style={styles.popupTitle}>Registration Successful!</h2>
-          <p style={styles.popupText}>Your agent application has been submitted successfully.</p>
-          <div style={styles.emailBox}>
-            <div style={styles.emailLabel}>Your login email:</div>
-            <div style={styles.emailValue}>{registeredEmail}</div>
+      <div className="min-h-screen bg-black/50 flex items-center justify-center p-5">
+        <div className="bg-canvas rounded-card p-7 max-w-[400px] w-full shadow-elevation">
+          <div className="text-5xl text-center mb-3">🎉</div>
+          <h2 className="text-display-lg text-ink text-center mb-2.5">Registration Successful!</h2>
+          <p className="text-body-sm text-body text-center leading-relaxed mb-4">
+            Your agent application has been submitted successfully.
+          </p>
+          <div className="bg-surface-soft border border-hairline rounded-btn px-4 py-3 mb-3">
+            <div className="text-[10.5px] text-muted mb-1">Your login email:</div>
+            <div className="text-body-md font-bold text-ink">{registeredEmail}</div>
           </div>
-          <p style={styles.popupNote}>
+          <p className="text-body-sm text-muted leading-relaxed text-center">
             Use your email and password to log in. Your account will show "Under Review" until our Marketing Manager approves your application.
           </p>
-          <button className="btn-primary" style={{ width: "100%", marginTop: 16 }} onClick={onSwitchToLogin}>
+          <button
+            onClick={onSwitchToLogin}
+            className="w-full mt-4 h-12 rounded-btn bg-rausch hover:bg-rausch-active text-white text-title-sm font-semibold transition-colors"
+          >
             Login with your email and password →
           </button>
           {onBackToBrowsing && (
-            <div style={styles.backToHomeBtn} onClick={onBackToBrowsing}>🏠 Back to Shopping</div>
+            <div
+              onClick={onBackToBrowsing}
+              className="flex items-center justify-center gap-2 py-3 px-5 mt-2.5 rounded-btn border border-hairline bg-surface-soft text-title-sm text-ink cursor-pointer hover:shadow-elevation transition-shadow"
+            >
+              🏠 Back to Shopping
+            </div>
           )}
         </div>
       </div>
@@ -162,31 +172,49 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
   }
 
   return (
-    <div className="auth-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span> <span style={styles.agentTag}>Agent</span></div>
+    <div className="min-h-screen bg-canvas">
+      <div className="h-nav flex items-center justify-center border-b border-hairline">
+        <div className="text-display-lg flex items-center gap-2">
+          Uni<span className="text-rausch">Mart</span>
+          <span className="text-[11px] bg-rausch text-white px-2 py-0.5 rounded font-extrabold">Agent</span>
+        </div>
       </div>
 
-      <div className="container" style={styles.formWrap}>
-        {onBackToBrowsing && <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"12px 20px",background:"#F0F5F0",border:"1.5px solid #eee0c0",borderRadius:12,fontSize:13.5,fontWeight:700,color:"#0B3D2E",cursor:"pointer",marginBottom:20}} onClick={onBackToBrowsing}>🏠 Back to Shopping</div>}
-        <h2 style={styles.title}>Become a UniMart Agent</h2>
-        <p style={styles.subtitle}>Earn commission by bringing sellers onto the platform and sharing referral links.</p>
+      <div className="max-w-[400px] mx-auto px-4 pt-7 pb-10">
+        {onBackToBrowsing && (
+          <div
+            onClick={onBackToBrowsing}
+            className="flex items-center justify-center gap-2 py-3 px-5 mb-5 rounded-btn border border-hairline bg-surface-soft text-title-sm text-ink cursor-pointer hover:shadow-elevation transition-shadow"
+          >
+            🏠 Back to Shopping
+          </div>
+        )}
+        <h2 className="text-display-lg text-ink mb-2">Become a UniMart Agent</h2>
+        <p className="text-body-sm text-muted mb-6 leading-relaxed">
+          Earn commission by bringing sellers onto the platform and sharing referral links.
+        </p>
 
         <form onSubmit={handleSubmit}>
           <Field label="Full Name" error={errors.fullName}>
-            <input className="input-field" value={form.fullName} onChange={(e) => handleChange("fullName", e.target.value)} />
+            <input className={inputClass} value={form.fullName} onChange={(e) => handleChange("fullName", e.target.value)} />
           </Field>
           <Field label="Email" error={errors.email}>
-            <input type="email" className="input-field" value={form.email} onChange={(e) => handleChange("email", e.target.value)} />
+            <input type="email" className={inputClass} value={form.email} onChange={(e) => handleChange("email", e.target.value)} />
           </Field>
           <Field label="Password" error={errors.password}>
-            <div style={{position:"relative"}}><input type={showPassword ? "text" : "password"} className="input-field" style={{paddingRight:44}} value={form.password} onChange={(e) => handleChange("password", e.target.value)} /><span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:16}} onClick={() => setShowPassword(s => !s)}>{showPassword ? "🙈" : "👁️"}</span></div>
+            <div className="relative">
+              <input type={showPassword ? "text" : "password"} className={`${inputClass} pr-11`} value={form.password} onChange={(e) => handleChange("password", e.target.value)} />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-base select-none" onClick={() => setShowPassword(s => !s)}>{showPassword ? "🙈" : "👁️"}</span>
+            </div>
           </Field>
           <Field label="Confirm Password" error={errors.confirmPassword}>
-            <div style={{position:"relative"}}><input type={showPassword ? "text" : "password"} className="input-field" style={{paddingRight:44}} value={form.confirmPassword} onChange={(e) => handleChange("confirmPassword", e.target.value)} /><span style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:16}} onClick={() => setShowPassword(s => !s)}>{showPassword ? "🙈" : "👁️"}</span></div>
+            <div className="relative">
+              <input type={showPassword ? "text" : "password"} className={`${inputClass} pr-11`} value={form.confirmPassword} onChange={(e) => handleChange("confirmPassword", e.target.value)} />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-base select-none" onClick={() => setShowPassword(s => !s)}>{showPassword ? "🙈" : "👁️"}</span>
+            </div>
           </Field>
           <Field label="Phone Number" error={errors.phone}>
-            <input className="input-field" value={form.phone} onChange={(e) => handleChange("phone", e.target.value)} placeholder="+92 3XX XXXXXXX" />
+            <input className={inputClass} value={form.phone} onChange={(e) => handleChange("phone", e.target.value)} placeholder="+92 3XX XXXXXXX" />
           </Field>
           <CountryGenderFields
             country={form.country}
@@ -196,73 +224,55 @@ export default function AgentSignUp({ onSuccess, onSwitchToLogin, onBackToBrowsi
             errors={errors}
           />
           <Field label="National ID" error={errors.nationalId}>
-            <input className="input-field" value={form.nationalId} onChange={(e) => handleChange("nationalId", e.target.value)} placeholder="XXXXX-XXXXXXX-X" />
+            <input className={inputClass} value={form.nationalId} onChange={(e) => handleChange("nationalId", e.target.value)} placeholder="XXXXX-XXXXXXX-X" />
           </Field>
 
           <Field label="CNIC Photo Upload (optional but recommended)">
             <input
               type="file"
-              className="input-field"
+              className={inputClass}
               accept="image/*,application/pdf"
               onChange={(e) => handleChange("cnicFile", e.target.files[0])}
             />
-            <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Upload a clear photo of your CNIC (front side)</div>
+            <div className="text-[11px] text-muted mt-1">Upload a clear photo of your CNIC (front side)</div>
           </Field>
           <Field label="City" error={errors.city}>
-            <input className="input-field" value={form.city} onChange={(e) => handleChange("city", e.target.value)} />
+            <input className={inputClass} value={form.city} onChange={(e) => handleChange("city", e.target.value)} />
           </Field>
           <Field label="Payment Account (Easypaisa / JazzCash)" error={errors.paymentAccount}>
-            <input className="input-field" value={form.paymentAccount} onChange={(e) => handleChange("paymentAccount", e.target.value)} />
+            <input className={inputClass} value={form.paymentAccount} onChange={(e) => handleChange("paymentAccount", e.target.value)} />
           </Field>
           <Field label="Previous Sales/Marketing Experience (Optional)">
-            <textarea className="input-field" rows={2} value={form.experience} onChange={(e) => handleChange("experience", e.target.value)} style={{ resize: "none", fontFamily: "inherit" }} />
+            <textarea className={`${inputClass} h-auto py-3 resize-none font-inherit`} rows={2} value={form.experience} onChange={(e) => handleChange("experience", e.target.value)} />
           </Field>
           <Field label="Social Media Handle (Optional)">
-            <input className="input-field" value={form.socialHandle} onChange={(e) => handleChange("socialHandle", e.target.value)} placeholder="@yourhandle" />
+            <input className={inputClass} value={form.socialHandle} onChange={(e) => handleChange("socialHandle", e.target.value)} placeholder="@yourhandle" />
           </Field>
 
-          {error && <p className="error-text">{error}</p>}
+          {error && <p className="text-rausch text-body-sm mb-2">{error}</p>}
 
-          <button type="submit" className="btn-primary" style={{ width: "100%", marginTop: 8 }} disabled={loading}>
+          <button type="submit" disabled={loading} className="w-full mt-2 h-12 rounded-btn bg-rausch hover:bg-rausch-active disabled:bg-rausch-disabled text-white text-title-sm font-semibold transition-colors">
             {loading ? "Submitting..." : "Submit application"}
           </button>
         </form>
 
-        <p style={styles.switchText}>
+        <p className="text-center mt-5 text-body-sm text-muted">
           Already an agent?{" "}
-          <span style={styles.switchLink} onClick={onSwitchToLogin}>Log in</span>
+          <span onClick={onSwitchToLogin} className="text-ink font-semibold cursor-pointer hover:underline">Log in</span>
         </p>
       </div>
     </div>
   );
 }
 
+const inputClass = "w-full h-12 px-4 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted focus:outline-none focus:border-ink focus:shadow-elevation transition-shadow bg-canvas";
+
 function Field({ label, error, children }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <label className="input-label">{label}</label>
+    <div className="mb-4">
+      <label className="block text-title-sm text-ink mb-1.5">{label}</label>
       {children}
-      {error && <p className="error-text">{error}</p>}
+      {error && <p className="text-rausch text-body-sm mt-1.5">{error}</p>}
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)" },
-  header: { background: "#0B3D2E", padding: "20px 16px", textAlign: "center" },
-  logo: { fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 700, color: "#FBF9F4" },
-  agentTag: { fontSize: 11, background: "#D4AF37", color: "#0B3D2E", padding: "2px 8px", borderRadius: 6, fontWeight: 800, marginLeft: 4 },
-  formWrap: { paddingTop: 28, paddingBottom: 40 },
-  title: { fontSize: 21, marginBottom: 8 },
-  popup: { background: "#fff", borderRadius: 20, padding: 28, maxWidth: 400, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" },
-  popupTitle: { fontFamily: "Georgia, serif", fontSize: 20, color: "#0B3D2E", textAlign: "center", marginBottom: 10 },
-  popupText: { fontSize: 13.5, color: "#444", textAlign: "center", lineHeight: 1.5, marginBottom: 16 },
-  emailBox: { background: "#F0F5F0", border: "1.5px solid #D4AF37", borderRadius: 12, padding: "12px 16px", marginBottom: 12 },
-  emailLabel: { fontSize: 10.5, color: "#888", marginBottom: 4 },
-  emailValue: { fontSize: 14, fontWeight: 700, color: "#0B3D2E" },
-  popupNote: { fontSize: 12, color: "#666", lineHeight: 1.5, textAlign: "center" },
-  backToHomeBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 20px", background: "#F0F5F0", border: "1.5px solid #eee0c0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#0B3D2E", cursor: "pointer", marginTop: 10, textAlign: "center" },
-  subtitle: { fontSize: 13.5, color: "#6b6b6b", marginBottom: 22, lineHeight: 1.5 },
-  switchText: { textAlign: "center", marginTop: 20, fontSize: 13, color: "#6b6b6b" },
-  switchLink: { color: "#0B3D2E", fontWeight: 700, cursor: "pointer" }
-};
