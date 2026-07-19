@@ -3,10 +3,10 @@
 // Step 1: enter email, request a code (sent via
 //         email through our own serverless function)
 // Step 2: popup — enter code + new password, submit
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
 import { useState } from "react";
-import "../../styles/theme.css";
 
 export default function ForgotPassword({ onBack }) {
   const [email, setEmail] = useState("");
@@ -76,63 +76,82 @@ export default function ForgotPassword({ onBack }) {
     setVerifying(false);
   };
 
+  const inputClass = "w-full h-12 px-4 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted focus:outline-none focus:border-ink focus:shadow-elevation transition-shadow mb-3";
+
   return (
-    <div className="auth-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
+    <div className="min-h-screen bg-canvas">
+      <div className="h-nav flex items-center justify-center border-b border-hairline">
+        <div className="text-display-lg">
+          Uni<span className="text-rausch">Mart</span>
+        </div>
       </div>
 
-      <div className="container" style={styles.formWrap}>
+      <div className="max-w-[400px] mx-auto px-4 pt-8 pb-10">
         {success ? (
-          <div style={styles.successBox}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>✓</div>
-            <h2 style={styles.title}>Password updated</h2>
-            <p style={styles.subtitle}>You can now log in with your new password.</p>
-            <button className="btn-primary" style={{ width: "100%", marginTop: 16 }} onClick={onBack}>Back to login</button>
+          <div className="text-center pt-5">
+            <div className="text-4xl mb-3">✓</div>
+            <h2 className="text-display-lg text-ink mb-2">Password updated</h2>
+            <p className="text-body-sm text-muted mb-5">You can now log in with your new password.</p>
+            <button onClick={onBack} className="w-full h-12 rounded-btn bg-rausch hover:bg-rausch-active text-white text-title-sm font-semibold transition-colors">
+              Back to login
+            </button>
           </div>
         ) : (
           <>
-            <h2 style={styles.title}>Reset your password</h2>
-            <p style={styles.subtitle}>Enter your email — we'll send a 6-digit code to reset your password.</p>
+            <h2 className="text-display-lg text-ink mb-2">Reset your password</h2>
+            <p className="text-body-sm text-muted mb-6 leading-relaxed">
+              Enter your email — we'll send a 6-digit code to reset your password.
+            </p>
             <form onSubmit={handleGetOtp}>
-              <label className="input-label">Email</label>
+              <label className="block text-title-sm text-ink mb-1.5">Email</label>
               <input
                 type="email"
-                className="input-field"
-                style={{ marginBottom: 12 }}
+                className={inputClass}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={otpSent}
               />
-              {sendError && <p className="error-text">{sendError}</p>}
+              {sendError && <p className="text-rausch text-body-sm mb-2">{sendError}</p>}
               {otpSent && !sendError && (
-                <p style={styles.sentNote}>✓ Code sent — check your email inbox.</p>
+                <p className="text-body-sm text-green-700 font-semibold mb-2">✓ Code sent — check your email inbox.</p>
               )}
-              <button type="submit" className="btn-primary" style={{ width: "100%", marginTop: 8 }} disabled={sendingOtp}>
+              <button
+                type="submit"
+                disabled={sendingOtp}
+                className="w-full h-12 mt-2 rounded-btn bg-rausch hover:bg-rausch-active disabled:bg-rausch-disabled text-white text-title-sm font-semibold transition-colors"
+              >
                 {sendingOtp ? "Sending..." : otpSent ? "Resend Code" : "Get OTP"}
               </button>
               {otpSent && (
-                <button type="button" className="btn-secondary" style={{ width: "100%", marginTop: 10 }} onClick={() => setShowPopup(true)}>
+                <button
+                  type="button"
+                  onClick={() => setShowPopup(true)}
+                  className="w-full h-12 mt-2.5 rounded-btn border border-hairline text-ink text-title-sm font-semibold hover:bg-surface-soft transition-colors"
+                >
                   Enter Code
                 </button>
               )}
             </form>
-            <p style={styles.switchText} onClick={onBack}>← Back to login</p>
+            <p onClick={onBack} className="text-center mt-4.5 text-body-sm text-ink font-semibold cursor-pointer hover:underline">
+              ← Back to login
+            </p>
           </>
         )}
       </div>
 
       {/* ===== OTP + New Password Popup ===== */}
       {showPopup && (
-        <div style={styles.overlay} onClick={() => setShowPopup(false)}>
-          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 style={styles.modalTitle}>Enter Reset Code</h3>
-            <p style={styles.modalSubtitle}>Sent to <b>{email}</b></p>
+        <div
+          onClick={() => setShowPopup(false)}
+          className="fixed inset-0 bg-black/50 z-[300] flex items-center justify-center p-5"
+        >
+          <div onClick={(e) => e.stopPropagation()} className="bg-canvas rounded-card p-6 w-full max-w-[380px] shadow-elevation">
+            <h3 className="text-title-md text-ink font-bold mb-1">Enter Reset Code</h3>
+            <p className="text-body-sm text-muted mb-4.5">Sent to <b className="text-ink">{email}</b></p>
 
-            <label className="input-label">6-Digit Code</label>
+            <label className="block text-title-sm text-ink mb-1.5">6-Digit Code</label>
             <input
-              className="input-field"
-              style={{ marginBottom: 12, letterSpacing: 4, fontWeight: 700, textAlign: "center" }}
+              className={`${inputClass} tracking-[4px] font-bold text-center`}
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="000000"
@@ -140,58 +159,48 @@ export default function ForgotPassword({ onBack }) {
               inputMode="numeric"
             />
 
-            <label className="input-label">New Password</label>
+            <label className="block text-title-sm text-ink mb-1.5">New Password</label>
             <input
               type="password"
-              className="input-field"
-              style={{ marginBottom: 12 }}
+              className={inputClass}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="At least 6 characters"
             />
 
-            <label className="input-label">Re-enter New Password</label>
+            <label className="block text-title-sm text-ink mb-1.5">Re-enter New Password</label>
             <input
               type="password"
-              className="input-field"
-              style={{ marginBottom: 14 }}
+              className={`${inputClass} mb-3.5`}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Repeat new password"
             />
 
-            {verifyError && <p className="error-text">{verifyError}</p>}
+            {verifyError && <p className="text-rausch text-body-sm mb-2">{verifyError}</p>}
 
-            <div style={styles.modalActions}>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={verifying}>
+            <div className="flex gap-2.5 mt-1.5">
+              <button
+                onClick={handleSubmit}
+                disabled={verifying}
+                className="flex-1 h-12 rounded-btn bg-rausch hover:bg-rausch-active disabled:bg-rausch-disabled text-white text-title-sm font-semibold transition-colors"
+              >
                 {verifying ? "Updating..." : "Submit"}
               </button>
-              <button style={styles.clearBtn} onClick={resetPopupFields} disabled={verifying}>Clear</button>
+              <button
+                onClick={resetPopupFields}
+                disabled={verifying}
+                className="flex-1 h-12 rounded-btn bg-surface-soft border border-hairline text-ink text-title-sm font-bold"
+              >
+                Clear
+              </button>
             </div>
-            <div style={styles.closeBtn} onClick={() => setShowPopup(false)}>Close</div>
+            <div onClick={() => setShowPopup(false)} className="text-center mt-2.5 text-body-sm text-muted cursor-pointer">
+              Close
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)" },
-  header: { background: "#0B3D2E", padding: "20px 16px", textAlign: "center" },
-  logo: { fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, color: "#FBF9F4" },
-  formWrap: { paddingTop: 32, paddingBottom: 40 },
-  title: { fontSize: 21, marginBottom: 8 },
-  subtitle: { fontSize: 13.5, color: "#6b6b6b", marginBottom: 22, lineHeight: 1.5 },
-  sentNote: { fontSize: 12.5, color: "#2E7D32", fontWeight: 600, marginBottom: 8 },
-  successBox: { textAlign: "center", paddingTop: 20 },
-  switchText: { textAlign: "center", marginTop: 18, fontSize: 12.5, color: "#0B3D2E", fontWeight: 700, cursor: "pointer" },
-
-  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
-  modal: { background: "#fff", borderRadius: 18, padding: 24, width: "100%", maxWidth: 380 },
-  modalTitle: { fontSize: 18, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 4, fontWeight: 700 },
-  modalSubtitle: { fontSize: 12.5, color: "#888", marginBottom: 18 },
-  modalActions: { display: "flex", gap: 10, marginTop: 6 },
-  clearBtn: { flex: 1, background: "#F0F5F0", border: "1px solid #eee0c0", color: "#0B3D2E", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" },
-  closeBtn: { textAlign: "center", fontSize: 12.5, color: "#888", cursor: "pointer", padding: "10px 0 0" }
-};
