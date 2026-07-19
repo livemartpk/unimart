@@ -33,39 +33,39 @@ export default function CountryGenderFields({ country, setCountry, gender, setGe
 
   return (
     <>
-      <div style={{ marginBottom: 16 }}>
-        <label className="input-label">Country</label>
+      <div className="mb-4">
+        <label className="block text-title-sm text-ink mb-1.5">Country</label>
         <select
-          className="input-field"
           value={country}
           onChange={(e) => setCountry(e.target.value)}
           disabled={loading}
+          className="w-full h-12 px-4 rounded-btn border border-hairline text-body-md text-ink bg-canvas focus:outline-none focus:border-ink focus:shadow-elevation transition-shadow disabled:text-muted"
         >
           <option value="">{loading ? "Loading countries..." : "Select your country"}</option>
           {activeCountries.map((c) => (
             <option key={c.code} value={c.name}>{c.name}</option>
           ))}
         </select>
-        {errors.country && <p className="error-text">{errors.country}</p>}
+        {errors.country && <p className="text-rausch text-body-sm mt-1.5">{errors.country}</p>}
         {currency && (
-          <p style={{ fontSize: 11.5, color: "#0B3D2E", fontWeight: 600, marginTop: 6 }}>
+          <p className="text-body-sm text-ink font-semibold mt-1.5">
             Currency: {currency}
           </p>
         )}
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <label className="input-label">Gender</label>
+      <div className="mb-4">
+        <label className="block text-title-sm text-ink mb-1.5">Gender</label>
         <select
-          className="input-field"
           value={gender}
           onChange={(e) => setGender(e.target.value)}
+          className="w-full h-12 px-4 rounded-btn border border-hairline text-body-md text-ink bg-canvas focus:outline-none focus:border-ink focus:shadow-elevation transition-shadow"
         >
           <option value="">Select gender</option>
           <option value="Male">Male</option>
           <option value="Female">Female</option>
         </select>
-        {errors.gender && <p className="error-text">{errors.gender}</p>}
+        {errors.gender && <p className="text-rausch text-body-sm mt-1.5">{errors.gender}</p>}
       </div>
     </>
   );
