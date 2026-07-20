@@ -2,13 +2,13 @@
 // UniMart - Buyer Profile Completion
 // Trigger: Pehli baar checkout try karne par.
 // Requires: Email verified + full profile details.
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
 import { useState, useEffect } from "react";
 import { sendEmailVerification, reload } from "firebase/auth";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../config/firebase";
-import "../../styles/theme.css";
 
 export default function BuyerProfileCompletion({ user, onComplete }) {
   const [emailVerified, setEmailVerified] = useState(user?.emailVerified || false);
@@ -129,38 +129,40 @@ export default function BuyerProfileCompletion({ user, onComplete }) {
   };
 
   return (
-    <div className="auth-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
+    <div className="min-h-screen bg-canvas">
+      <div className="h-nav flex items-center justify-center border-b border-hairline">
+        <div className="text-display-lg">
+          Uni<span className="text-rausch">Mart</span>
+        </div>
       </div>
 
-      <div className="container" style={styles.formWrap}>
-        <h2 style={styles.title}>One last step</h2>
-        <p style={styles.subtitle}>
+      <div className="max-w-[400px] mx-auto px-4 pt-7 pb-10">
+        <h2 className="text-display-lg text-ink mb-2">One last step</h2>
+        <p className="text-body-sm text-muted mb-6 leading-relaxed">
           We need a few details to process your order — this only takes a minute, and you won't need to do it again.
         </p>
 
         {/* Email Verification Block */}
         {!emailVerified && (
-          <div style={styles.verifyBox}>
-            <p style={styles.verifyTitle}>Verify your email</p>
-            <p style={styles.verifyText}>
-              We've sent a verification link to <b>{user?.email}</b>. Tap the link, then come back here.
+          <div className="bg-surface-soft border border-hairline rounded-card p-4 mb-6">
+            <p className="text-title-sm text-ink font-bold mb-1.5">Verify your email</p>
+            <p className="text-body-sm text-body leading-relaxed">
+              We've sent a verification link to <b className="text-ink">{user?.email}</b>. Tap the link, then come back here.
             </p>
-            <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <div className="flex gap-2.5 mt-2.5">
               <button
                 type="button"
-                className="btn-primary"
                 onClick={handleCheckVerified}
                 disabled={checkingVerification}
+                className="h-11 px-4 rounded-btn bg-rausch hover:bg-rausch-active disabled:bg-rausch-disabled text-white text-body-sm font-semibold transition-colors"
               >
                 {checkingVerification ? "Checking..." : "I've verified — Check now"}
               </button>
               <button
                 type="button"
-                className="btn-secondary"
                 onClick={handleResendEmail}
                 disabled={resendCooldown > 0}
+                className="h-11 px-4 rounded-btn border border-hairline text-ink text-body-sm font-semibold hover:bg-surface-soft transition-colors disabled:text-muted"
               >
                 {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : "Resend email"}
               </button>
@@ -169,24 +171,24 @@ export default function BuyerProfileCompletion({ user, onComplete }) {
         )}
 
         {emailVerified && (
-          <form onSubmit={handleSubmit} style={{ opacity: emailVerified ? 1 : 0.4, pointerEvents: emailVerified ? "auto" : "none" }}>
+          <form onSubmit={handleSubmit}>
             <Field label="Full Name" error={errors.fullName}>
-              <input className="input-field" value={form.fullName} onChange={(e) => handleChange("fullName", e.target.value)} placeholder="Your full name" />
+              <input className={inputClass} value={form.fullName} onChange={(e) => handleChange("fullName", e.target.value)} placeholder="Your full name" />
             </Field>
 
             <Field label="Phone Number" error={errors.phone}>
-              <input className="input-field" value={form.phone} onChange={(e) => handleChange("phone", e.target.value)} placeholder="+92 3XX XXXXXXX" />
+              <input className={inputClass} value={form.phone} onChange={(e) => handleChange("phone", e.target.value)} placeholder="+92 3XX XXXXXXX" />
             </Field>
 
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
+            <div className="flex gap-3">
+              <div className="flex-1">
                 <Field label="Date of Birth" error={errors.dob}>
-                  <input type="date" className="input-field" value={form.dob} onChange={(e) => handleChange("dob", e.target.value)} />
+                  <input type="date" className={inputClass} value={form.dob} onChange={(e) => handleChange("dob", e.target.value)} />
                 </Field>
               </div>
-              <div style={{ flex: 1 }}>
+              <div className="flex-1">
                 <Field label="Gender" error={errors.gender}>
-                  <select className="input-field" value={form.gender} onChange={(e) => handleChange("gender", e.target.value)}>
+                  <select className={inputClass} value={form.gender} onChange={(e) => handleChange("gender", e.target.value)}>
                     <option value="">Select</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -197,33 +199,32 @@ export default function BuyerProfileCompletion({ user, onComplete }) {
             </div>
 
             <Field label="Country">
-              <select className="input-field" value={form.country} onChange={(e) => handleChange("country", e.target.value)}>
+              <select className={inputClass} value={form.country} onChange={(e) => handleChange("country", e.target.value)}>
                 <option value="Pakistan">Pakistan</option>
               </select>
             </Field>
 
             <Field label="National ID" error={errors.nationalId}>
-              <input className="input-field" value={form.nationalId} onChange={(e) => handleChange("nationalId", e.target.value)} placeholder="XXXXX-XXXXXXX-X" />
+              <input className={inputClass} value={form.nationalId} onChange={(e) => handleChange("nationalId", e.target.value)} placeholder="XXXXX-XXXXXXX-X" />
             </Field>
 
             <Field label="City" error={errors.city}>
-              <input className="input-field" value={form.city} onChange={(e) => handleChange("city", e.target.value)} placeholder="e.g. Bahawalpur" />
+              <input className={inputClass} value={form.city} onChange={(e) => handleChange("city", e.target.value)} placeholder="e.g. Bahawalpur" />
             </Field>
 
             <Field label="Delivery Address" error={errors.address}>
               <textarea
-                className="input-field"
+                className={`${inputClass} h-auto py-3 resize-none font-inherit`}
                 rows={3}
                 value={form.address}
                 onChange={(e) => handleChange("address", e.target.value)}
                 placeholder="House #, street, area..."
-                style={{ resize: "none", fontFamily: "inherit" }}
               />
             </Field>
 
-            {submitError && <p className="error-text">{submitError}</p>}
+            {submitError && <p className="text-rausch text-body-sm mb-2">{submitError}</p>}
 
-            <button type="submit" className="btn-primary" style={{ width: "100%", marginTop: 8 }} disabled={submitting}>
+            <button type="submit" disabled={submitting} className="w-full mt-2 h-12 rounded-btn bg-rausch hover:bg-rausch-active disabled:bg-rausch-disabled text-white text-title-sm font-semibold transition-colors">
               {submitting ? "Saving..." : "Continue to checkout"}
             </button>
           </form>
@@ -233,24 +234,14 @@ export default function BuyerProfileCompletion({ user, onComplete }) {
   );
 }
 
+const inputClass = "w-full h-12 px-4 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted focus:outline-none focus:border-ink focus:shadow-elevation transition-shadow bg-canvas";
+
 function Field({ label, error, children }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <label className="input-label">{label}</label>
+    <div className="mb-4">
+      <label className="block text-title-sm text-ink mb-1.5">{label}</label>
       {children}
-      {error && <p className="error-text">{error}</p>}
+      {error && <p className="text-rausch text-body-sm mt-1.5">{error}</p>}
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)" },
-  header: { background: "#0B3D2E", padding: "20px 16px", textAlign: "center" },
-  logo: { fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, color: "#FBF9F4" },
-  formWrap: { paddingTop: 28, paddingBottom: 40 },
-  title: { fontSize: 22, marginBottom: 8 },
-  subtitle: { fontSize: 13.5, color: "#6b6b6b", marginBottom: 22, lineHeight: 1.5 },
-  verifyBox: { background: "#F0F5F0", border: "1px solid #eee0c0", borderRadius: 12, padding: 16, marginBottom: 24 },
-  verifyTitle: { fontWeight: 700, color: "#0B3D2E", fontSize: 14, marginBottom: 6 },
-  verifyText: { fontSize: 12.5, color: "#444", lineHeight: 1.5 }
-};
