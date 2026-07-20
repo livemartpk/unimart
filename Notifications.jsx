@@ -1,0 +1,299 @@
+/* ============================================
+   UniMart - Global Theme: "Emerald Trust"
+   Deep Green + Gold | Phase 1 brand identity
+   ============================================ */
+
+/* Fonts loaded via <link> in index.html (non-blocking) instead of @import here */
+
+:root {
+  /* Core Colors */
+  --color-primary: #0B3D2E;       /* Deep Green */
+  --color-accent: #D4AF37;        /* Gold */
+  --color-bg: #FBF9F4;            /* Warm Off-White */
+  --color-card-bg: #F0F5F0;       /* Light Mint */
+  --color-border: #eee0c0;        /* Soft Gold tint */
+
+  /* Text */
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #6b6b6b;
+  --color-text-on-dark: #FBF9F4;
+
+  /* Status Colors */
+  --color-success: #2E7D32;
+  --color-warning: #D4AF37;
+  --color-error: #C0392B;
+  --color-info: #2C6E91;
+
+  /* Typography */
+  --font-heading: Georgia, 'Times New Roman', serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, sans-serif;
+
+  /* Spacing */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-card: 0 4px 16px rgba(11, 61, 46, 0.08);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  color: var(--color-primary);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ===== Reusable Components ===== */
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-accent);
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-primary:hover { opacity: 0.9; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  padding: 11px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-gold {
+  background: var(--color-accent);
+  color: var(--color-primary);
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.input-field {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: #fff;
+  color: var(--color-text-primary);
+  transition: border-color 0.2s;
+}
+.input-field:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.input-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 6px;
+}
+
+.error-text {
+  color: var(--color-error);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.badge-verified {
+  background: var(--color-accent);
+  color: var(--color-primary);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.container {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ============================================
+   Desktop Responsive Overrides
+   Mobile-first pages use maxWidth:480 by default
+   (inline styles). On wider screens, we widen the
+   page shell and adapt grids so it doesn't look like
+   a tiny phone stuck in the middle of the screen.
+   ============================================ */
+
+.page-shell {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+@media (min-width: 900px) {
+  .page-shell {
+    max-width: 1200px !important;
+  }
+
+  /* Product grids: 2 columns on mobile -> 4 on desktop */
+  .product-grid-responsive {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+
+  /* Bento category row: stack -> wider row */
+  .bento-grid-responsive {
+    max-width: 1200px;
+  }
+
+  /* Bottom nav becomes a top nav bar feel on desktop (still functional, just wider) */
+  .bottom-nav-responsive {
+    max-width: 1200px !important;
+    position: relative !important;
+    bottom: auto !important;
+  }
+
+  .header-responsive {
+    padding-left: 48px !important;
+    padding-right: 48px !important;
+  }
+
+  .section-responsive {
+    padding-left: 48px !important;
+    padding-right: 48px !important;
+  }
+}
+
+@media (min-width: 1300px) {
+  .product-grid-responsive {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+}
+
+/* Auth pages (Login/Signup): center as a card on desktop instead of
+   stretching full-width, since a form doesn't benefit from extra width. */
+@media (min-width: 700px) {
+  .auth-shell {
+    max-width: 480px !important;
+    margin: 40px auto !important;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(11,61,46,0.15);
+  }
+  body {
+    background: #F0F5F0;
+  }
+}
+
+/* ============================================
+   Admin Layout — Rising Hope Society Pattern
+   Desktop: sidebar always visible (fixed left)
+   Mobile: sidebar hidden, hamburger toggles it
+   with overlay — exact same as RHS admin.css
+   ============================================ */
+
+.admin-sidebar {
+  width: 240px;
+  background: #0B3D2E;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 100;
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+}
+
+/* Mobile: hamburger toggle button — hidden on desktop */
+.admin-menu-toggle {
+  display: none !important;
+}
+
+/* Mobile breakpoint — same as RHS: 768px */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    transform: translateX(-100%);
+  }
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+  .admin-menu-toggle {
+    display: flex !important;
+  }
+  /* Main content: no left margin on mobile (sidebar is overlaid) */
+  .admin-main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+/* ============================================
+   Print Styles — Invoice & Dispatch Slip
+   ============================================ */
+@media print {
+  /* Hide everything except the printable sheet */
+  .no-print,
+  .admin-sidebar,
+  .admin-main-content > div:first-child {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* ============================================
+   Product Card Interaction — hover on desktop,
+   press feedback on mobile (Daraz-style lift)
+   ============================================ */
+.product-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+@media (hover: hover) {
+  .product-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 22px rgba(11, 61, 46, 0.18) !important;
+  }
+}
+.product-card-hover:active {
+  transform: translateY(-1px) scale(0.98);
+  box-shadow: 0 5px 12px rgba(11, 61, 46, 0.14) !important;
+}
