@@ -1,9 +1,8 @@
 // ============================================
 // UniMart - Admin Layout
-// Sidebar pattern copied from Rising Hope Society:
-// - Desktop: sidebar always visible (fixed left)
-// - Mobile: hamburger button toggles sidebar
-//   with overlay (same as RHS admin dashboard)
+// Desktop: sidebar always visible (fixed left)
+// Mobile: hamburger button toggles sidebar (slide-in)
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
 import { useState, useEffect } from "react";
@@ -12,7 +11,6 @@ import { collection, getDocs } from "firebase/firestore";
 import { auth, db } from "../config/firebase";
 import { COUNTRIES, getFlagUrl } from "../utils/countries";
 import { AdminCountryProvider, useAdminCountry } from "../context/AdminCountryContext";
-import "../styles/theme.css";
 
 const SIDEBAR_ITEMS = {
   super_admin: [
@@ -125,87 +123,82 @@ function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
   };
 
   return (
-    <div style={s.shell}>
+    <div className="flex h-screen bg-surface-soft">
 
       {/* ===== Sidebar ===== */}
-      <div className={`admin-sidebar${sidebarOpen ? " open" : ""}`}>
-
+      <div
+        className={`fixed md:static inset-y-0 left-0 w-60 bg-canvas border-r border-hairline flex flex-col z-[100] transition-transform duration-200
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+      >
         {/* Brand */}
-        <div style={s.brand}>
-          <div style={s.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
-          <div style={s.roleLabel}>{roleLabel}</div>
+        <div className="h-16 px-4.5 border-b border-hairline flex flex-col justify-center flex-shrink-0">
+          <div className="text-display-lg text-ink">Uni<span className="text-rausch">Mart</span></div>
+          <div className="text-[11px] text-rausch font-bold tracking-wide mt-0.5">{roleLabel}</div>
         </div>
 
         {/* Nav Links */}
-        <nav style={s.nav}>
+        <nav className="flex-1 p-2.5 flex flex-col gap-1 overflow-y-auto">
           {items.map((item) => (
             <button
               key={item.key}
-              style={{
-                ...s.navItem,
-                ...(currentPage === item.key ? s.navItemActive : {})
-              }}
               onClick={() => handleNav(item.key)}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-btn text-body-sm font-medium text-left w-full transition-colors
+              ${currentPage === item.key ? "bg-rausch/10 text-rausch font-semibold" : "text-body hover:bg-surface-soft"}`}
             >
-              <span style={s.navIcon}>{item.icon}</span>
+              <span className="w-5 text-center text-base">{item.icon}</span>
               <span>{item.label}</span>
             </button>
           ))}
         </nav>
 
         {/* Bottom: View Website + Logout */}
-        <div style={s.sidebarBottom}>
-          <button style={s.viewWebsiteBtn} onClick={handleViewWebsite}>
+        <div className="p-2.5 border-t border-hairline flex flex-col gap-1">
+          <button onClick={handleViewWebsite} className="flex items-center gap-3 px-3.5 py-2.5 rounded-btn text-body-sm text-muted hover:bg-surface-soft w-full">
             🌐 <span>View Website</span>
           </button>
-          <button style={s.logoutBtn} onClick={handleLogout}>
+          <button onClick={handleLogout} className="flex items-center gap-3 px-3.5 py-2.5 rounded-btn bg-rausch/10 border border-rausch/20 text-rausch text-body-sm font-semibold w-full">
             🚪 <span>Logout</span>
           </button>
         </div>
       </div>
 
-      {/* ===== Mobile Overlay (click to close sidebar) ===== */}
+      {/* ===== Mobile Overlay ===== */}
       {sidebarOpen && (
-        <div style={s.overlay} onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-black/50 z-[99] md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* ===== Main Content ===== */}
-      <div className="admin-main-content" style={s.mainContent}>
+      <div className="flex-1 flex flex-col h-screen overflow-hidden md:ml-0">
 
-        {/* Topbar — fixed in place (flex layout keeps it out of the scroll area), one line: title + icons */}
-        <div style={s.topbar}>
-          {/* Hamburger — mobile only */}
-          <button
-            className="admin-menu-toggle"
-            style={s.menuToggle}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
+        {/* Topbar */}
+        <div className="h-16 px-4.5 flex items-center gap-4 bg-canvas border-b border-hairline flex-shrink-0">
+          <button className="md:hidden text-xl text-ink" onClick={() => setSidebarOpen(!sidebarOpen)}>
             ☰
           </button>
-          <div style={s.pageTitle}>
+          <div className="flex-1 text-title-md text-ink font-bold whitespace-nowrap overflow-hidden text-ellipsis">
             {items.find(i => i.key === currentPage)?.label || roleLabel}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          <div className="flex items-center gap-2.5 flex-shrink-0">
             <div
-              style={{ ...s.adminChip, ...(!country ? s.countrySelectorEmpty : {}), cursor: "pointer" }}
               onClick={() => setShowCountryModal(true)}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-body-sm font-semibold cursor-pointer whitespace-nowrap
+              ${!country ? "bg-rausch-disabled/30 text-rausch border-rausch-disabled" : "bg-surface-soft text-ink border-hairline"}`}
             >
               {country && selectedCountryData ? (
                 <>
-                  <img src={getFlagUrl(selectedCountryData.code, 40)} alt="" style={s.flagIconSmall} />
+                  <img src={getFlagUrl(selectedCountryData.code, 40)} alt="" className="w-4 h-4 rounded-full object-cover flex-shrink-0" />
                   {country}
                 </>
               ) : "🌍 Select country"}
             </div>
-            {/* Logout button — visible on both mobile and desktop */}
-            <button style={s.topbarLogoutBtn} onClick={handleLogout} title="Logout">
+            <button onClick={handleLogout} title="Logout" className="w-10 h-10 rounded-full border border-hairline bg-surface-soft text-base flex items-center justify-center">
               🚪
             </button>
           </div>
         </div>
 
         {/* Page Content — this is the only part that scrolls */}
-        <div style={{ flex: 1, overflowY: "auto", paddingBottom: 30 }}>
+        <div className="flex-1 overflow-y-auto pb-8">
           {children}
         </div>
 
@@ -213,193 +206,35 @@ function AdminLayoutInner({ role, currentPage, onNavigate, children }) {
 
       {/* ===== Country Picker Modal (only Active countries) ===== */}
       {showCountryModal && (
-        <div style={s.countryModalOverlay} onClick={() => setShowCountryModal(false)}>
-          <div style={s.countryModal} onClick={(e) => e.stopPropagation()}>
-            <div style={s.countryModalTitle}>Select country</div>
+        <div className="fixed inset-0 bg-black/50 z-[400] flex items-end justify-center" onClick={() => setShowCountryModal(false)}>
+          <div className="bg-canvas rounded-t-card p-5.5 w-full max-w-[480px] max-h-[75vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="text-title-md text-ink font-bold mb-3.5">Select country</div>
             <input
-              className="input-field"
-              style={{ marginBottom: 12 }}
+              className="w-full h-12 px-4 mb-3 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted focus:outline-none focus:border-ink"
               placeholder="Search countries..."
               value={countrySearch}
               onChange={(e) => setCountrySearch(e.target.value)}
               autoFocus
             />
-            <div style={s.countryModalList}>
+            <div className="overflow-y-auto flex-1">
               {activeCountryList
                 .filter((c) => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
                 .map((c) => (
-                  <div key={c.code} style={s.countryModalRow} onClick={() => handleSelectCountry(c.name)}>
-                    <img src={getFlagUrl(c.code, 40)} alt="" style={s.flagIconModal} />
+                  <div key={c.code} onClick={() => handleSelectCountry(c.name)} className="flex items-center gap-2.5 py-2.5 px-1.5 border-b border-hairline-soft cursor-pointer text-body-sm text-ink">
+                    <img src={getFlagUrl(c.code, 40)} alt="" className="w-6.5 h-6.5 rounded-full object-cover flex-shrink-0" />
                     <span>{c.name}</span>
                   </div>
                 ))}
               {activeCountryList.length === 0 && (
-                <p style={{ fontSize: 12.5, color: "#888", textAlign: "center", padding: 20 }}>
+                <p className="text-body-sm text-muted text-center p-5">
                   No countries are active yet — turn some on in Countries management.
                 </p>
               )}
             </div>
-            <div style={s.countryModalClose} onClick={() => setShowCountryModal(false)}>Close</div>
+            <div onClick={() => setShowCountryModal(false)} className="text-center text-body-sm text-muted cursor-pointer pt-3">Close</div>
           </div>
         </div>
       )}
     </div>
   );
 }
-
-const s = {
-  shell: {
-    display: "flex",
-    height: "100vh",
-    background: "#F0F4F3",
-    fontFamily: "var(--font-body)"
-  },
-  brand: {
-    padding: "0 18px",
-    height: 64,
-    borderBottom: "1px solid rgba(255,255,255,0.12)",
-    flexShrink: 0,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center"
-  },
-  logo: {
-    fontFamily: "Georgia, serif",
-    fontSize: 22,
-    fontWeight: 800,
-    color: "#fff"
-  },
-  roleLabel: {
-    fontSize: 11,
-    color: "#D4AF37",
-    fontWeight: 700,
-    letterSpacing: 0.5,
-    marginTop: 3
-  },
-  nav: {
-    flex: 1,
-    padding: "16px 10px",
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-    overflowY: "auto"
-  },
-  navItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    padding: "12px 14px",
-    borderRadius: 10,
-    background: "none",
-    border: "none",
-    color: "rgba(255,255,255,0.75)",
-    fontFamily: "inherit",
-    fontSize: 14,
-    fontWeight: 500,
-    cursor: "pointer",
-    textAlign: "left",
-    width: "100%",
-    transition: "background 0.2s"
-  },
-  navItemActive: {
-    background: "rgba(255,255,255,0.15)",
-    color: "#fff"
-  },
-  navIcon: { width: 20, textAlign: "center", fontSize: 16 },
-
-  sidebarBottom: {
-    padding: "12px 10px",
-    borderTop: "1px solid rgba(255,255,255,0.12)",
-    display: "flex",
-    flexDirection: "column",
-    gap: 4
-  },
-  viewWebsiteBtn: {
-    display: "flex", alignItems: "center", gap: 12,
-    padding: "10px 14px", borderRadius: 10,
-    background: "none", border: "none",
-    color: "rgba(255,255,255,0.65)", fontSize: 13.5,
-    fontWeight: 500, cursor: "pointer", fontFamily: "inherit", width: "100%"
-  },
-  logoutBtn: {
-    display: "flex", alignItems: "center", gap: 12,
-    padding: "10px 14px", borderRadius: 10,
-    background: "rgba(255,80,80,0.13)",
-    border: "1px solid rgba(255,100,100,0.2)",
-    color: "rgba(255,180,180,0.9)", fontSize: 13.5,
-    fontWeight: 600, cursor: "pointer", fontFamily: "inherit", width: "100%"
-  },
-
-  overlay: {
-    position: "fixed", inset: 0,
-    background: "rgba(0,0,0,0.5)",
-    zIndex: 99
-  },
-
-  mainContent: {
-    marginLeft: 240,
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    height: "100vh",
-    width: "calc(100% - 240px)",
-    overflow: "hidden"
-  },
-
-  topbar: {
-    background: "#0B3D2E",
-    padding: "0 18px",
-    height: 64,
-    display: "flex",
-    alignItems: "center",
-    gap: 16,
-    flexShrink: 0
-  },
-  menuToggle: {
-    background: "none", border: "none",
-    fontSize: 20, cursor: "pointer",
-    color: "#fff", display: "none"
-  },
-  pageTitle: {
-    fontFamily: "Georgia, serif",
-    fontSize: 15,
-    color: "#fff",
-    flex: 1,
-    fontWeight: 700,
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis"
-  },
-  adminChip: {
-    background: "rgba(255,255,255,0.15)", color: "#fff",
-    border: "1px solid rgba(255,255,255,0.2)",
-    padding: "6px 14px", borderRadius: 999,
-    fontSize: 12.5, fontWeight: 600,
-    display: "flex", alignItems: "center", gap: 7,
-    whiteSpace: "nowrap"
-  },
-  countrySelectorEmpty: {
-    background: "#FCEAEA", color: "#C0392B", border: "1px solid #f5c6c6"
-  },
-  flagIconSmall: { width: 16, height: 16, borderRadius: "50%", objectFit: "cover", flexShrink: 0 },
-  flagIconModal: { width: 26, height: 26, borderRadius: "50%", objectFit: "cover", flexShrink: 0 },
-
-  countryModalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 400, display: "flex", alignItems: "flex-end", justifyContent: "center" },
-  countryModal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 22, width: "100%", maxWidth: 480, maxHeight: "75vh", display: "flex", flexDirection: "column" },
-  countryModalTitle: { fontSize: 17, fontFamily: "Georgia, serif", color: "#0B3D2E", fontWeight: 700, marginBottom: 14 },
-  countryModalList: { overflowY: "auto", flex: 1 },
-  countryModalRow: { display: "flex", alignItems: "center", gap: 10, padding: "10px 6px", borderBottom: "1px solid #f0f0f0", cursor: "pointer", fontSize: 13.5, color: "#1a1a1a" },
-  countryModalClose: { textAlign: "center", fontSize: 12.5, color: "#888", cursor: "pointer", padding: "12px 0 0" },
-  topbarLogoutBtn: {
-    background: "rgba(255,255,255,0.15)",
-    border: "1px solid rgba(255,255,255,0.2)",
-    borderRadius: 10,
-    padding: "8px 12px",
-    fontSize: 16,
-    cursor: "pointer",
-    color: "#fff",
-    fontFamily: "inherit",
-    display: "flex",
-    alignItems: "center"
-  }
-};
