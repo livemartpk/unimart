@@ -3,15 +3,13 @@
 // Same pattern as AdminLayout:
 // Fixed left sidebar on desktop
 // Hamburger slide menu on mobile
-// Green topbar stays fixed in place — only the
-// white page content below it scrolls.
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
 import { useState, useEffect } from "react";
 import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../config/firebase";
-import "../styles/theme.css";
 
 const SIDEBAR_ITEMS = [
   { key: "seller-dashboard", icon: "🏠", label: "Dashboard" },
@@ -50,43 +48,46 @@ export default function SellerLayout({ currentPage, onNavigate, storeName, user,
   };
 
   const statusLabel = storeStatus === "vacation" ? "On Vacation" : storeStatus === "approved" ? "Active" : storeStatus === "pending" ? "Pending" : null;
-  const statusStyle = storeStatus === "vacation" ? s.statusVacation : storeStatus === "approved" ? s.statusActive : s.statusPending;
+  const statusClass =
+    storeStatus === "approved" ? "bg-green-100 text-green-700" :
+    storeStatus === "vacation" ? "bg-surface-strong text-body" :
+    "bg-rausch-disabled/40 text-rausch";
 
   return (
-    <div style={s.shell}>
+    <div className="flex h-screen bg-surface-soft">
 
       {/* ===== Sidebar ===== */}
-      <div className={`admin-sidebar${sidebarOpen ? " open" : ""}`}>
-
+      <div
+        className={`fixed md:static inset-y-0 left-0 w-60 bg-canvas border-r border-hairline flex flex-col z-[100] transition-transform duration-200
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+      >
         {/* Brand */}
-        <div style={s.brand}>
-          <div style={s.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
-          <div style={s.roleLabel}>🏪 {storeName || "Seller"}</div>
+        <div className="h-16 px-4.5 border-b border-hairline flex flex-col justify-center flex-shrink-0">
+          <div className="text-display-lg text-ink">Uni<span className="text-rausch">Mart</span></div>
+          <div className="text-[11px] text-rausch font-bold tracking-wide mt-0.5">🏪 {storeName || "Seller"}</div>
         </div>
 
         {/* Nav Links */}
-        <nav style={s.nav}>
+        <nav className="flex-1 p-2.5 flex flex-col gap-1 overflow-y-auto">
           {SIDEBAR_ITEMS.map((item) => (
             <button
               key={item.key}
-              style={{
-                ...s.navItem,
-                ...(currentPage === item.key ? s.navItemActive : {})
-              }}
               onClick={() => handleNav(item.key)}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-btn text-body-sm font-medium text-left w-full transition-colors
+              ${currentPage === item.key ? "bg-rausch/10 text-rausch font-semibold" : "text-body hover:bg-surface-soft"}`}
             >
-              <span style={s.navIcon}>{item.icon}</span>
+              <span className="w-5 text-center text-base">{item.icon}</span>
               <span>{item.label}</span>
             </button>
           ))}
         </nav>
 
         {/* Bottom */}
-        <div style={s.sidebarBottom}>
-          <button style={s.viewWebsiteBtn} onClick={() => window.open(window.location.origin, "_blank")}>
+        <div className="p-2.5 border-t border-hairline flex flex-col gap-1">
+          <button onClick={() => window.open(window.location.origin, "_blank")} className="flex items-center gap-3 px-3.5 py-2.5 rounded-btn text-body-sm text-muted hover:bg-surface-soft w-full">
             🌐 <span>View Store</span>
           </button>
-          <button style={s.logoutBtn} onClick={handleLogout}>
+          <button onClick={handleLogout} className="flex items-center gap-3 px-3.5 py-2.5 rounded-btn bg-rausch/10 border border-rausch/20 text-rausch text-body-sm font-semibold w-full">
             🚪 <span>Logout</span>
           </button>
         </div>
@@ -94,28 +95,32 @@ export default function SellerLayout({ currentPage, onNavigate, storeName, user,
 
       {/* Overlay */}
       {sidebarOpen && (
-        <div style={s.overlay} onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-black/50 z-[99] md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* ===== Main Content ===== */}
-      <div className="admin-main-content" style={s.mainContent}>
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
 
-        {/* Topbar — fixed in place, matches sidebar brand height, no white strip */}
-        <div style={s.topbar}>
-          <button className="admin-menu-toggle" style={s.menuToggle} onClick={() => setSidebarOpen(!sidebarOpen)}>
+        {/* Topbar */}
+        <div className="h-16 px-4.5 flex items-center gap-4 bg-canvas border-b border-hairline flex-shrink-0">
+          <button className="md:hidden text-xl text-ink" onClick={() => setSidebarOpen(!sidebarOpen)}>
             ☰
           </button>
-          <div style={{ flex: 1 }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {statusLabel && <div style={{ ...s.statusBadge, ...statusStyle }}>{statusLabel}</div>}
-            <button style={s.topbarLogoutBtn} onClick={handleLogout} title="Logout">
+          <div className="flex-1" />
+          <div className="flex items-center gap-2.5">
+            {statusLabel && (
+              <div className={`text-[10.5px] font-extrabold px-3 py-1.5 rounded-full uppercase ${statusClass}`}>
+                {statusLabel}
+              </div>
+            )}
+            <button onClick={handleLogout} title="Logout" className="w-10 h-10 rounded-full border border-hairline bg-surface-soft text-base flex items-center justify-center">
               🚪
             </button>
           </div>
         </div>
 
         {/* Page Content — this is the only part that scrolls */}
-        <div style={s.scrollArea}>
+        <div className="flex-1 overflow-y-auto pb-8">
           {children}
         </div>
 
@@ -123,27 +128,3 @@ export default function SellerLayout({ currentPage, onNavigate, storeName, user,
     </div>
   );
 }
-
-const s = {
-  shell: { display: "flex", height: "100vh", background: "#F0F4F3", fontFamily: "var(--font-body)" },
-  brand: { padding: "0 18px", height: 64, borderBottom: "1px solid rgba(255,255,255,0.12)", flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center" },
-  logo: { fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 800, color: "#fff" },
-  roleLabel: { fontSize: 11, color: "#D4AF37", fontWeight: 700, letterSpacing: 0.5, marginTop: 3 },
-  nav: { flex: 1, padding: "16px 10px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" },
-  navItem: { display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: "none", border: "none", color: "rgba(255,255,255,0.75)", fontFamily: "inherit", fontSize: 14, fontWeight: 500, cursor: "pointer", textAlign: "left", width: "100%" },
-  navItemActive: { background: "rgba(255,255,255,0.15)", color: "#fff" },
-  navIcon: { width: 20, textAlign: "center", fontSize: 16 },
-  sidebarBottom: { padding: "12px 10px", borderTop: "1px solid rgba(255,255,255,0.12)", display: "flex", flexDirection: "column", gap: 4 },
-  viewWebsiteBtn: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "none", border: "none", color: "rgba(255,255,255,0.65)", fontSize: 13.5, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", width: "100%" },
-  logoutBtn: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(255,80,80,0.13)", border: "1px solid rgba(255,100,100,0.2)", color: "rgba(255,180,180,0.9)", fontSize: 13.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", width: "100%" },
-  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 99 },
-  mainContent: { marginLeft: 240, flex: 1, display: "flex", flexDirection: "column", height: "100vh", width: "calc(100% - 240px)", overflow: "hidden" },
-  topbar: { background: "#0B3D2E", padding: "0 18px", height: 64, display: "flex", alignItems: "center", gap: 16, flexShrink: 0 },
-  scrollArea: { flex: 1, overflowY: "auto", paddingBottom: 30 },
-  menuToggle: { background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#fff", display: "none" },
-  topbarLogoutBtn: { background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 10, padding: "8px 12px", fontSize: 16, cursor: "pointer", color: "#fff", fontFamily: "inherit" },
-  statusBadge: { fontSize: 10.5, fontWeight: 800, padding: "6px 12px", borderRadius: 20, textTransform: "uppercase" },
-  statusActive: { background: "#D4AF37", color: "#0B3D2E" },
-  statusVacation: { background: "rgba(255,255,255,0.2)", color: "#fff" },
-  statusPending: { background: "rgba(255,255,255,0.15)", color: "#FBF1DA" }
-};
