@@ -1,7 +1,6 @@
 // ============================================
 // UniMart - Homepage
-// Style: "Emerald Trust" + Gen Z (bento grid,
-// stories bar, social proof, micro-interactions)
+// [Tailwind / Airbnb-inspired design system]
 // Data: Connected to Firestore (products, etc.)
 // ============================================
 
@@ -9,7 +8,6 @@ import { useState, useEffect } from "react";
 import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { db, auth } from "../../config/firebase";
-import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
 import { optimizeImage } from "../../utils/optimizeImage";
 import { COUNTRIES, getFlagUrl, formatPrice } from "../../utils/countries";
@@ -30,7 +28,6 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
     onNavigate && onNavigate("search", searchQuery.trim());
   };
 
-  // Filter recommended products by search query
   const isSearching = searchQuery.trim().length > 0;
 
   const displayedProducts = isSearching
@@ -55,7 +52,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   // Guest country detection: GPS first, then IP-based, so the homepage can
   // still filter products by country before the guest ever logs in.
   useEffect(() => {
-    if (user) return; // logged-in users use their profile's country, not location detection
+    if (user) return;
 
     const tryIP = async () => {
       try {
@@ -87,7 +84,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
             await tryIP();
           }
         },
-        async () => { await tryIP(); }, // permission denied or GPS failed
+        async () => { await tryIP(); },
         { timeout: 6000 }
       );
     } else {
@@ -95,7 +92,6 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
     }
   }, [user]);
 
-  // Load the Active countries list for the manual picker modal
   useEffect(() => {
     const loadActive = async () => {
       try {
@@ -146,12 +142,8 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   const loadHomepageData = async () => {
     setLoading(true);
     try {
-      // Country-matching: buyer only ever sees sellers/products from their own
-      // country. Guests default to Pakistan until location auto-detection is
-      // built (a later step) — this keeps behavior consistent in the meantime.
       const buyerCountry = user?.country || guestCountry || "Pakistan";
 
-      // Flash Sale products
       const flashQuery = query(
         collection(db, "products"),
         where("boost.type", "==", "flash_sale"),
@@ -162,7 +154,6 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
       const flashSnap = await getDocs(flashQuery);
       setFlashSaleProducts(flashSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
 
-      // Flash Deals banners (set by Marketing Manager) — homepage slideshow
       try {
         const bannersSnap = await getDocs(collection(db, "flashBanners"));
         setFlashBanners(bannersSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -170,11 +161,6 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
         console.error("Failed to load flash banners:", err);
       }
 
-      // "Just For You" — ranked by a weighted score (sales, rating, recency),
-      // out-of-stock items pushed to the bottom. Candidate pool of 40 active
-      // products, ranked client-side, top 8 shown — same two-stage pattern
-      // (candidates → ranking) that marketplaces like Daraz use, sized down
-      // to what UniMart actually tracks today.
       const recoQuery = query(
         collection(db, "products"),
         where("status", "==", "active"),
@@ -187,11 +173,11 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
       const now = Date.now();
       const scored = candidates.map((p) => {
         const inStock = (p.stock || 0) > 0;
-        const salesScore = Math.log((p.salesCount || 0) + 1) * 12;   // sales velocity — strongest signal
-        const ratingScore = (p.rating || 0) * 5;                      // customer trust
+        const salesScore = Math.log((p.salesCount || 0) + 1) * 12;
+        const ratingScore = (p.rating || 0) * 5;
         const ageDays = p.createdAt?.seconds ? (now - p.createdAt.seconds * 1000) / 86400000 : 999;
-        const recencyScore = Math.max(0, 15 - ageDays);                // fresh listings get a temporary boost
-        const score = inStock ? salesScore + ratingScore + recencyScore : -9999; // out-of-stock sinks to the bottom
+        const recencyScore = Math.max(0, 15 - ageDays);
+        const score = inStock ? salesScore + ratingScore + recencyScore : -9999;
         return { ...p, _score: score };
       });
       scored.sort((a, b) => b._score - a._score);
@@ -208,16 +194,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
     setWishlist((prev) =>
       prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
     );
-    // TODO: persist to buyers/{uid}.wishlist array in Firestore
   };
-
-  const categories = [
-    { key: "flash", label: "Flash Deals", sub: "Up to 60% off", big: true, icon: "⚡" },
-    { key: "electronics", label: "Tech", icon: "📱" },
-    { key: "fashion", label: "Fashion", icon: "👗" },
-    { key: "beauty", label: "Beauty", icon: "💄" },
-    { key: "home", label: "Home", icon: "🏠" }
-  ];
 
   const stories = [
     { key: "new", label: "New In", icon: "🆕" },
@@ -228,275 +205,287 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
   ];
 
   return (
-    <div className="page-shell" style={styles.page}>
-      {/* Header */}
-      <div
-        className="header-responsive"
-        style={{
-          ...styles.header,
-          padding: isScrolled ? "12px 16px 12px" : "16px 16px 16px",
-          transition: "padding 0.25s ease"
-        }}
-      >
-        {/* Top info row: Salam (left) + icons (right) — single clean line, collapses on scroll */}
-        <div
-          style={{
-            ...styles.topInfoRow,
-            maxHeight: isScrolled ? 0 : 46,
-            opacity: isScrolled ? 0 : 1,
-            overflow: "hidden",
-            marginBottom: isScrolled ? 0 : 14,
-            transition: "max-height 0.25s ease, opacity 0.2s ease, margin-bottom 0.25s ease"
-          }}
-        >
-          <div style={styles.topInfoLine}>
-            <div style={styles.greetingEyebrow}>
-              {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"}
+    <div className="min-h-screen bg-canvas pb-5">
+
+      {/* ===== Header (Top Nav) ===== */}
+      <div className="sticky top-0 z-[100] bg-canvas border-b border-hairline">
+        <div className={`transition-all duration-200 ${isScrolled ? "px-4 py-2.5" : "px-4 py-4"}`}>
+
+          {/* Row 1: greeting + icons — collapses on scroll */}
+          <div
+            className="overflow-hidden transition-all duration-200"
+            style={{ maxHeight: isScrolled ? 0 : 46, opacity: isScrolled ? 0 : 1, marginBottom: isScrolled ? 0 : 14 }}
+          >
+            <div className="flex justify-between items-center gap-2.5">
+              <div className="text-title-md text-ink font-semibold">
+                {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"}
+              </div>
+              <div className="flex gap-2.5 items-center flex-shrink-0">
+                {user ? (
+                  <>
+                    <IconButton icon="🔔" label="Notify" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
+                    <IconButton icon="📦" label="Orders" onClick={() => onNavigate && onNavigate("orders")} />
+                    <div className="flex flex-col items-center gap-0.5 cursor-pointer" onClick={handleLogout}>
+                      <div className="w-8.5 h-8.5 rounded-btn bg-surface-soft border border-hairline flex items-center justify-center text-base">🚪</div>
+                      <div className="text-[8.5px] font-bold text-muted whitespace-nowrap">Logout</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div onClick={() => setShowCountryModal(true)} className="flex items-center gap-1.5 bg-surface-soft border border-hairline text-ink font-semibold text-[11.5px] px-3 py-2 rounded-full cursor-pointer whitespace-nowrap">
+                      {guestCountry ? (
+                        <>
+                          <img src={getFlagUrl(COUNTRIES.find(c => c.name === guestCountry)?.code, 40)} alt="" className="w-4 h-4 rounded-full object-cover flex-shrink-0" />
+                          {guestCountry}
+                        </>
+                      ) : "🌍 Select country"}
+                    </div>
+                    <div onClick={() => onNavigate && onNavigate("login")} className="flex items-center gap-1.5 bg-rausch text-white font-bold text-[12.5px] px-3.5 py-2 rounded-full cursor-pointer">
+                      👤 Login
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-            <div style={styles.topIconsInline}>
-              {user ? (
-                <>
-                  <IconButton icon="🔔" label="Notification" onClick={() => onNavigate && onNavigate("notifications")} hasBadge />
-                  <IconButton icon="📦" label="Track Order" onClick={() => onNavigate && onNavigate("orders")} />
-                  <div style={styles.iconBtnWrap} onClick={handleLogout}>
-                    <div style={styles.logoutIconBtn}>🚪</div>
-                    <div style={styles.iconBtnLabel}>Logout</div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div style={styles.countryChip} onClick={() => setShowCountryModal(true)}>
-                    {guestCountry ? (
-                      <>
-                        <img
-                          src={getFlagUrl(COUNTRIES.find(c => c.name === guestCountry)?.code, 40)}
-                          alt=""
-                          style={styles.flagIconSmall}
-                        />
-                        {guestCountry}
-                      </>
-                    ) : "🌍 Select country"}
-                  </div>
-                  <div style={styles.loginIconBtn} onClick={() => onNavigate && onNavigate("login")}>
-                    👤 Login
-                  </div>
-                </>
+          </div>
+
+          {/* Row 2: logo + search pill + cart */}
+          <div className="flex items-center gap-3">
+            <div className="text-display-lg text-ink flex-shrink-0">Uni<span className="text-rausch">Mart</span></div>
+
+            <div className="flex-1 min-w-0 h-search-pill flex items-center bg-canvas border border-hairline rounded-full overflow-hidden shadow-elevation">
+              <input
+                className="flex-1 min-w-0 bg-transparent px-4 text-body-sm text-ink placeholder:text-muted outline-none"
+                placeholder="Search products, stores, brands..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleSearch()}
+                autoComplete="off"
+              />
+              <div onClick={handleSearch} className="w-12 h-12 flex-shrink-0 bg-rausch hover:bg-rausch-active text-white flex items-center justify-center rounded-full m-0.5 cursor-pointer transition-colors">
+                🔍
+              </div>
+            </div>
+
+            <div className="relative flex-shrink-0">
+              <div onClick={() => onNavigate && onNavigate("cart")} className="w-11 h-11 rounded-full bg-rausch text-white flex items-center justify-center text-lg cursor-pointer shadow-elevation">🛒</div>
+              {cartCount > 0 && (
+                <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-ink text-white rounded-full text-[9px] font-extrabold flex items-center justify-center px-1 border-2 border-canvas">
+                  {cartCount}
+                </div>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Main row: logo (left) + search bar + cart (right) — same row, like Daraz */}
-        <div style={styles.mainRow}>
-          <div style={styles.logo}>Uni<span style={{ color: "#D4AF37" }}>Mart</span></div>
-          <div style={styles.searchWrap}>
-            <input
-              style={styles.searchBar}
-              placeholder="Search products, stores, brands..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleSearch()}
-              autoComplete="off"
-            />
-            <div style={styles.searchBtn} onClick={handleSearch}>🔍</div>
-          </div>
-          <div style={{ position: "relative" }}>
-            <div style={styles.cartIconMain} onClick={() => onNavigate && onNavigate("cart")}>🛒</div>
-            {cartCount > 0 && <div style={styles.cartBadge}>{cartCount}</div>}
           </div>
         </div>
       </div>
 
-      {/* Stories bar — hidden during search */}
-      {!isSearching && <div style={styles.storiesBar}>
-        {stories.map((s) => (
-          <div key={s.key} style={styles.storyItem}>
-            <div style={styles.storyRing}>
-              <div style={styles.storyInner}>{s.icon}</div>
-            </div>
-            <div style={styles.storyLabel}>{s.label}</div>
-          </div>
-        ))}
-      </div>}
-
-      {!isSearching && <div style={styles.socialProof}>
-        <div style={styles.avatarStack}>
-          <div style={styles.miniAvatar}>😊</div>
-          <div style={{ ...styles.miniAvatar, marginLeft: -8 }}>🙂</div>
-          <div style={{ ...styles.miniAvatar, marginLeft: -8 }}>😄</div>
-        </div>
-        <div style={styles.socialText}><b>2,300+</b> orders placed today</div>
-      </div>}
-
-      {!isSearching && <div className="bento-grid-responsive" style={styles.bentoWrap}>
-        <div style={styles.bentoGrid}>
-          <div style={{ flex: 1.3 }}>
-            <div
-              style={{
-                ...styles.bentoCard,
-                ...styles.bentoBig,
-                ...(flashBanners[bannerSlide]?.imageUrl
-                  ? { backgroundImage: `linear-gradient(180deg, rgba(11,61,46,0.15) 0%, rgba(11,61,46,0.85) 100%), url(${optimizeImage(flashBanners[bannerSlide].imageUrl, 700)})`, backgroundSize: "cover", backgroundPosition: "center", transition: "background-image 0.5s ease" }
-                  : {})
-              }}
-              onClick={() => onNavigate && onNavigate("category", "flash")}
-            >
-              <div style={styles.bentoEmoji}>⚡</div>
-              <div>
-                <div style={styles.bentoLabel}>Flash Deals</div>
-                <div style={styles.bentoSub}>Up to 60% off</div>
+      {/* ===== Stories bar ===== */}
+      {!isSearching && (
+        <div className="flex gap-3.5 px-4 pt-4 pb-1.5 overflow-x-auto">
+          {stories.map((s) => (
+            <div key={s.key} className="flex flex-col items-center gap-1.5 min-w-[58px]">
+              <div className="w-[58px] h-[58px] rounded-full border-2 border-hairline p-0.5 flex items-center justify-center">
+                <div className="w-full h-full rounded-full bg-surface-soft flex items-center justify-center text-xl">{s.icon}</div>
               </div>
-              {flashBanners.length > 1 && (
-                <div style={styles.bannerDots} onClick={(e) => e.stopPropagation()}>
-                  {flashBanners.map((_, i) => (
-                    <div
-                      key={i}
-                      style={{ ...styles.bannerDot, ...(i === bannerSlide ? styles.bannerDotActive : {}) }}
-                      onClick={() => setBannerSlide(i)}
-                    />
-                  ))}
+              <div className="text-[9px] text-body font-semibold">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ===== Social proof ===== */}
+      {!isSearching && (
+        <div className="mx-4 mt-1.5 flex items-center gap-2 bg-surface-soft rounded-card px-3.5 py-2.5">
+          <div className="flex">
+            <div className="w-5.5 h-5.5 rounded-full bg-canvas border-2 border-surface-soft flex items-center justify-center text-[10px]">😊</div>
+            <div className="w-5.5 h-5.5 rounded-full bg-canvas border-2 border-surface-soft flex items-center justify-center text-[10px] -ml-2">🙂</div>
+            <div className="w-5.5 h-5.5 rounded-full bg-canvas border-2 border-surface-soft flex items-center justify-center text-[10px] -ml-2">😄</div>
+          </div>
+          <div className="text-[10.5px] text-ink font-semibold"><b>2,300+</b> orders placed today</div>
+        </div>
+      )}
+
+      {/* ===== Bento category grid ===== */}
+      {!isSearching && (
+        <div className="p-4">
+          <div className="flex gap-2">
+            <div className="flex-[1.3]">
+              <div
+                onClick={() => onNavigate && onNavigate("category", "flash")}
+                className="rounded-card p-3.5 min-h-[166px] cursor-pointer relative flex flex-col justify-between text-white bg-ink"
+                style={flashBanners[bannerSlide]?.imageUrl ? {
+                  backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.75) 100%), url(${optimizeImage(flashBanners[bannerSlide].imageUrl, 700)})`,
+                  backgroundSize: "cover", backgroundPosition: "center", transition: "background-image 0.5s ease"
+                } : {}}
+              >
+                <div className="text-2xl">⚡</div>
+                <div>
+                  <div className="text-[12.5px] font-bold">Flash Deals</div>
+                  <div className="text-[9.5px] opacity-80 font-medium">Up to 60% off</div>
                 </div>
-              )}
-            </div>
-          </div>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ display: "flex", gap: 8 }}>
-              <div style={{ ...styles.bentoCard, ...styles.bentoC1, flex: 1 }} onClick={() => onNavigate && onNavigate("category", "electronics")}>
-                <div style={styles.bentoEmoji}>📱</div><div style={styles.bentoLabel}>Tech</div>
-              </div>
-              <div style={{ ...styles.bentoCard, ...styles.bentoC2, flex: 1 }} onClick={() => onNavigate && onNavigate("category", "fashion")}>
-                <div style={styles.bentoEmoji}>👗</div><div style={styles.bentoLabel}>Fashion</div>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <div style={{ ...styles.bentoCard, ...styles.bentoC1, flex: 1 }} onClick={() => onNavigate && onNavigate("category", "beauty")}>
-                <div style={styles.bentoEmoji}>💄</div><div style={styles.bentoLabel}>Beauty</div>
-              </div>
-              <div style={{ ...styles.bentoCard, ...styles.bentoC2, flex: 1 }} onClick={() => onNavigate && onNavigate("category", "home")}>
-                <div style={styles.bentoEmoji}>🏠</div><div style={styles.bentoLabel}>Home</div>
+                {flashBanners.length > 1 && (
+                  <div className="absolute bottom-2.5 right-3 flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {flashBanners.map((_, i) => (
+                      <div
+                        key={i}
+                        onClick={() => setBannerSlide(i)}
+                        className={`h-1.5 rounded-full cursor-pointer transition-all ${i === bannerSlide ? "w-4 bg-rausch" : "w-1.5 bg-white/40"}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        </div>
-      </div>}
-
-      {!isSearching && <div style={styles.section}>
-        <div style={styles.sectionHead}>
-          <div style={styles.sectionTitle}>Flash Sale <span style={styles.livePill}>LIVE</span></div>
-          <div style={styles.sectionLink} onClick={() => onNavigate && onNavigate("flash-sale")}>See all</div>
-        </div>
-
-        {loading ? (
-          <LoadingLogo fullPage={false} size={16} />
-        ) : flashSaleProducts.length === 0 ? (
-          <p style={styles.emptyText}>No flash deals right now — check back soon.</p>
-        ) : (
-          <div style={styles.flashScroll}>
-            {flashSaleProducts.map((p) => (
-              <div key={p.id} className="product-card-hover" style={styles.flashCard} onClick={() => onNavigate && onNavigate("product", p.id)}>
-                <div style={styles.flashImg}>
-                  {p.images?.[0] ? <img src={optimizeImage(p.images[0], 260)} alt={p.name} style={styles.imgFit} loading="lazy" /> : "🛍️"}
-                  {p.discountPercent && <div style={styles.flashTag}>-{p.discountPercent}%</div>}
+            <div className="flex-1 flex flex-col gap-2">
+              <div className="flex gap-2">
+                <div onClick={() => onNavigate && onNavigate("category", "electronics")} className="flex-1 rounded-card p-3.5 min-h-[78px] cursor-pointer bg-surface-soft text-ink flex flex-col justify-between">
+                  <div className="text-2xl">📱</div><div className="text-[12.5px] font-bold">Tech</div>
                 </div>
-                <div style={styles.flashInfo}>
-                  <div style={styles.flashName}>{p.name}</div>
-                  <div style={styles.flashPriceRow}>
-                    <span style={styles.flashPrice}>{formatPrice(p.price, p.country)}</span>
-                    {p.mrp && <span style={styles.flashOld}>{p.mrp}</span>}
+                <div onClick={() => onNavigate && onNavigate("category", "fashion")} className="flex-1 rounded-card p-3.5 min-h-[78px] cursor-pointer bg-surface-strong text-ink flex flex-col justify-between">
+                  <div className="text-2xl">👗</div><div className="text-[12.5px] font-bold">Fashion</div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <div onClick={() => onNavigate && onNavigate("category", "beauty")} className="flex-1 rounded-card p-3.5 min-h-[78px] cursor-pointer bg-surface-soft text-ink flex flex-col justify-between">
+                  <div className="text-2xl">💄</div><div className="text-[12.5px] font-bold">Beauty</div>
+                </div>
+                <div onClick={() => onNavigate && onNavigate("category", "home")} className="flex-1 rounded-card p-3.5 min-h-[78px] cursor-pointer bg-surface-strong text-ink flex flex-col justify-between">
+                  <div className="text-2xl">🏠</div><div className="text-[12.5px] font-bold">Home</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Flash Sale ===== */}
+      {!isSearching && (
+        <div className="px-4 pt-2.5 pb-1">
+          <div className="flex justify-between items-baseline mb-3">
+            <div className="text-display-md text-ink flex items-center gap-1.5">
+              Flash Sale <span className="bg-rausch text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">LIVE</span>
+            </div>
+            <div onClick={() => onNavigate && onNavigate("flash-sale")} className="text-[11.5px] text-muted font-bold cursor-pointer">See all</div>
+          </div>
+
+          {loading ? (
+            <LoadingLogo fullPage={false} size={16} />
+          ) : flashSaleProducts.length === 0 ? (
+            <p className="text-body-sm text-muted">No flash deals right now — check back soon.</p>
+          ) : (
+            <div className="flex gap-3 overflow-x-auto pb-1.5">
+              {flashSaleProducts.map((p) => (
+                <div key={p.id} onClick={() => onNavigate && onNavigate("product", p.id)} className="min-w-[130px] bg-canvas rounded-card overflow-hidden shadow-elevation cursor-pointer hover:shadow-lg transition-shadow">
+                  <div className="w-full h-[120px] bg-surface-soft flex items-center justify-center text-4xl relative">
+                    {p.images?.[0] ? <img src={optimizeImage(p.images[0], 260)} alt={p.name} className="w-full h-full object-cover" loading="lazy" /> : "🛍️"}
+                    {p.discountPercent && <div className="absolute top-2 left-2 bg-ink text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded">-{p.discountPercent}%</div>}
+                  </div>
+                  <div className="p-2.5">
+                    <div className="text-[11px] text-body font-semibold mb-1 leading-tight line-clamp-2 min-h-[2.6em]">{p.name}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-ink font-extrabold text-sm">{formatPrice(p.price, p.country)}</span>
+                      {p.mrp && <span className="text-muted text-[10px] line-through">{p.mrp}</span>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>}
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-      {!isSearching && <div style={styles.voucherCard} onClick={() => onNavigate && onNavigate("vouchers")}>
-        <div style={styles.voucherEyebrow}>Limited Drop</div>
-        <div style={styles.voucherTitle}>Rs 200 off your first order</div>
-        <div style={styles.voucherBtn}>Claim now →</div>
-      </div>}
+      {/* ===== Voucher banner ===== */}
+      {!isSearching && (
+        <div onClick={() => onNavigate && onNavigate("vouchers")} className="mx-4 my-4.5 bg-ink rounded-card p-4.5 cursor-pointer">
+          <div className="text-rausch text-[10px] font-extrabold tracking-wide uppercase">Limited Drop</div>
+          <div className="text-white text-display-md my-1 mb-2.5">Rs 200 off your first order</div>
+          <div className="inline-block bg-rausch text-white text-xs font-extrabold px-4.5 py-2 rounded-full">Claim now →</div>
+        </div>
+      )}
 
-      {/* Products Section */}
-      <div style={styles.section}>
-        <div style={styles.sectionHead}>
-          <div style={styles.sectionTitle}>{isSearching ? `Search Results for "${searchQuery}"` : "Just For You"}</div>
-          <div style={styles.sectionLink}>See all</div>
+      {/* ===== Product grid ===== */}
+      <div className="px-4 pt-2.5 pb-1">
+        <div className="flex justify-between items-baseline">
+          <div className="text-display-md text-ink">{isSearching ? `Search Results for "${searchQuery}"` : "Just For You"}</div>
+          <div className="text-[11.5px] text-muted font-bold cursor-pointer">See all</div>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ padding: "12px 16px" }}><LoadingLogo fullPage={false} size={18} /></div>
+        <div className="px-4 py-3"><LoadingLogo fullPage={false} size={18} /></div>
       ) : displayedProducts.length === 0 ? (
-        <p style={{ ...styles.emptyText, padding: "0 16px" }}>{searchQuery ? "No products found for your search." : "No products yet — be the first seller to add one!"}</p>
+        <p className="text-body-sm text-muted px-4">{searchQuery ? "No products found for your search." : "No products yet — be the first seller to add one!"}</p>
       ) : (
-        <div className="product-grid-responsive" style={styles.productGrid}>
+        <div className="grid grid-cols-2 gap-2.5 px-4 py-3.5">
           {displayedProducts.map((p) => (
-            <div key={p.id} className="product-card-hover" style={styles.pcard}>
-              <div style={styles.pimg} onClick={() => onNavigate && onNavigate("product", p.id)}>
-                {p.images?.[0] ? <img src={optimizeImage(p.images[0], 320)} alt={p.name} style={styles.imgFit} loading="lazy" /> : "🛍️"}
-                <div style={styles.heart} onClick={(e) => { e.stopPropagation(); toggleWishlist(p.id); }}>
+            <div key={p.id} className="bg-canvas rounded-card overflow-hidden shadow-elevation hover:shadow-lg transition-shadow">
+              <div onClick={() => onNavigate && onNavigate("product", p.id)} className="w-full aspect-square bg-surface-soft flex items-center justify-center text-3xl relative cursor-pointer">
+                {p.images?.[0] ? <img src={optimizeImage(p.images[0], 320)} alt={p.name} className="w-full h-full object-cover" loading="lazy" /> : "🛍️"}
+                <div onClick={(e) => { e.stopPropagation(); toggleWishlist(p.id); }} className="absolute top-2 right-2 w-7 h-7 bg-canvas/90 rounded-full flex items-center justify-center text-[13px] cursor-pointer shadow-elevation">
                   {wishlist.includes(p.id) ? "❤️" : "🤍"}
                 </div>
-                {p.verifiedMall && <div style={styles.verifiedTag}>VERIFIED</div>}
+                {p.verifiedMall && <div className="absolute bottom-2 left-2 bg-canvas text-ink text-[8px] font-extrabold px-1.5 py-0.5 rounded shadow-elevation">VERIFIED</div>}
               </div>
-              <div style={styles.pinfo}>
-                <div style={styles.pname}>{p.name}</div>
-                <div style={styles.priceRow}>
-                  <span style={styles.pprice}>{formatPrice(p.price, p.country)}</span>
-                  {p.mrp > p.price && <span style={styles.pdiscount}>-{Math.round((1 - p.price / p.mrp) * 100)}%</span>}
+              <div className="p-2.5">
+                <div className="text-[11.5px] text-ink font-semibold mb-1 leading-tight line-clamp-2 min-h-[2.6em]">{p.name}</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-ink font-extrabold text-[13.5px]">{formatPrice(p.price, p.country)}</span>
+                  {p.mrp > p.price && <span className="text-[10.5px] text-rausch font-bold">-{Math.round((1 - p.price / p.mrp) * 100)}%</span>}
                 </div>
-                <div style={styles.pratingRow}>⭐ {p.rating || "New"}</div>
-                <div style={styles.quickAdd} onClick={() => {
-                  if (onAddToCart) {
-                    onAddToCart({
-                      productId: p.id,
-                      name: p.name,
-                      price: p.price,
-                      image: p.images?.[0] || null,
-                      sellerId: p.sellerId,
-                      sellerName: p.sellerName || "Store",
-                      country: p.country,
-                      qty: 1
-                    });
-                    // If guest, redirect to login
-                    if (!user) { onNavigate && onNavigate("login"); return; }
-                  }
-                  onNavigate && onNavigate("cart");
-                }}>+ Add to Cart</div>
+                <div className="text-[10px] text-muted font-semibold mt-0.5">⭐ {p.rating || "New"}</div>
+                <div
+                  onClick={() => {
+                    if (onAddToCart) {
+                      onAddToCart({
+                        productId: p.id,
+                        name: p.name,
+                        price: p.price,
+                        image: p.images?.[0] || null,
+                        sellerId: p.sellerId,
+                        sellerName: p.sellerName || "Store",
+                        country: p.country,
+                        qty: 1
+                      });
+                      if (!user) { onNavigate && onNavigate("login"); return; }
+                    }
+                    onNavigate && onNavigate("cart");
+                  }}
+                  className="w-full mt-2 bg-ink hover:bg-rausch text-white text-[10.5px] font-bold text-center py-1.5 rounded-btn cursor-pointer transition-colors"
+                >
+                  + Add to Cart
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Manual country picker — for guests, either as override or when auto-detection fails */}
+      {/* ===== Manual country picker ===== */}
       {showCountryModal && (
-        <div style={styles.countryModalOverlay} onClick={() => setShowCountryModal(false)}>
-          <div style={styles.countryModal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.countryModalTitle}>Select your country</div>
+        <div onClick={() => setShowCountryModal(false)} className="fixed inset-0 bg-black/50 z-[400] flex items-end justify-center">
+          <div onClick={(e) => e.stopPropagation()} className="bg-canvas rounded-t-card p-5.5 w-full max-w-[480px] max-h-[75vh] flex flex-col">
+            <div className="text-title-md text-ink font-bold mb-3.5">Select your country</div>
             <input
-              className="input-field"
-              style={{ marginBottom: 12 }}
+              className="w-full h-12 px-4 mb-3 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted outline-none focus:border-ink"
               placeholder="Search countries..."
               value={countrySearch}
               onChange={(e) => setCountrySearch(e.target.value)}
               autoFocus
             />
-            <div style={styles.countryModalList}>
+            <div className="overflow-y-auto flex-1">
               {activeCountryList
                 .filter((c) => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
                 .map((c) => (
-                  <div key={c.code} style={styles.countryModalRow} onClick={() => handleSelectGuestCountry(c.name)}>
-                    <img src={getFlagUrl(c.code, 40)} alt="" style={styles.flagIconModal} />
+                  <div key={c.code} onClick={() => handleSelectGuestCountry(c.name)} className="flex items-center gap-2.5 py-2.5 px-1.5 border-b border-hairline-soft cursor-pointer text-body-sm text-ink">
+                    <img src={getFlagUrl(c.code, 40)} alt="" className="w-6.5 h-6.5 rounded-full object-cover flex-shrink-0" />
                     <span>{c.name}</span>
                   </div>
                 ))}
               {activeCountryList.length === 0 && (
-                <p style={{ fontSize: 12.5, color: "#888", textAlign: "center", padding: 20 }}>No countries available yet.</p>
+                <p className="text-body-sm text-muted text-center p-5">No countries available yet.</p>
               )}
             </div>
-            <div style={styles.countryModalClose} onClick={() => setShowCountryModal(false)}>Close</div>
+            <div onClick={() => setShowCountryModal(false)} className="text-center text-body-sm text-muted cursor-pointer pt-3">Close</div>
           </div>
         </div>
       )}
@@ -506,133 +495,12 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
 
 function IconButton({ icon, label, onClick, hasBadge }) {
   return (
-    <div style={styles.iconBtnWrap} onClick={onClick}>
-      <div style={styles.iconBtn}>
+    <div className="flex flex-col items-center gap-0.5 cursor-pointer" onClick={onClick}>
+      <div className="w-8.5 h-8.5 rounded-btn bg-surface-soft border border-hairline flex items-center justify-center text-base relative">
         {icon}
-        {hasBadge && <div style={styles.badgeDot} />}
+        {hasBadge && <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-rausch rounded-full border-2 border-canvas" />}
       </div>
-      {label && <div style={styles.iconBtnLabel}>{label}</div>}
+      {label && <div className="text-[8.5px] font-bold text-muted whitespace-nowrap">{label}</div>}
     </div>
   );
 }
-
-function NavItem({ icon, label, active, onClick }) {
-  return (
-    <div style={{ ...styles.navItem, ...(active ? styles.navItemActive : {}) }} onClick={onClick}>
-      <div style={{ ...styles.navCircle, ...(active ? styles.navCircleActive : {}) }}>{icon}</div>
-      {label}
-    </div>
-  );
-}
-
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)", paddingBottom: 20, margin: "0 auto", fontFamily: "var(--font-body)" },
-
-  header: { background: "linear-gradient(135deg, #0B3D2E 0%, #0f4d3a 100%)", padding: "18px 16px 18px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 6px 24px rgba(11,61,46,0.28)", borderRadius: "0 0 18px 18px" },
-  topInfoRow: { display: "flex", flexDirection: "column", gap: 6 },
-  topInfoLine: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 },
-  topIconsInline: { display: "flex", gap: 10, alignItems: "center", flexShrink: 0 },
-  topUtilityRow: { display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 14 },
-  mainRow: { display: "flex", alignItems: "center", gap: 12 },
-  topRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
-  logo: { color: "#FBF9F4", fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 900, flexShrink: 0, whiteSpace: "nowrap" },
-  topIcons: { display: "flex", gap: 14, alignItems: "center" },
-  loginIconBtn: { display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700, fontSize: 12.5, padding: "8px 14px", borderRadius: 20, cursor: "pointer" },
-  countryChip: { display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 600, fontSize: 11.5, padding: "8px 12px", borderRadius: 20, cursor: "pointer", whiteSpace: "nowrap" },
-  flagIconSmall: { width: 16, height: 16, borderRadius: "50%", objectFit: "cover", flexShrink: 0 },
-  flagIconModal: { width: 26, height: 26, borderRadius: "50%", objectFit: "cover", marginRight: 10, flexShrink: 0 },
-
-  countryModalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 400, display: "flex", alignItems: "flex-end", justifyContent: "center" },
-  countryModal: { background: "#fff", borderRadius: "20px 20px 0 0", padding: 22, width: "100%", maxWidth: 480, maxHeight: "75vh", display: "flex", flexDirection: "column" },
-  countryModalTitle: { fontSize: 17, fontFamily: "Georgia, serif", color: "#0B3D2E", fontWeight: 700, marginBottom: 14 },
-  countryModalList: { overflowY: "auto", flex: 1 },
-  countryModalRow: { display: "flex", alignItems: "center", padding: "10px 6px", borderBottom: "1px solid #f0f0f0", cursor: "pointer", fontSize: 13.5, color: "#1a1a1a" },
-  countryModalClose: { textAlign: "center", fontSize: 12.5, color: "#888", cursor: "pointer", padding: "12px 0 0" },
-  logoutIconBtn: { background: "rgba(255,90,90,0.18)", border: "1px solid rgba(255,90,90,0.3)", color: "#fff", fontSize: 15, width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
-  cartBadge: { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, background: "#D4AF37", color: "#0B3D2E", borderRadius: 999, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", border: "1.5px solid #0B3D2E" },
-  iconBtnWrap: { display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer" },
-  iconBtn: { width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.14)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, color: "#fff", position: "relative" },
-  cartIconMain: { width: 44, height: 44, borderRadius: 12, background: "#D4AF37", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, cursor: "pointer", boxShadow: "0 3px 10px rgba(212,175,55,0.4)", flexShrink: 0 },
-  iconBtnLabel: { fontSize: 8.5, fontWeight: 700, color: "rgba(255,255,255,0.75)", letterSpacing: 0.2, whiteSpace: "nowrap" },
-  badgeDot: { position: "absolute", top: -3, right: -3, width: 9, height: 9, background: "#D4AF37", borderRadius: "50%", border: "2px solid #0B3D2E" },
-  searchWrap: { display: "flex", alignItems: "center", background: "rgba(255,255,255,0.97)", borderRadius: 14, overflow: "hidden", flex: 1, minWidth: 0, boxShadow: "0 3px 10px rgba(0,0,0,0.12)" },
-  searchBar: { flex: 1, minWidth: 0, background: "transparent", padding: "13px 4px 13px 16px", color: "#1a1a1a", fontSize: 13, fontWeight: 500, border: "none", outline: "none", fontFamily: "inherit" },
-  searchBtn: { width: 46, height: 46, flexShrink: 0, background: "#D4AF37", color: "#0B3D2E", fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, borderRadius: 12, margin: 2 },
-  greeting: { marginTop: 14 },
-  greetingEyebrow: { color: "#FBF9F4", fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700, letterSpacing: 0.3 },
-  greetingText: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 600, marginTop: 4 },
-
-  storiesBar: { display: "flex", gap: 14, padding: "16px 16px 6px", overflowX: "auto" },
-  storyItem: { display: "flex", flexDirection: "column", alignItems: "center", gap: 5, minWidth: 58 },
-  storyRing: { width: 58, height: 58, borderRadius: "50%", background: "conic-gradient(from 180deg, #D4AF37, #0B3D2E, #7FBF9E, #D4AF37)", padding: 2.5, display: "flex", alignItems: "center", justifyContent: "center" },
-  storyInner: { width: "100%", height: "100%", borderRadius: "50%", background: "#F0F5F0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, border: "2px solid #FBF9F4" },
-  storyLabel: { fontSize: 9, color: "#444", fontWeight: 600 },
-
-  socialProof: { margin: "6px 16px 0", display: "flex", alignItems: "center", gap: 8, background: "#F0F5F0", borderRadius: 14, padding: "10px 14px" },
-  avatarStack: { display: "flex" },
-  miniAvatar: { width: 22, height: 22, borderRadius: "50%", background: "#0B3D2E", border: "2px solid #FBF9F4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 },
-  socialText: { fontSize: 10.5, color: "#0B3D2E", fontWeight: 600 },
-
-  bentoWrap: { padding: 16 },
-  bentoGrid: { display: "flex", gap: 8 },
-  bentoCard: { borderRadius: 18, padding: 14, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 78, cursor: "pointer", position: "relative" },
-  bentoBig: { background: "linear-gradient(160deg, #0B3D2E, #1a5c44)", color: "#fff", minHeight: 166 },
-  bannerDots: { position: "absolute", bottom: 10, right: 12, display: "flex", gap: 5 },
-  bannerDot: { width: 6, height: 6, borderRadius: 10, background: "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all 0.3s ease" },
-  bannerDotActive: { background: "#D4AF37", width: 16 },
-  bentoC1: { background: "#F0F5F0", color: "#0B3D2E" },
-  bentoC2: { background: "#FBF1DA", color: "#0B3D2E" },
-  bentoEmoji: { fontSize: 24 },
-  bentoLabel: { fontSize: 12.5, fontWeight: 700 },
-  bentoSub: { fontSize: 9.5, opacity: 0.75, fontWeight: 500 },
-
-  section: { padding: "10px 16px 4px" },
-  sectionHead: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 },
-  sectionTitle: { fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 19, color: "#0B3D2E", display: "flex", alignItems: "center", gap: 7 },
-  livePill: { background: "#D4AF37", color: "#0B3D2E", fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 20 },
-  sectionLink: { fontSize: 11.5, color: "#0B3D2E", fontWeight: 700, opacity: 0.6, cursor: "pointer" },
-
-  loadingText: { fontSize: 13, color: "#6b6b6b" },
-  emptyText: { fontSize: 13, color: "#6b6b6b" },
-
-  flashScroll: { display: "flex", gap: 12, overflowX: "auto", paddingBottom: 6 },
-  flashCard: { minWidth: 130, background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 14px rgba(11,61,46,0.08)", cursor: "pointer" },
-  flashImg: { width: "100%", height: 120, background: "linear-gradient(135deg,#F0F5F0,#dce8de)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, position: "relative" },
-  flashTag: { position: "absolute", top: 8, left: 8, background: "#0B3D2E", color: "#D4AF37", fontSize: 9, fontWeight: 800, padding: "3px 7px", borderRadius: 8 },
-  flashInfo: { padding: 10 },
-  flashName: {
-    fontSize: 11, color: "#444", fontWeight: 600, marginBottom: 4, lineHeight: 1.3,
-    minHeight: "2.6em", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden"
-  },
-  flashPriceRow: { display: "flex", alignItems: "center", gap: 6 },
-  flashPrice: { color: "#0B3D2E", fontWeight: 800, fontSize: 14 },
-  flashOld: { color: "#bbb", fontSize: 10, textDecoration: "line-through" },
-
-  voucherCard: { margin: "18px 16px", background: "linear-gradient(120deg, #0B3D2E 0%, #155c43 60%, #0B3D2E 100%)", borderRadius: 20, padding: 18, cursor: "pointer" },
-  voucherEyebrow: { color: "#D4AF37", fontSize: 10, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" },
-  voucherTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700, margin: "4px 0 10px" },
-  voucherBtn: { background: "#D4AF37", color: "#0B3D2E", fontSize: 12, fontWeight: 800, padding: "9px 18px", borderRadius: 30, display: "inline-block" },
-
-  productGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "14px 16px 20px" },
-  pcard: { background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 3px 12px rgba(11,61,46,0.07)" },
-  pimg: { width: "100%", height: 118, background: "#F0F5F0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, position: "relative", cursor: "pointer" },
-  imgFit: { width: "100%", height: "100%", objectFit: "cover" },
-  heart: { position: "absolute", top: 8, right: 8, width: 28, height: 28, background: "rgba(255,255,255,0.9)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, cursor: "pointer" },
-  verifiedTag: { position: "absolute", bottom: 8, left: 8, background: "#D4AF37", color: "#0B3D2E", fontSize: 8, fontWeight: 800, padding: "3px 7px", borderRadius: 7 },
-  pinfo: { padding: 10 },
-  pname: {
-    fontSize: 11.5, color: "#333", fontWeight: 600, marginBottom: 5, lineHeight: 1.3,
-    minHeight: "2.6em", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden"
-  },
-  priceRow: { display: "flex", alignItems: "center", gap: 6 },
-  pprice: { color: "#0B3D2E", fontWeight: 800, fontSize: 13.5 },
-  pdiscount: { fontSize: 10.5, color: "#C0392B", fontWeight: 700 },
-  pratingRow: { fontSize: 10, color: "#767676", fontWeight: 600, marginTop: 2 },
-  quickAdd: { width: "100%", marginTop: 8, background: "#0B3D2E", color: "#D4AF37", fontSize: 10.5, fontWeight: 700, textAlign: "center", padding: 7, borderRadius: 10, cursor: "pointer" },
-
-  bottomNav: { display: "flex", justifyContent: "space-around", alignItems: "center", padding: "12px 8px", margin: "10px 14px 0", background: "#0B3D2E", borderRadius: 24, boxShadow: "0 8px 24px rgba(11,61,46,0.3)", position: "sticky", bottom: 10 },
-  navItem: { display: "flex", flexDirection: "column", alignItems: "center", gap: 3, fontSize: 9, color: "#7fa896", fontWeight: 600, cursor: "pointer" },
-  navItemActive: { color: "#D4AF37" },
-  navCircle: { width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 },
-  navCircleActive: { background: "rgba(212,175,55,0.15)", borderRadius: "50%" }
-};
