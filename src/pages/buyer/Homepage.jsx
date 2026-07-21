@@ -206,6 +206,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
 
   return (
     <div className="min-h-screen bg-canvas pb-5">
+      <div className="max-w-[1400px] mx-auto">
 
       {/* ===== Header (Top Nav) ===== */}
       <div className="sticky top-0 z-[100] bg-canvas border-b border-hairline">
@@ -416,7 +417,7 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
       ) : displayedProducts.length === 0 ? (
         <p className="text-body-sm text-muted px-4">{searchQuery ? "No products found for your search." : "No products yet — be the first seller to add one!"}</p>
       ) : (
-        <div className="grid grid-cols-2 gap-2.5 px-4 py-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 px-4 py-3.5">
           {displayedProducts.map((p) => (
             <div key={p.id} className="bg-canvas rounded-card overflow-hidden shadow-elevation hover:shadow-lg transition-shadow">
               <div onClick={() => onNavigate && onNavigate("product", p.id)} className="w-full aspect-square bg-surface-soft flex items-center justify-center text-3xl relative cursor-pointer">
@@ -459,6 +460,8 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
           ))}
         </div>
       )}
+
+      </div>
 
       {/* ===== Manual country picker ===== */}
       {showCountryModal && (
