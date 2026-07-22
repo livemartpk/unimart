@@ -39,7 +39,6 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
     : recommendedProducts;
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [guestCountry, setGuestCountry] = useState("");
   const [showCountryModal, setShowCountryModal] = useState(false);
   const [activeCountryList, setActiveCountryList] = useState([]);
@@ -120,25 +119,6 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
     return () => clearInterval(interval);
   }, [flashBanners.length]);
 
-  useEffect(() => {
-    let ticking = false;
-    const handleScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(() => {
-        const y = window.scrollY;
-        setIsScrolled(prev => {
-          if (!prev && y > 90) return true;
-          if (prev && y < 40) return false;
-          return prev;
-        });
-        ticking = false;
-      });
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   const loadHomepageData = async () => {
     setLoading(true);
     try {
@@ -210,13 +190,10 @@ export default function Homepage({ user, onNavigate, onAddToCart, cartCount = 0 
 
       {/* ===== Header (Top Nav) ===== */}
       <div className="sticky top-0 z-[100] bg-canvas border-b border-hairline">
-        <div className={`transition-all duration-200 ${isScrolled ? "px-4 py-2.5" : "px-4 py-4"}`}>
+        <div className="px-4 py-4">
 
           {/* Row 1: greeting + icons — collapses on scroll */}
-          <div
-            className="overflow-hidden transition-all duration-200"
-            style={{ maxHeight: isScrolled ? 0 : 46, opacity: isScrolled ? 0 : 1, marginBottom: isScrolled ? 0 : 14 }}
-          >
+          <div className="mb-3.5">
             <div className="flex justify-between items-center gap-2.5">
               <div className="text-title-md text-ink font-semibold">
                 {user?.fullName ? `Salam, ${user.fullName.split(" ")[0]}` : "Salam"}
