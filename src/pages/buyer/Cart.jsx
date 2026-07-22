@@ -3,16 +3,15 @@
 // Logic: Items grouped by seller, each seller
 // group shows its own shipping charge (per our
 // earlier decision on multi-seller orders).
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { formatPrice } from "../../utils/countries";
-import "../../styles/theme.css";
 
 // Each cart item: { productId, name, price, image, sellerId, sellerName, country, selectedColor, selectedSize, qty }
 
 export default function Cart({ cartItems = [], onUpdateQty, onRemoveItem, onNavigate, onCheckout }) {
-  // Group items by seller
   const groupedBySeller = useMemo(() => {
     const groups = {};
     cartItems.forEach((item) => {
@@ -24,11 +23,8 @@ export default function Cart({ cartItems = [], onUpdateQty, onRemoveItem, onNavi
     return Object.values(groups);
   }, [cartItems]);
 
-  // All cart items are guaranteed to be from the same country (buyers only
-  // ever add same-country products), so one currency applies to the whole cart.
   const cartCountry = cartItems[0]?.country;
-
-  const SHIPPING_PER_SELLER = 150; // placeholder flat rate — real logic comes from seller/location rules later
+  const SHIPPING_PER_SELLER = 150;
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
   const totalShipping = groupedBySeller.length * SHIPPING_PER_SELLER;
@@ -36,13 +32,18 @@ export default function Cart({ cartItems = [], onUpdateQty, onRemoveItem, onNavi
 
   if (cartItems.length === 0) {
     return (
-      <div className="page-shell" style={styles.page}>
-        <div style={styles.header}><div style={styles.headerTitle}>My Cart</div></div>
-        <div style={styles.emptyState}>
-          <div style={{ fontSize: 50, marginBottom: 12 }}>🛒</div>
-          <p style={styles.emptyTitle}>Your cart is empty</p>
-          <p style={styles.emptyText}>Add something you love and it'll show up here.</p>
-          <button className="btn-primary" style={{ marginTop: 16 }} onClick={() => onNavigate && onNavigate("home")}>
+      <div className="min-h-screen bg-canvas">
+        <div className="h-16 flex items-center justify-center border-b border-hairline">
+          <div className="text-title-md text-ink font-bold">My Cart</div>
+        </div>
+        <div className="text-center py-20 px-8">
+          <div className="text-5xl mb-3">🛒</div>
+          <p className="text-title-md text-ink font-bold mb-1.5">Your cart is empty</p>
+          <p className="text-body-sm text-muted">Add something you love and it'll show up here.</p>
+          <button
+            onClick={() => onNavigate && onNavigate("home")}
+            className="mt-4 h-12 px-6 rounded-btn bg-rausch hover:bg-rausch-active text-white text-title-sm font-semibold transition-colors"
+          >
             Start shopping
           </button>
         </div>
@@ -51,45 +52,45 @@ export default function Cart({ cartItems = [], onUpdateQty, onRemoveItem, onNavi
   }
 
   return (
-    <div className="page-shell" style={styles.page}>
-      <div style={styles.header}>
-        <div style={styles.backBtn} onClick={() => onNavigate && onNavigate("back")}>←</div>
-        <div style={styles.headerTitle}>My Cart</div>
-        <div style={{ width: 36 }} />
+    <div className="min-h-screen bg-canvas pb-[110px]">
+      <div className="h-16 px-4 flex items-center justify-between border-b border-hairline">
+        <div onClick={() => onNavigate && onNavigate("back")} className="w-9 h-9 rounded-full bg-surface-soft flex items-center justify-center cursor-pointer">←</div>
+        <div className="text-title-md text-ink font-bold">My Cart</div>
+        <div className="w-9" />
       </div>
 
-      <div className="container" style={{ paddingTop: 16, paddingBottom: 200 }}>
+      <div className="max-w-[600px] mx-auto px-4 pt-4">
         {groupedBySeller.map((group) => (
-          <div key={group.sellerId} style={styles.sellerGroup}>
-            <div style={styles.sellerHeader}>🏬 {group.sellerName}</div>
+          <div key={group.sellerId} className="bg-canvas rounded-card border border-hairline mb-3.5 overflow-hidden">
+            <div className="px-3.5 py-3 text-body-sm font-bold text-ink border-b border-hairline-soft">🏬 {group.sellerName}</div>
 
             {group.items.map((item, idx) => (
-              <div key={`${item.productId}-${idx}`} style={styles.cartItem}>
-                <div style={styles.itemImg}>
-                  {item.image ? <img src={item.image} alt={item.name} style={styles.imgFit} /> : "🛍️"}
+              <div key={`${item.productId}-${idx}`} className="flex gap-3 p-3.5 border-b border-hairline-soft">
+                <div className="w-[70px] h-[70px] rounded-btn bg-surface-soft flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden">
+                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : "🛍️"}
                 </div>
-                <div style={styles.itemInfo}>
-                  <div style={styles.itemName}>{item.name}</div>
+                <div className="flex-1">
+                  <div className="text-body-sm text-ink font-semibold mb-0.5">{item.name}</div>
                   {(item.selectedColor || item.selectedSize) && (
-                    <div style={styles.itemVariant}>
+                    <div className="text-[11px] text-muted mb-1">
                       {item.selectedColor}{item.selectedColor && item.selectedSize ? " · " : ""}{item.selectedSize}
                     </div>
                   )}
-                  <div style={styles.itemPrice}>{formatPrice(item.price, item.country)}</div>
+                  <div className="text-[13.5px] font-extrabold text-ink mb-2">{formatPrice(item.price, item.country)}</div>
 
-                  <div style={styles.qtyRow}>
-                    <div style={styles.qtyControls}>
-                      <div style={styles.qtyBtn} onClick={() => onUpdateQty && onUpdateQty(item.productId, Math.max(1, item.qty - 1))}>−</div>
-                      <div style={styles.qtyNum}>{item.qty}</div>
-                      <div style={styles.qtyBtn} onClick={() => onUpdateQty && onUpdateQty(item.productId, item.qty + 1)}>+</div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2.5 bg-surface-soft rounded-btn px-2 py-1">
+                      <div onClick={() => onUpdateQty && onUpdateQty(item.productId, Math.max(1, item.qty - 1))} className="w-5 h-5 flex items-center justify-center text-sm font-bold text-ink cursor-pointer">−</div>
+                      <div className="text-[12.5px] font-bold min-w-[16px] text-center">{item.qty}</div>
+                      <div onClick={() => onUpdateQty && onUpdateQty(item.productId, item.qty + 1)} className="w-5 h-5 flex items-center justify-center text-sm font-bold text-ink cursor-pointer">+</div>
                     </div>
-                    <div style={styles.removeBtn} onClick={() => onRemoveItem && onRemoveItem(item.productId)}>Remove</div>
+                    <div onClick={() => onRemoveItem && onRemoveItem(item.productId)} className="text-[11px] text-rausch font-semibold cursor-pointer">Remove</div>
                   </div>
                 </div>
               </div>
             ))}
 
-            <div style={styles.shippingRow}>
+            <div className="flex justify-between px-3.5 py-2.5 text-xs text-muted bg-surface-soft">
               <span>Shipping for this seller</span>
               <span>{formatPrice(SHIPPING_PER_SELLER, cartCountry)}</span>
             </div>
@@ -97,22 +98,25 @@ export default function Cart({ cartItems = [], onUpdateQty, onRemoveItem, onNavi
         ))}
 
         {/* Order summary */}
-        <div style={styles.summaryCard}>
-          <div style={styles.summaryRow}><span>Subtotal</span><span>{formatPrice(subtotal, cartCountry)}</span></div>
-          <div style={styles.summaryRow}><span>Shipping ({groupedBySeller.length} seller{groupedBySeller.length > 1 ? "s" : ""})</span><span>{formatPrice(totalShipping, cartCountry)}</span></div>
-          <div style={styles.summaryDivider} />
-          <div style={styles.summaryTotal}><span>Total</span><span>{formatPrice(grandTotal, cartCountry)}</span></div>
+        <div className="bg-canvas rounded-card border border-hairline p-4 mt-1.5">
+          <div className="flex justify-between text-body-sm text-body mb-2"><span>Subtotal</span><span>{formatPrice(subtotal, cartCountry)}</span></div>
+          <div className="flex justify-between text-body-sm text-body mb-2"><span>Shipping ({groupedBySeller.length} seller{groupedBySeller.length > 1 ? "s" : ""})</span><span>{formatPrice(totalShipping, cartCountry)}</span></div>
+          <div className="h-px bg-hairline my-2" />
+          <div className="flex justify-between text-lg font-extrabold text-ink"><span>Total</span><span>{formatPrice(grandTotal, cartCountry)}</span></div>
         </div>
       </div>
 
       {/* Sticky checkout bar */}
-      <div style={styles.bottomBar}>
-        <div style={styles.bottomBarInner}>
+      <div className="fixed bottom-0 left-0 right-0 bg-canvas border-t border-hairline p-3.5">
+        <div className="max-w-[600px] mx-auto flex items-center">
           <div>
-            <div style={styles.bottomTotalLabel}>Total</div>
-            <div style={styles.bottomTotalValue}>{formatPrice(grandTotal, cartCountry)}</div>
+            <div className="text-[10.5px] text-muted">Total</div>
+            <div className="text-lg font-extrabold text-ink">{formatPrice(grandTotal, cartCountry)}</div>
           </div>
-          <button className="btn-primary" style={{ flex: 1, marginLeft: 16 }} onClick={() => onCheckout && onCheckout({ groupedBySeller, subtotal, totalShipping, grandTotal })}>
+          <button
+            onClick={() => onCheckout && onCheckout({ groupedBySeller, subtotal, totalShipping, grandTotal })}
+            className="flex-1 ml-4 h-12 rounded-btn bg-rausch hover:bg-rausch-active text-white text-title-sm font-semibold transition-colors"
+          >
             Checkout
           </button>
         </div>
@@ -120,43 +124,3 @@ export default function Cart({ cartItems = [], onUpdateQty, onRemoveItem, onNavi
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)", margin: "0 auto" },
-  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px", background: "#fff", borderBottom: "1px solid #eee0c0" },
-  backBtn: { width: 36, height: 36, borderRadius: "50%", background: "#F0F5F0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
-  headerTitle: { fontFamily: "Georgia, serif", fontSize: 17, fontWeight: 700, color: "#0B3D2E" },
-
-  emptyState: { textAlign: "center", padding: "80px 30px" },
-  emptyTitle: { fontSize: 16, fontWeight: 700, color: "#0B3D2E", marginBottom: 6 },
-  emptyText: { fontSize: 13, color: "#888" },
-
-  sellerGroup: { background: "#fff", borderRadius: 14, border: "1px solid #eee0c0", marginBottom: 14, overflow: "hidden" },
-  sellerHeader: { padding: "12px 14px", fontSize: 13, fontWeight: 700, color: "#0B3D2E", borderBottom: "1px solid #f0f0f0" },
-
-  cartItem: { display: "flex", gap: 12, padding: "14px", borderBottom: "1px solid #f5f5f5" },
-  itemImg: { width: 70, height: 70, borderRadius: 10, background: "#F0F5F0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 },
-  imgFit: { width: "100%", height: "100%", objectFit: "cover", borderRadius: 10 },
-  itemInfo: { flex: 1 },
-  itemName: { fontSize: 13, fontWeight: 600, color: "#1a1a1a", marginBottom: 3 },
-  itemVariant: { fontSize: 11, color: "#888", marginBottom: 4 },
-  itemPrice: { fontSize: 13.5, fontWeight: 800, color: "#0B3D2E", marginBottom: 8 },
-
-  qtyRow: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  qtyControls: { display: "flex", alignItems: "center", gap: 10, background: "#F0F5F0", borderRadius: 8, padding: "4px 8px" },
-  qtyBtn: { width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#0B3D2E", cursor: "pointer" },
-  qtyNum: { fontSize: 12.5, fontWeight: 700, minWidth: 16, textAlign: "center" },
-  removeBtn: { fontSize: 11, color: "#C0392B", fontWeight: 600, cursor: "pointer" },
-
-  shippingRow: { display: "flex", justifyContent: "space-between", padding: "10px 14px", fontSize: 12, color: "#666", background: "#FBF9F4" },
-
-  summaryCard: { background: "#fff", borderRadius: 14, border: "1px solid #eee0c0", padding: 16, marginTop: 6 },
-  summaryRow: { display: "flex", justifyContent: "space-between", fontSize: 13, color: "#555", marginBottom: 8 },
-  summaryDivider: { height: 1, background: "#eee0c0", margin: "8px 0" },
-  summaryTotal: { display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 800, color: "#0B3D2E" },
-
-  bottomBar: { position: "fixed", bottom: 0, left: 0, right: 0, margin: "0 auto", background: "#fff", borderTop: "1px solid #eee0c0", padding: 14 },
-  bottomBarInner: { display: "flex", alignItems: "center" },
-  bottomTotalLabel: { fontSize: 10.5, color: "#888" },
-  bottomTotalValue: { fontSize: 16, fontWeight: 800, color: "#0B3D2E" }
-};
