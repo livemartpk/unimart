@@ -1,13 +1,13 @@
 // ============================================
 // UniMart - My Products (Seller)
 // View / Edit / Delete + status filter
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { formatPrice } from "../../utils/countries";
-import "../../styles/theme.css";
 
 export default function MyProducts({ user, onNavigate }) {
   const [products, setProducts] = useState([]);
@@ -55,50 +55,50 @@ export default function MyProducts({ user, onNavigate }) {
   };
 
   return (
-    <div className="page-shell" style={styles.page}>
-      <div style={{ padding: "16px 16px 0", display: "flex", justifyContent: "flex-end" }}>
-        <div style={styles.addBtn} onClick={() => onNavigate && onNavigate("add-product")}>+ Add</div>
+    <div className="min-h-screen bg-canvas">
+      <div className="p-4 pb-0 flex justify-end">
+        <div onClick={() => onNavigate && onNavigate("add-product")} className="bg-rausch hover:bg-rausch-active text-white font-bold text-[12.5px] px-4 py-2 rounded-full cursor-pointer transition-colors">+ Add</div>
       </div>
 
-      <div style={styles.filterRow}>
+      <div className="flex gap-2 px-4 py-3.5 overflow-x-auto">
         <FilterPill label="All" count={counts.all} active={filter === "all"} onClick={() => setFilter("all")} />
         <FilterPill label="Active" count={counts.active} active={filter === "active"} onClick={() => setFilter("active")} />
         <FilterPill label="Draft" count={counts.draft} active={filter === "draft"} onClick={() => setFilter("draft")} />
         <FilterPill label="Out of Stock" count={counts.outofstock} active={filter === "outofstock"} onClick={() => setFilter("outofstock")} />
       </div>
 
-      <div style={{ padding: "0 16px 30px" }}>
+      <div className="px-4 pb-8">
         {loading ? (
-          <p style={styles.emptyText}>Loading products...</p>
+          <p className="text-body-sm text-muted">Loading products...</p>
         ) : filteredProducts.length === 0 ? (
-          <div style={styles.emptyState}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🛍️</div>
-            <p style={styles.emptyText}>No products here yet.</p>
-            <button className="btn-primary" onClick={() => onNavigate && onNavigate("add-product")}>Add your first product</button>
+          <div className="text-center py-10">
+            <div className="text-4xl mb-3">🛍️</div>
+            <p className="text-body-sm text-muted mb-3.5">No products here yet.</p>
+            <button onClick={() => onNavigate && onNavigate("add-product")} className="h-11 px-5 rounded-btn bg-rausch hover:bg-rausch-active text-white text-body-sm font-semibold">Add your first product</button>
           </div>
         ) : (
           filteredProducts.map((p) => (
-            <div key={p.id} style={styles.productCard}>
-              <div style={styles.productImg}>
-                {p.images?.[0] ? <img src={p.images[0]} alt={p.name} style={styles.imgFit} /> : "🛍️"}
+            <div key={p.id} className="flex gap-3 bg-canvas border border-hairline rounded-card p-3 mb-2.5">
+              <div className="w-[70px] h-[70px] bg-surface-soft rounded-btn flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden">
+                {p.images?.[0] ? <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" /> : "🛍️"}
               </div>
-              <div style={styles.productInfo}>
-                <div style={styles.productName}>{p.name}</div>
-                <div style={styles.productPrice}>{formatPrice(Number(p.price), p.country)}</div>
-                <div style={{ ...styles.stockBadge, ...((p.stock || 0) <= 5 ? styles.stockLow : {}) }}>
+              <div className="flex-1">
+                <div className="text-body-sm text-ink font-bold">{p.name}</div>
+                <div className="text-body-sm font-extrabold text-ink mt-0.5">{formatPrice(Number(p.price), p.country)}</div>
+                <div className={`text-[10.5px] mt-1 ${(p.stock || 0) <= 5 ? "text-rausch font-bold" : "text-muted"}`}>
                   Stock: {p.stock || 0}
                 </div>
-                <div style={styles.statusBadge}>
-                  <span style={{ ...styles.statusDot, background: p.status === "active" ? "#2E7D32" : "#888" }} />
-                  {p.status === "active" ? "Active" : "Draft"}
+                <div className="flex items-center gap-1 mt-1">
+                  <span className={`w-1.5 h-1.5 rounded-full ${p.status === "active" ? "bg-green-600" : "bg-muted"}`} />
+                  <span className="text-[10.5px] text-muted">{p.status === "active" ? "Active" : "Draft"}</span>
                 </div>
-                <div style={styles.actionsRow}>
-                  <span style={styles.actionView} onClick={() => setViewProduct(p)}>👁 View</span>
-                  <span style={styles.actionLink} onClick={() => onNavigate && onNavigate("edit-product", p.id)}>✏️ Edit</span>
-                  <span style={styles.actionLink} onClick={() => toggleStatus(p)}>
+                <div className="flex gap-2.5 mt-2 flex-wrap">
+                  <span className="text-[11px] text-rausch font-bold cursor-pointer" onClick={() => setViewProduct(p)}>👁 View</span>
+                  <span className="text-[11px] text-ink font-bold cursor-pointer" onClick={() => onNavigate && onNavigate("edit-product", p.id)}>✏️ Edit</span>
+                  <span className="text-[11px] text-ink font-bold cursor-pointer" onClick={() => toggleStatus(p)}>
                     {p.status === "active" ? "📋 Draft" : "✅ Activate"}
                   </span>
-                  <span style={{ ...styles.actionLink, color: "#C0392B" }} onClick={() => handleDelete(p.id)}>🗑 Delete</span>
+                  <span className="text-[11px] text-rausch font-bold cursor-pointer" onClick={() => handleDelete(p.id)}>🗑 Delete</span>
                 </div>
               </div>
             </div>
@@ -108,26 +108,24 @@ export default function MyProducts({ user, onNavigate }) {
 
       {/* ===== View Product Modal ===== */}
       {viewProduct && (
-        <div style={styles.overlay} onClick={() => setViewProduct(null)}>
-          <div style={styles.modal} onClick={e => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <div style={styles.modalTitle}>Product Details</div>
-              <div style={styles.modalClose} onClick={() => setViewProduct(null)}>✕</div>
+        <div className="fixed inset-0 bg-black/55 z-[200] flex items-end" onClick={() => setViewProduct(null)}>
+          <div className="bg-canvas rounded-t-card w-full max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center px-5 pt-4.5 pb-3.5 border-b border-hairline-soft sticky top-0 bg-canvas z-10">
+              <div className="text-title-md text-ink font-bold">Product Details</div>
+              <div className="text-lg text-muted cursor-pointer px-2 py-1" onClick={() => setViewProduct(null)}>✕</div>
             </div>
 
-            {/* Product Image */}
             {viewProduct.images?.[0] ? (
-              <img src={viewProduct.images[0]} alt={viewProduct.name} style={styles.modalImg} />
+              <img src={viewProduct.images[0]} alt={viewProduct.name} className="w-full h-[200px] object-cover" />
             ) : (
-              <div style={styles.modalImgPlaceholder}>🛍️</div>
+              <div className="w-full h-[150px] bg-surface-soft flex items-center justify-center text-5xl">🛍️</div>
             )}
 
-            {/* Details */}
-            <div style={styles.modalBody}>
-              <div style={styles.modalProductName}>{viewProduct.name}</div>
-              <div style={styles.modalPrice}>{formatPrice(Number(viewProduct.price), viewProduct.country)}</div>
+            <div className="px-5 pt-4 pb-6">
+              <div className="text-lg font-extrabold text-ink mb-1">{viewProduct.name}</div>
+              <div className="text-xl font-extrabold text-ink mb-4">{formatPrice(Number(viewProduct.price), viewProduct.country)}</div>
 
-              <div style={styles.detailGrid}>
+              <div className="mb-4">
                 <DetailItem label="Category" value={viewProduct.category} />
                 <DetailItem label="Stock" value={viewProduct.stock} />
                 <DetailItem label="Status" value={viewProduct.status} />
@@ -139,31 +137,33 @@ export default function MyProducts({ user, onNavigate }) {
               </div>
 
               {viewProduct.highlights?.length > 0 && (
-                <div style={{ marginTop: 4, marginBottom: 4 }}>
-                  <div style={{ fontSize: 10.5, color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Key Product Details</div>
-                  <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
+                <div className="my-1">
+                  <div className="text-[10.5px] text-muted font-semibold uppercase tracking-wide">Key Product Details</div>
+                  <ul className="mt-1 pl-4.5">
                     {viewProduct.highlights.map((h, i) => (
-                      <li key={i} style={{ fontSize: 12.5, color: "#333", lineHeight: 1.8 }}>{h}</li>
+                      <li key={i} className="text-[12.5px] text-body leading-loose">{h}</li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div style={styles.modalActions}>
-                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setViewProduct(null); onNavigate && onNavigate("edit-product", viewProduct.id); }}>
+              <div className="flex gap-2.5 mb-2.5 mt-4">
+                <button
+                  onClick={() => { setViewProduct(null); onNavigate && onNavigate("edit-product", viewProduct.id); }}
+                  className="flex-1 h-11 rounded-btn border border-hairline text-ink text-body-sm font-semibold hover:bg-surface-soft transition-colors"
+                >
                   ✏️ Edit Product
                 </button>
                 <button
-                  style={{ ...styles.toggleBtn, ...(viewProduct.status === "active" ? styles.draftBtn : styles.activateBtn) }}
                   onClick={() => toggleStatus(viewProduct)}
+                  className={`flex-1 h-11 rounded-btn text-body-sm font-bold ${viewProduct.status === "active" ? "bg-surface-soft text-body" : "bg-green-100 text-green-700"}`}
                 >
                   {viewProduct.status === "active" ? "📋 Set Draft" : "✅ Activate"}
                 </button>
               </div>
               <button
-                style={styles.deleteBtn}
                 onClick={() => handleDelete(viewProduct.id)}
+                className="w-full h-11 bg-rausch-disabled/30 border border-rausch-disabled text-rausch text-body-sm font-bold rounded-btn"
               >
                 🗑 Delete Product
               </button>
@@ -177,7 +177,11 @@ export default function MyProducts({ user, onNavigate }) {
 
 function FilterPill({ label, count, active, onClick }) {
   return (
-    <div style={{ ...styles.pill, ...(active ? styles.pillActive : {}) }} onClick={onClick}>
+    <div
+      onClick={onClick}
+      className={`px-3.5 py-2 rounded-full border text-[11.5px] font-semibold whitespace-nowrap cursor-pointer
+      ${active ? "bg-ink text-white border-ink" : "bg-canvas text-ink border-hairline"}`}
+    >
       {label} {count > 0 && `(${count})`}
     </div>
   );
@@ -186,56 +190,9 @@ function FilterPill({ label, count, active, onClick }) {
 function DetailItem({ label, value }) {
   if (!value && value !== 0) return null;
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 10.5, color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 13.5, color: "#1a1a1a", fontWeight: 500, textTransform: "capitalize" }}>{value}</div>
+    <div className="mb-2.5">
+      <div className="text-[10.5px] text-muted font-semibold uppercase tracking-wide mb-0.5">{label}</div>
+      <div className="text-[13.5px] text-ink font-medium capitalize">{value}</div>
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)", margin: "0 auto" },
-  header: { background: "#0B3D2E", padding: "18px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" },
-  headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700 },
-  addBtn: { background: "#D4AF37", color: "#0B3D2E", fontWeight: 700, fontSize: 12.5, padding: "8px 16px", borderRadius: 20, cursor: "pointer" },
-
-  filterRow: { display: "flex", gap: 8, padding: "14px 16px", overflowX: "auto" },
-  pill: { padding: "8px 14px", borderRadius: 20, border: "1.5px solid #eee0c0", fontSize: 11.5, fontWeight: 600, color: "#0B3D2E", whiteSpace: "nowrap", cursor: "pointer", background: "#fff" },
-  pillActive: { background: "#0B3D2E", color: "#fff", borderColor: "#0B3D2E" },
-
-  emptyState: { textAlign: "center", padding: "40px 0" },
-  emptyText: { fontSize: 13, color: "#888", marginBottom: 14 },
-
-  productCard: { display: "flex", gap: 12, background: "#fff", border: "1px solid #eee0c0", borderRadius: 14, padding: 12, marginBottom: 10 },
-  productImg: { width: 70, height: 70, background: "#F0F5F0", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 },
-  imgFit: { width: "100%", height: "100%", objectFit: "cover", borderRadius: 10 },
-  productInfo: { flex: 1 },
-  productName: { fontSize: 13, fontWeight: 700, color: "#1a1a1a" },
-  productPrice: { fontSize: 13, fontWeight: 800, color: "#0B3D2E", marginTop: 2 },
-  stockBadge: { fontSize: 10.5, color: "#888", marginTop: 3 },
-  stockLow: { color: "#C0392B", fontWeight: 700 },
-  statusBadge: { display: "flex", alignItems: "center", gap: 4, marginTop: 3 },
-  statusDot: { width: 6, height: 6, borderRadius: "50%" },
-  actionsRow: { display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" },
-  actionView: { fontSize: 11, color: "#D4AF37", fontWeight: 700, cursor: "pointer" },
-  actionLink: { fontSize: 11, color: "#0B3D2E", fontWeight: 700, cursor: "pointer" },
-
-  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 200, display: "flex", alignItems: "flex-end" },
-  modal: { background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxHeight: "92vh", overflowY: "auto" },
-  modalHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px 14px", borderBottom: "1px solid #f0f0f0", position: "sticky", top: 0, background: "#fff", zIndex: 1 },
-  modalTitle: { fontSize: 17, fontFamily: "Georgia, serif", color: "#0B3D2E", fontWeight: 700 },
-  modalClose: { fontSize: 18, color: "#888", cursor: "pointer", padding: "4px 8px" },
-  modalImg: { width: "100%", height: 200, objectFit: "cover" },
-  modalImgPlaceholder: { width: "100%", height: 150, background: "#F0F5F0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 50 },
-  modalBody: { padding: "16px 20px 24px" },
-  modalProductName: { fontSize: 18, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 },
-  modalPrice: { fontSize: 20, fontWeight: 800, color: "#0B3D2E", marginBottom: 16 },
-  detailGrid: { marginBottom: 16 },
-  modalActions: { display: "flex", gap: 10, marginBottom: 10 },
-  toggleBtn: { flex: 1, padding: "13px 0", borderRadius: 12, border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
-  activateBtn: { background: "#E3F2E1", color: "#2E7D32" },
-  draftBtn: { background: "#F0F5F0", color: "#555" },
-  deleteBtn: { width: "100%", padding: "13px 0", background: "#FCEAEA", border: "1px solid #f5c6c6", borderRadius: 12, color: "#C0392B", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }
-};
-
-
