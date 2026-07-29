@@ -1,11 +1,11 @@
 // ============================================
 // UniMart - Add Product (Seller)
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
 import { useState, useEffect } from "react";
 import { collection, getDocs, addDoc, doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
-import "../../styles/theme.css";
 import LoadingLogo from "../../components/LoadingLogo";
 
 export default function AddProduct({ user, sellerStoreName, sellerCountry, editProductId, onSuccess, onNavigate }) {
@@ -186,117 +186,115 @@ export default function AddProduct({ user, sellerStoreName, sellerCountry, editP
   if (loadingProduct) return <LoadingLogo label="Loading product..." />;
 
   return (
-    <div className="page-shell" style={styles.page}>
-      <div style={{ padding: "16px 16px 0" }}>
-        <div style={styles.backBtn} onClick={() => onNavigate && onNavigate("products")}>← Back</div>
+    <div className="min-h-screen bg-canvas">
+      <div className="p-4 pb-0">
+        <div onClick={() => onNavigate && onNavigate("products")} className="text-ink text-body-sm font-semibold cursor-pointer">← Back</div>
       </div>
 
-      <div className="container" style={{ paddingTop: 18, paddingBottom: 40 }}>
+      <div className="max-w-[600px] mx-auto px-4 pt-4.5 pb-10">
         <form onSubmit={handleSubmit}>
           <Field label="Product Name" error={errors.name}>
-            <input className="input-field" value={form.name} onChange={(e) => handleChange("name", e.target.value)} placeholder="e.g. Wireless Earbuds" />
+            <input className={inputClass} value={form.name} onChange={(e) => handleChange("name", e.target.value)} placeholder="e.g. Wireless Earbuds" />
           </Field>
 
           <Field label="Category" error={errors.category}>
-            <select className="input-field" value={form.category} onChange={(e) => handleChange("category", e.target.value)}>
+            <select className={inputClass} value={form.category} onChange={(e) => handleChange("category", e.target.value)}>
               <option value="">Select category</option>
               {categories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
-              {/* Keep the product's existing category selectable even if it was later removed from Category Management */}
               {isEditMode && form.category && !categories.includes(form.category) && (
                 <option value={form.category}>{form.category}</option>
               )}
             </select>
             {categories.length === 0 && (
-              <p style={styles.helperText}>No categories set up yet — ask Super Admin to add some in Category Management.</p>
+              <p className="text-[11px] text-muted mt-1.5">No categories set up yet — ask Super Admin to add some in Category Management.</p>
             )}
           </Field>
 
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1 }}>
+          <div className="flex gap-3">
+            <div className="flex-1">
               <Field label="Price (Rs)" error={errors.price}>
-                <input type="number" className="input-field" value={form.price} onChange={(e) => handleChange("price", e.target.value)} />
+                <input type="number" className={inputClass} value={form.price} onChange={(e) => handleChange("price", e.target.value)} />
               </Field>
             </div>
-            <div style={{ flex: 1 }}>
+            <div className="flex-1">
               <Field label="MRP (Rs, optional)" error={errors.mrp}>
-                <input type="number" className="input-field" value={form.mrp} onChange={(e) => handleChange("mrp", e.target.value)} />
+                <input type="number" className={inputClass} value={form.mrp} onChange={(e) => handleChange("mrp", e.target.value)} />
               </Field>
             </div>
           </div>
 
           <Field label="Stock Quantity" error={errors.stock}>
-            <input type="number" className="input-field" value={form.stock} onChange={(e) => handleChange("stock", e.target.value)} />
+            <input type="number" className={inputClass} value={form.stock} onChange={(e) => handleChange("stock", e.target.value)} />
           </Field>
 
           <Field label="Delivery Time">
-            <input className="input-field" value={form.deliveryTime} onChange={(e) => handleChange("deliveryTime", e.target.value)} placeholder="e.g. 3-5 days" />
+            <input className={inputClass} value={form.deliveryTime} onChange={(e) => handleChange("deliveryTime", e.target.value)} placeholder="e.g. 3-5 days" />
           </Field>
 
           <Field label="Colors (optional, comma-separated)">
-            <input className="input-field" value={form.colors} onChange={(e) => handleChange("colors", e.target.value)} placeholder="Red, Blue, Black" />
+            <input className={inputClass} value={form.colors} onChange={(e) => handleChange("colors", e.target.value)} placeholder="Red, Blue, Black" />
           </Field>
 
           <Field label="Sizes (optional, comma-separated)">
-            <input className="input-field" value={form.sizes} onChange={(e) => handleChange("sizes", e.target.value)} placeholder="S, M, L, XL" />
+            <input className={inputClass} value={form.sizes} onChange={(e) => handleChange("sizes", e.target.value)} placeholder="S, M, L, XL" />
           </Field>
 
           <Field label="Description" error={errors.description}>
-            <textarea className="input-field" rows={4} value={form.description} onChange={(e) => handleChange("description", e.target.value)} style={{ resize: "none", fontFamily: "inherit" }} />
+            <textarea className={`${inputClass} h-auto py-3 resize-none font-inherit`} rows={4} value={form.description} onChange={(e) => handleChange("description", e.target.value)} />
           </Field>
 
           <Field label="Brand (optional)">
-            <input className="input-field" value={form.brand} onChange={(e) => handleChange("brand", e.target.value)} placeholder="e.g. No Brand, Sony, Khaadi" />
+            <input className={inputClass} value={form.brand} onChange={(e) => handleChange("brand", e.target.value)} placeholder="e.g. No Brand, Sony, Khaadi" />
           </Field>
 
           <Field label="Key Product Details" error={errors.highlights}>
             <textarea
-              className="input-field"
+              className={`${inputClass} h-auto py-3 resize-none font-inherit`}
               rows={5}
               value={form.highlights}
               onChange={(e) => handleChange("highlights", e.target.value)}
               placeholder={"One detail per line — buyers see these as bullet points.\ne.g.\nPremium metal build, rust-resistant\n100% imported material\nIdeal for daily use and gifting\nHandcrafted with fine finishing"}
-              style={{ resize: "none", fontFamily: "inherit" }}
             />
-            <p style={styles.helperText}>Write one detail per line. The more specific, the more buyers trust your product.</p>
+            <p className="text-[11px] text-muted mt-1.5">Write one detail per line. The more specific, the more buyers trust your product.</p>
           </Field>
 
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1 }}>
+          <div className="flex gap-3">
+            <div className="flex-1">
               <Field label="Material (optional)">
-                <input className="input-field" value={form.material} onChange={(e) => handleChange("material", e.target.value)} placeholder="e.g. Stainless Steel" />
+                <input className={inputClass} value={form.material} onChange={(e) => handleChange("material", e.target.value)} placeholder="e.g. Stainless Steel" />
               </Field>
             </div>
-            <div style={{ flex: 1 }}>
+            <div className="flex-1">
               <Field label="Weight / Size (optional)">
-                <input className="input-field" value={form.weight} onChange={(e) => handleChange("weight", e.target.value)} placeholder="e.g. 450g, 30x20cm" />
+                <input className={inputClass} value={form.weight} onChange={(e) => handleChange("weight", e.target.value)} placeholder="e.g. 450g, 30x20cm" />
               </Field>
             </div>
           </div>
 
           <Field label="Warranty (optional)">
-            <input className="input-field" value={form.warranty} onChange={(e) => handleChange("warranty", e.target.value)} placeholder="e.g. 6 months seller warranty" />
+            <input className={inputClass} value={form.warranty} onChange={(e) => handleChange("warranty", e.target.value)} placeholder="e.g. 6 months seller warranty" />
           </Field>
 
           <Field label={isEditMode ? "Add More Images (optional)" : "Product Images (up to 5)"} error={errors.images}>
             {existingImages.length > 0 && (
-              <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+              <div className="flex gap-2 mb-2.5 flex-wrap">
                 {existingImages.map((url, i) => (
-                  <div key={i} style={styles.existingImgWrap}>
-                    <img src={url} alt="" style={styles.existingImg} />
-                    <div style={styles.removeImgBtn} onClick={() => setExistingImages((imgs) => imgs.filter((_, idx) => idx !== i))}>✕</div>
+                  <div key={i} className="relative w-16 h-16">
+                    <img src={url} alt="" className="w-16 h-16 object-cover rounded-btn border border-hairline" />
+                    <div onClick={() => setExistingImages((imgs) => imgs.filter((_, idx) => idx !== i))} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rausch text-white text-[11px] flex items-center justify-center cursor-pointer">✕</div>
                   </div>
                 ))}
               </div>
             )}
-            <input type="file" className="input-field" multiple accept="image/*" onChange={handleImageSelect} />
-            {images.length > 0 && <p style={styles.imgCount}>{images.length} new image(s) selected</p>}
+            <input type="file" className={inputClass} multiple accept="image/*" onChange={handleImageSelect} />
+            {images.length > 0 && <p className="text-[11.5px] text-ink font-semibold mt-1.5">{images.length} new image(s) selected</p>}
           </Field>
 
-          {submitError && <p className="error-text">{submitError}</p>}
+          {submitError && <p className="text-rausch text-body-sm mb-2">{submitError}</p>}
 
-          <button type="submit" className="btn-primary" style={{ width: "100%", marginTop: 8 }} disabled={submitting}>
+          <button type="submit" disabled={submitting} className="w-full mt-2 h-12 rounded-btn bg-rausch hover:bg-rausch-active disabled:bg-rausch-disabled text-white text-title-sm font-semibold transition-colors">
             {submitting ? "Saving..." : isEditMode ? "Save Changes" : "Publish Product"}
           </button>
         </form>
@@ -305,24 +303,14 @@ export default function AddProduct({ user, sellerStoreName, sellerCountry, editP
   );
 }
 
+const inputClass = "w-full h-12 px-4 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted focus:outline-none focus:border-ink focus:shadow-elevation transition-shadow bg-canvas";
+
 function Field({ label, error, children }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <label className="input-label">{label}</label>
+    <div className="mb-4">
+      <label className="block text-title-sm text-ink mb-1.5">{label}</label>
       {children}
-      {error && <p className="error-text">{error}</p>}
+      {error && <p className="text-rausch text-body-sm mt-1.5">{error}</p>}
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)", margin: "0 auto" },
-  header: { background: "#0B3D2E", padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between" },
-  backBtn: { color: "#0B3D2E", fontSize: 14, fontWeight: 600, cursor: "pointer" },
-  headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 },
-  imgCount: { fontSize: 11.5, color: "#0B3D2E", marginTop: 6, fontWeight: 600 },
-  helperText: { fontSize: 11, color: "#888", marginTop: 5 },
-  existingImgWrap: { position: "relative", width: 64, height: 64 },
-  existingImg: { width: 64, height: 64, objectFit: "cover", borderRadius: 10, border: "1px solid #eee0c0" },
-  removeImgBtn: { position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#C0392B", color: "#fff", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }
-};
