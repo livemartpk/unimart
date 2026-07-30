@@ -2,22 +2,22 @@
 // UniMart - Incoming Orders (Seller)
 // Professional View Order modal with full details
 // Flow: New Order → Packed → Dispatched → Delivered
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { formatPrice } from "../../utils/countries";
-import "../../styles/theme.css";
 
 const COURIERS = ["TCS", "Leopards", "M&P", "Pakistan Post", "Trax", "Swyft", "BlueEx", "Other"];
 
 const STATUS_CONFIG = {
-  pending:    { label: "New Order",   bg: "#FBF1DA", color: "#8a6d1f",  icon: "🆕" },
-  packed:     { label: "Packed",      bg: "#E8F0FF", color: "#2C6E91",  icon: "📦" },
-  dispatched: { label: "Dispatched",  bg: "#F0F5F0", color: "#0B3D2E",  icon: "🚚" },
-  delivered:  { label: "Delivered",   bg: "#E3F2E1", color: "#2E7D32",  icon: "✅" },
-  cancelled:  { label: "Cancelled",   bg: "#FCEAEA", color: "#C0392B",  icon: "❌" }
+  pending:    { label: "New Order",   className: "bg-yellow-50 text-yellow-800",  icon: "🆕" },
+  packed:     { label: "Packed",      className: "bg-blue-50 text-blue-700",  icon: "📦" },
+  dispatched: { label: "Dispatched",  className: "bg-surface-soft text-ink",  icon: "🚚" },
+  delivered:  { label: "Delivered",   className: "bg-green-50 text-green-700",  icon: "✅" },
+  cancelled:  { label: "Cancelled",   className: "bg-rausch-disabled/30 text-rausch",  icon: "❌" }
 };
 
 export default function IncomingOrders({ user, onNavigate }) {
@@ -50,7 +50,6 @@ export default function IncomingOrders({ user, onNavigate }) {
         status: "packed",
         packedAt: serverTimestamp()
       });
-      // Notify buyer
       const { addDoc, collection: col } = await import("firebase/firestore");
       await addDoc(col(db, "notifications"), {
         userId: order.buyerId,
@@ -97,7 +96,6 @@ export default function IncomingOrders({ user, onNavigate }) {
       setViewOrder(v => ({ ...v, status: "dispatched", dispatchDetails: { courierCompany: courierName, dispatchDate: dispatchForm.date, trackingNumber: dispatchForm.trackingNumber } }));
       setShowDispatch(false);
 
-      // Track sales count per product (used to rank "Just For You" on the homepage) — only once per order
       if (!viewOrder.salesTracked) {
         try {
           for (const item of viewOrder.items || []) {
@@ -113,7 +111,6 @@ export default function IncomingOrders({ user, onNavigate }) {
         }
       }
 
-      // Award points-per-sale (rate set by Super Admin in Policy Engine) — only once per order
       if (!viewOrder.pointsAwarded) {
         try {
           const policySnap = await getDoc(doc(db, "policies", "current"));
@@ -138,62 +135,63 @@ export default function IncomingOrders({ user, onNavigate }) {
   };
 
   return (
-    <div style={s.page}>
+    <div className="min-h-screen bg-canvas">
 
       {/* Filter Tabs */}
-      <div style={s.filterRow}>
+      <div className="flex gap-2 px-4 py-3.5 overflow-x-auto">
         {[["all","📋","All"], ["pending","🆕","New Order"], ["packed","📦","Packed"], ["dispatched","🚚","Dispatch"], ["delivered","✅","Delivered"]].map(([key, icon, label]) => (
-          <div key={key} style={{ ...s.pill, ...(filter === key ? s.pillActive : {}) }} onClick={() => setFilter(key)}>
+          <div
+            key={key}
+            onClick={() => setFilter(key)}
+            className={`px-3.5 py-2 rounded-full border text-[11.5px] font-semibold whitespace-nowrap cursor-pointer
+            ${filter === key ? "bg-ink text-white border-ink" : "bg-canvas text-ink border-hairline"}`}
+          >
             {icon} {label} {counts[key] > 0 && `(${counts[key]})`}
           </div>
         ))}
       </div>
 
       {/* Orders List */}
-      <div style={{ padding: "12px 16px 100px" }}>
-        {loading ? <p style={s.emptyText}>Loading orders...</p>
-          : filteredOrders.length === 0 ? <p style={s.emptyText}>No orders here.</p>
+      <div className="px-4 pt-3 pb-[100px]">
+        {loading ? <p className="text-body-sm text-muted py-5">Loading orders...</p>
+          : filteredOrders.length === 0 ? <p className="text-body-sm text-muted py-5">No orders here.</p>
           : filteredOrders.map(o => {
             const cfg = STATUS_CONFIG[o.status] || STATUS_CONFIG.pending;
             return (
-              <div key={o.id} style={s.orderCard}>
-                {/* Card Top */}
-                <div style={s.cardTop}>
+              <div key={o.id} className="bg-canvas border border-hairline rounded-card p-3.5 mb-2.5">
+                <div className="flex justify-between items-start mb-1.5">
                   <div>
-                    <div style={s.orderId}>Order #{o.id.slice(0, 8).toUpperCase()}</div>
-                    <div style={s.buyerName}>{o.buyerName || "Buyer"}</div>
-                    <div style={s.orderDate}>{o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString() : "—"}</div>
+                    <div className="text-[13.5px] font-bold text-ink">Order #{o.id.slice(0, 8).toUpperCase()}</div>
+                    <div className="text-xs text-ink font-semibold mt-0.5">{o.buyerName || "Buyer"}</div>
+                    <div className="text-[11px] text-muted mt-0.5">{o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString() : "—"}</div>
                   </div>
-                  <div style={{ ...s.statusBadge, background: cfg.bg, color: cfg.color }}>
+                  <div className={`text-[11px] font-bold px-3 py-1.5 rounded-full ${cfg.className}`}>
                     {cfg.icon} {cfg.label}
                   </div>
                 </div>
 
-                <div style={s.orderTotal}>{formatPrice(o.grandTotal || 0, o.country)}</div>
+                <div className="text-lg font-extrabold text-ink mb-2">{formatPrice(o.grandTotal || 0, o.country)}</div>
 
-                {/* Items preview */}
-                <div style={s.itemsPreview}>
+                <div className="flex gap-1.5 flex-wrap mb-2.5">
                   {(o.items || []).slice(0, 2).map((item, i) => (
-                    <span key={i} style={s.itemChip}>{item.name} ×{item.qty}</span>
+                    <span key={i} className="text-[10.5px] bg-surface-soft text-ink px-2 py-1 rounded font-semibold">{item.name} ×{item.qty}</span>
                   ))}
-                  {(o.items || []).length > 2 && <span style={s.itemChip}>+{o.items.length - 2} more</span>}
+                  {(o.items || []).length > 2 && <span className="text-[10.5px] bg-surface-soft text-ink px-2 py-1 rounded font-semibold">+{o.items.length - 2} more</span>}
                 </div>
 
-                {/* Dispatch info if dispatched */}
                 {o.status === "dispatched" && o.dispatchDetails && (
-                  <div style={s.dispatchInfoChip}>
+                  <div className="text-[11.5px] text-ink bg-surface-soft rounded-lg px-2.5 py-1.5 mb-2">
                     🚚 {o.dispatchDetails.courierCompany} · {o.dispatchDetails.trackingNumber}
                   </div>
                 )}
 
-                {/* View + Quick Actions */}
-                <div style={s.cardActions}>
-                  <button style={s.viewBtn} onClick={() => setViewOrder(o)}>👁 View Order</button>
+                <div className="flex gap-2">
+                  <button onClick={() => setViewOrder(o)} className="flex-1 py-2.5 bg-ink hover:bg-rausch text-white rounded-btn text-body-sm font-bold transition-colors">👁 View Order</button>
                   {o.status === "pending" && (
-                    <button style={s.packBtn} onClick={() => { setViewOrder(o); }}>📦 Pack</button>
+                    <button onClick={() => setViewOrder(o)} className="flex-1 py-2.5 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-btn text-body-sm font-bold">📦 Pack</button>
                   )}
                   {o.status === "packed" && (
-                    <button style={s.dispatchBtn} onClick={() => { setViewOrder(o); setShowDispatch(true); }}>🚚 Dispatch</button>
+                    <button onClick={() => { setViewOrder(o); setShowDispatch(true); }} className="flex-1 py-2.5 bg-green-50 border border-green-300 text-green-700 rounded-btn text-body-sm font-bold">🚚 Dispatch</button>
                   )}
                 </div>
               </div>
@@ -204,26 +202,24 @@ export default function IncomingOrders({ user, onNavigate }) {
 
       {/* ===== VIEW ORDER MODAL ===== */}
       {viewOrder && (
-        <div style={s.overlay} onClick={() => { setViewOrder(null); setShowDispatch(false); }}>
-          <div style={s.modal} onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/55 z-[200] flex items-end" onClick={() => { setViewOrder(null); setShowDispatch(false); }}>
+          <div className="bg-canvas rounded-t-card w-full max-h-[92vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
 
-            {/* Modal Header */}
-            <div style={s.modalHeader}>
+            <div className="flex justify-between items-center px-5 py-4.5 border-b border-hairline-soft bg-canvas flex-shrink-0">
               <div>
-                <div style={s.modalTitle}>Order Details</div>
-                <div style={s.modalOrderId}>#{viewOrder.id.slice(0, 8).toUpperCase()}</div>
+                <div className="text-title-md text-ink font-bold">Order Details</div>
+                <div className="text-[11.5px] text-muted mt-0.5">#{viewOrder.id.slice(0, 8).toUpperCase()}</div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ ...s.statusBadge, ...(STATUS_CONFIG[viewOrder.status] || {}) }}>
+              <div className="flex items-center gap-2.5">
+                <div className={`text-[11px] font-bold px-3 py-1.5 rounded-full ${STATUS_CONFIG[viewOrder.status]?.className || ""}`}>
                   {STATUS_CONFIG[viewOrder.status]?.icon} {STATUS_CONFIG[viewOrder.status]?.label}
                 </div>
-                <div style={s.closeBtn} onClick={() => { setViewOrder(null); setShowDispatch(false); }}>✕</div>
+                <div onClick={() => { setViewOrder(null); setShowDispatch(false); }} className="text-lg text-muted cursor-pointer px-2 py-1">✕</div>
               </div>
             </div>
 
-            <div style={s.modalBody}>
+            <div className="overflow-y-auto px-5 py-4 pb-6 flex-1">
 
-              {/* Buyer Info */}
               <Section title="👤 Customer Info">
                 <InfoRow label="Name" value={viewOrder.buyerName || "—"} />
                 <InfoRow label="Phone" value={viewOrder.buyerPhone || "—"} />
@@ -231,42 +227,38 @@ export default function IncomingOrders({ user, onNavigate }) {
                 <InfoRow label="Address" value={viewOrder.shippingAddress?.fullAddress || "—"} />
               </Section>
 
-              {/* Items */}
               <Section title="🛍️ Ordered Items">
                 {(viewOrder.items || []).map((item, i) => (
-                  <div key={i} style={s.itemRow}>
+                  <div key={i} className="flex items-start gap-3 mb-2.5 pb-2.5 border-b border-dashed border-hairline-soft">
                     {item.image ? (
-                      <img src={item.image} alt={item.name} style={s.itemImg} />
+                      <img src={item.image} alt={item.name} className="w-14 h-14 rounded-btn object-cover flex-shrink-0" />
                     ) : (
-                      <div style={s.itemImgPlaceholder}>🛍️</div>
+                      <div className="w-14 h-14 rounded-btn bg-surface-soft flex items-center justify-center text-2xl flex-shrink-0">🛍️</div>
                     )}
-                    <div style={{ flex: 1 }}>
-                      <div style={s.itemName}>{item.name}</div>
-                      {item.color && <div style={s.itemMeta}>Color: {item.color}</div>}
-                      {item.size && <div style={s.itemMeta}>Size: {item.size}</div>}
-                      <div style={s.itemMeta}>Qty: {item.qty}</div>
+                    <div className="flex-1">
+                      <div className="text-[13.5px] font-bold text-ink mb-0.5">{item.name}</div>
+                      {item.color && <div className="text-[11.5px] text-muted">Color: {item.color}</div>}
+                      {item.size && <div className="text-[11.5px] text-muted">Size: {item.size}</div>}
+                      <div className="text-[11.5px] text-muted">Qty: {item.qty}</div>
                     </div>
-                    <div style={s.itemPrice}>{formatPrice(item.price * item.qty, viewOrder.country)}</div>
+                    <div className="text-sm font-extrabold text-ink whitespace-nowrap">{formatPrice(item.price * item.qty, viewOrder.country)}</div>
                   </div>
                 ))}
               </Section>
 
-              {/* Price Summary */}
               <Section title="💰 Price Summary">
                 <InfoRow label="Subtotal" value={formatPrice(viewOrder.subtotal || 0, viewOrder.country)} />
                 <InfoRow label="Shipping" value={formatPrice(viewOrder.shippingCharge || 0, viewOrder.country)} />
-                <div style={s.grandTotalRow}>
+                <div className="flex justify-between text-[15px] font-extrabold text-ink pt-2 border-t border-hairline mt-1.5">
                   <span>Grand Total</span>
                   <span>{formatPrice(viewOrder.grandTotal || 0, viewOrder.country)}</span>
                 </div>
               </Section>
 
-              {/* Payment */}
               <Section title="💳 Payment">
                 <InfoRow label="Method" value={viewOrder.paymentMethod === "cod" ? "💵 Cash on Delivery" : "💳 Online Payment"} />
               </Section>
 
-              {/* Dispatch Info */}
               {viewOrder.dispatchDetails && (
                 <Section title="🚚 Dispatch Info">
                   <InfoRow label="Courier" value={viewOrder.dispatchDetails.courierCompany} />
@@ -275,13 +267,12 @@ export default function IncomingOrders({ user, onNavigate }) {
                 </Section>
               )}
 
-              {/* Dispatch Form */}
               {showDispatch && viewOrder.status === "packed" && (
-                <div style={s.dispatchForm}>
-                  <div style={s.dispatchFormTitle}>🚚 Add Dispatch Details</div>
+                <div className="bg-surface-soft rounded-card p-4 mb-3.5">
+                  <div className="text-body-sm font-bold text-ink mb-3">🚚 Add Dispatch Details</div>
 
-                  <label className="input-label">Courier Company</label>
-                  <select className="input-field" style={{ marginBottom: 10 }}
+                  <label className="block text-title-sm text-ink mb-1.5">Courier Company</label>
+                  <select className={`${inputClass} mb-2.5`}
                     value={dispatchForm.courier}
                     onChange={e => setDispatchForm(f => ({ ...f, courier: e.target.value }))}>
                     <option value="">Select courier...</option>
@@ -290,58 +281,57 @@ export default function IncomingOrders({ user, onNavigate }) {
 
                   {dispatchForm.courier === "Other" && (
                     <>
-                      <label className="input-label">Courier Name</label>
-                      <input className="input-field" style={{ marginBottom: 10 }} placeholder="Enter courier name"
+                      <label className="block text-title-sm text-ink mb-1.5">Courier Name</label>
+                      <input className={`${inputClass} mb-2.5`} placeholder="Enter courier name"
                         value={dispatchForm.customCourier}
                         onChange={e => setDispatchForm(f => ({ ...f, customCourier: e.target.value }))} />
                     </>
                   )}
 
-                  <label className="input-label">Dispatch Date</label>
-                  <input type="date" className="input-field" style={{ marginBottom: 10 }}
+                  <label className="block text-title-sm text-ink mb-1.5">Dispatch Date</label>
+                  <input type="date" className={`${inputClass} mb-2.5`}
                     value={dispatchForm.date}
                     onChange={e => setDispatchForm(f => ({ ...f, date: e.target.value }))} />
 
-                  <label className="input-label">Tracking Number</label>
-                  <input className="input-field" style={{ marginBottom: 14 }} placeholder="e.g. TCS123456789"
+                  <label className="block text-title-sm text-ink mb-1.5">Tracking Number</label>
+                  <input className={`${inputClass} mb-3.5`} placeholder="e.g. TCS123456789"
                     value={dispatchForm.trackingNumber}
                     onChange={e => setDispatchForm(f => ({ ...f, trackingNumber: e.target.value }))} />
 
-                  <button style={s.confirmDispatchBtn} onClick={handleDispatch} disabled={actionLoading}>
+                  <button onClick={handleDispatch} disabled={actionLoading} className="w-full h-12 rounded-btn bg-rausch hover:bg-rausch-active disabled:bg-rausch-disabled text-white text-title-sm font-semibold mb-2 transition-colors">
                     {actionLoading ? "Processing..." : "✅ Confirm Dispatch"}
                   </button>
-                  <button style={s.cancelDispatchBtn} onClick={() => setShowDispatch(false)}>Cancel</button>
+                  <button onClick={() => setShowDispatch(false)} className="w-full h-11 rounded-btn border border-hairline text-muted text-body-sm font-semibold">Cancel</button>
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div style={s.modalActions}>
-                <button style={s.invoiceModalBtn} onClick={() => onNavigate && onNavigate("invoice", viewOrder.id)}>
+              <div className="flex gap-2 mb-2.5">
+                <button onClick={() => onNavigate && onNavigate("invoice", viewOrder.id)} className="flex-1 py-2.5 bg-surface-soft border border-hairline rounded-btn text-ink text-[12.5px] font-bold">
                   🧾 Print Invoice
                 </button>
-                <button style={s.slipModalBtn} onClick={() => onNavigate && onNavigate("dispatch-slip", viewOrder.id)}>
+                <button onClick={() => onNavigate && onNavigate("dispatch-slip", viewOrder.id)} className="flex-1 py-2.5 bg-surface-soft border border-hairline rounded-btn text-ink text-[12.5px] font-bold">
                   📋 Dispatch Slip
                 </button>
               </div>
 
               {viewOrder.status === "pending" && (
-                <button style={s.packModalBtn} onClick={() => handleMarkPacked(viewOrder)} disabled={actionLoading}>
+                <button onClick={() => handleMarkPacked(viewOrder)} disabled={actionLoading} className="w-full h-12 rounded-btn bg-rausch hover:bg-rausch-active disabled:bg-rausch-disabled text-white text-title-sm font-extrabold mb-2 transition-colors">
                   {actionLoading ? "Processing..." : "📦 Mark as Packed"}
                 </button>
               )}
 
               {viewOrder.status === "packed" && !showDispatch && (
-                <button style={s.dispatchModalBtn} onClick={() => { setShowDispatch(true); setDispatchForm({ courier: "", customCourier: "", date: "", trackingNumber: "" }); }}>
+                <button onClick={() => { setShowDispatch(true); setDispatchForm({ courier: "", customCourier: "", date: "", trackingNumber: "" }); }} className="w-full h-12 rounded-btn bg-ink hover:bg-rausch text-white text-title-sm font-extrabold mb-2 transition-colors">
                   🚚 Mark as Dispatched
                 </button>
               )}
 
               {viewOrder.status === "dispatched" && (
-                <div style={s.waitingNote}>⏳ Waiting for buyer to confirm delivery</div>
+                <div className="text-center text-body-sm text-muted py-3 italic">⏳ Waiting for buyer to confirm delivery</div>
               )}
 
               {viewOrder.status === "delivered" && (
-                <div style={s.deliveredNote}>✅ Delivered — Order Complete</div>
+                <div className="text-center text-body-sm text-green-700 font-bold py-3">✅ Delivered — Order Complete</div>
               )}
 
             </div>
@@ -352,76 +342,22 @@ export default function IncomingOrders({ user, onNavigate }) {
   );
 }
 
+const inputClass = "w-full h-12 px-4 rounded-btn border border-hairline text-body-md text-ink placeholder:text-muted focus:outline-none focus:border-ink bg-canvas";
+
 function Section({ title, children }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: "#0B3D2E", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>{title}</div>
-      <div style={{ background: "#F8F9FA", borderRadius: 10, padding: 12 }}>{children}</div>
+    <div className="mb-4">
+      <div className="text-xs font-bold text-ink mb-2 uppercase tracking-wide">{title}</div>
+      <div className="bg-surface-soft rounded-btn p-3">{children}</div>
     </div>
   );
 }
 
 function InfoRow({ label, value }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, gap: 10 }}>
-      <span style={{ fontSize: 11.5, color: "#888", minWidth: 70 }}>{label}</span>
-      <span style={{ fontSize: 13, color: "#1a1a1a", fontWeight: 500, textAlign: "right", flex: 1 }}>{value || "—"}</span>
+    <div className="flex justify-between items-start mb-1.5 gap-2.5">
+      <span className="text-[11.5px] text-muted min-w-[70px]">{label}</span>
+      <span className="text-[13px] text-ink font-medium text-right flex-1">{value || "—"}</span>
     </div>
   );
 }
-
-const s = {
-  page: { minHeight: "100vh", background: "var(--color-bg)" },
-  header: { background: "#0B3D2E", padding: "18px 16px" },
-  headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700 },
-
-  filterRow: { display: "flex", gap: 8, padding: "14px 16px", overflowX: "auto" },
-  pill: { padding: "8px 14px", borderRadius: 20, border: "1.5px solid #eee0c0", fontSize: 11.5, fontWeight: 600, color: "#0B3D2E", whiteSpace: "nowrap", cursor: "pointer", background: "#fff" },
-  pillActive: { background: "#0B3D2E", color: "#fff", borderColor: "#0B3D2E" },
-  emptyText: { fontSize: 13, color: "#888", padding: "20px 0" },
-
-  orderCard: { background: "#fff", border: "1px solid #eee0c0", borderRadius: 14, padding: 14, marginBottom: 10 },
-  cardTop: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 },
-  orderId: { fontSize: 13.5, fontWeight: 700, color: "#1a1a1a" },
-  buyerName: { fontSize: 12, color: "#0B3D2E", fontWeight: 600, marginTop: 2 },
-  orderDate: { fontSize: 11, color: "#aaa", marginTop: 1 },
-  statusBadge: { fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 20 },
-  orderTotal: { fontSize: 16, fontWeight: 800, color: "#0B3D2E", marginBottom: 8 },
-  itemsPreview: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 },
-  itemChip: { fontSize: 10.5, background: "#F0F5F0", color: "#0B3D2E", padding: "3px 8px", borderRadius: 10, fontWeight: 600 },
-  dispatchInfoChip: { fontSize: 11.5, color: "#0B3D2E", background: "#F0F5F0", borderRadius: 8, padding: "6px 10px", marginBottom: 8 },
-  cardActions: { display: "flex", gap: 8 },
-  viewBtn: { flex: 1, padding: "10px 0", background: "#0B3D2E", border: "none", borderRadius: 10, color: "#D4AF37", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
-  packBtn: { flex: 1, padding: "10px 0", background: "#FBF1DA", border: "1px solid #D4AF37", borderRadius: 10, color: "#8a6d1f", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
-  dispatchBtn: { flex: 1, padding: "10px 0", background: "#E3F2E1", border: "1px solid #BFE3CC", borderRadius: 10, color: "#2E7D32", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
-
-  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 200, display: "flex", alignItems: "flex-end" },
-  modal: { background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxHeight: "92vh", overflow: "hidden", display: "flex", flexDirection: "column" },
-  modalHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px", borderBottom: "1px solid #f0f0f0", background: "#fff", flexShrink: 0 },
-  modalTitle: { fontFamily: "Georgia, serif", fontSize: 17, fontWeight: 700, color: "#0B3D2E" },
-  modalOrderId: { fontSize: 11.5, color: "#888", marginTop: 2 },
-  closeBtn: { fontSize: 18, color: "#888", cursor: "pointer", padding: "4px 8px" },
-  modalBody: { overflowY: "auto", padding: "16px 20px 24px", flex: 1 },
-
-  itemRow: { display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 10, paddingBottom: 10, borderBottom: "1px dashed #f0f0f0" },
-  itemImg: { width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0 },
-  itemImgPlaceholder: { width: 56, height: 56, borderRadius: 10, background: "#F0F5F0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 },
-  itemName: { fontSize: 13.5, fontWeight: 700, color: "#1a1a1a", marginBottom: 3 },
-  itemMeta: { fontSize: 11.5, color: "#888" },
-  itemPrice: { fontSize: 14, fontWeight: 800, color: "#0B3D2E", whiteSpace: "nowrap" },
-
-  grandTotalRow: { display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 800, color: "#0B3D2E", paddingTop: 8, borderTop: "1px solid #eee0c0", marginTop: 6 },
-
-  dispatchForm: { background: "#F0F5F0", borderRadius: 14, padding: 16, marginBottom: 14 },
-  dispatchFormTitle: { fontSize: 14, fontWeight: 700, color: "#0B3D2E", marginBottom: 12 },
-  confirmDispatchBtn: { width: "100%", padding: "13px 0", background: "#0B3D2E", border: "none", borderRadius: 12, color: "#D4AF37", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 },
-  cancelDispatchBtn: { width: "100%", padding: "11px 0", background: "#fff", border: "1px solid #eee0c0", borderRadius: 12, color: "#888", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" },
-
-  modalActions: { display: "flex", gap: 8, marginBottom: 10 },
-  invoiceModalBtn: { flex: 1, padding: "11px 0", background: "#F0F5F0", border: "1px solid #eee0c0", borderRadius: 10, color: "#0B3D2E", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
-  slipModalBtn: { flex: 1, padding: "11px 0", background: "#F0F5F0", border: "1px solid #eee0c0", borderRadius: 10, color: "#0B3D2E", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
-  packModalBtn: { width: "100%", padding: "13px 0", background: "#D4AF37", border: "none", borderRadius: 12, color: "#0B3D2E", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 },
-  dispatchModalBtn: { width: "100%", padding: "13px 0", background: "#0B3D2E", border: "none", borderRadius: 12, color: "#D4AF37", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 },
-  waitingNote: { textAlign: "center", fontSize: 13, color: "#888", padding: "12px 0", fontStyle: "italic" },
-  deliveredNote: { textAlign: "center", fontSize: 14, color: "#2E7D32", fontWeight: 700, padding: "12px 0" }
-};
