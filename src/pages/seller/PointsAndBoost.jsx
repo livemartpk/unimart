@@ -1,11 +1,11 @@
 // ============================================
 // UniMart - Points & Boost (Seller)
+// [Tailwind / Airbnb-inspired design system]
 // ============================================
 
 import { useState, useEffect } from "react";
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebase";
-import "../../styles/theme.css";
 
 const BOOST_OPTIONS = [
   { key: "homepage", label: "Homepage Feature", cost: 100, duration: "24 hours", desc: "Your product appears in the homepage Just For You section." },
@@ -75,26 +75,30 @@ export default function PointsAndBoost({ user, onNavigate }) {
   };
 
   return (
-    <div className="page-shell" style={styles.page}>
+    <div className="min-h-screen bg-canvas">
+      <div className="max-w-[600px] mx-auto px-4 pt-4 pb-8">
 
-      <div className="container" style={{ paddingTop: 16, paddingBottom: 30 }}>
-        <div style={styles.pointsCard}>
-          <div style={styles.pointsLabel}>Your Points Balance</div>
-          <div style={styles.pointsValue}>{points} pts</div>
+        <div className="bg-ink rounded-card p-5 mb-4 text-center">
+          <div className="text-white/70 text-xs">Your Points Balance</div>
+          <div className="text-rausch text-[28px] font-extrabold mt-1.5">{points} pts</div>
         </div>
 
-        <div style={styles.infoBox}>
-          <div style={styles.infoTitle}>How points are earned</div>
-          <div style={styles.infoRow}>• Each completed sale = 10 points</div>
-          <div style={styles.infoRow}>• Hitting a monthly target = 50 bonus points</div>
-          <div style={styles.infoRow}>• A great rating from a buyer = 5 points</div>
+        <div className="bg-surface-soft rounded-card p-3.5 mb-5.5">
+          <div className="text-[12.5px] font-bold text-ink mb-1.5">How points are earned</div>
+          <div className="text-[11.5px] text-body mb-0.5">• Each completed sale = 10 points</div>
+          <div className="text-[11.5px] text-body mb-0.5">• Hitting a monthly target = 50 bonus points</div>
+          <div className="text-[11.5px] text-body">• A great rating from a buyer = 5 points</div>
         </div>
 
-        <h3 style={styles.sectionTitle}>Boost a Product</h3>
+        <h3 className="text-title-md text-ink font-bold mb-3">Boost a Product</h3>
 
-        <div style={{ marginBottom: 16 }}>
-          <label className="input-label">Select Product</label>
-          <select className="input-field" value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
+        <div className="mb-4">
+          <label className="block text-title-sm text-ink mb-1.5">Select Product</label>
+          <select
+            className="w-full h-12 px-4 rounded-btn border border-hairline text-body-md text-ink bg-canvas focus:outline-none focus:border-ink"
+            value={selectedProduct}
+            onChange={(e) => setSelectedProduct(e.target.value)}
+          >
             <option value="">Choose a product</option>
             {products.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
@@ -102,26 +106,26 @@ export default function PointsAndBoost({ user, onNavigate }) {
           </select>
         </div>
 
-        <div style={styles.boostGrid}>
+        <div className="grid grid-cols-2 gap-2.5">
           {BOOST_OPTIONS.map((b) => (
             <div
               key={b.key}
-              style={{ ...styles.boostCard, ...(selectedBoost?.key === b.key ? styles.boostCardActive : {}) }}
               onClick={() => setSelectedBoost(b)}
+              className={`rounded-card p-3 cursor-pointer border
+              ${selectedBoost?.key === b.key ? "border-ink bg-surface-soft" : "border-hairline bg-canvas"}`}
             >
-              <div style={styles.boostLabel}>{b.label}</div>
-              <div style={styles.boostCost}>{b.cost} pts</div>
-              <div style={styles.boostDuration}>{b.duration}</div>
-              <div style={styles.boostDesc}>{b.desc}</div>
+              <div className="text-[12.5px] font-bold text-ink">{b.label}</div>
+              <div className="text-[15px] font-extrabold text-rausch mt-1">{b.cost} pts</div>
+              <div className="text-[10px] text-muted mt-0.5">{b.duration}</div>
+              <div className="text-[10px] text-body mt-1.5 leading-snug">{b.desc}</div>
             </div>
           ))}
         </div>
 
         <button
-          className="btn-primary"
-          style={{ width: "100%", marginTop: 16 }}
           onClick={handleApplyBoost}
           disabled={applying || !selectedProduct || !selectedBoost}
+          className="w-full mt-4 h-12 rounded-btn bg-rausch hover:bg-rausch-active disabled:bg-rausch-disabled text-white text-title-sm font-semibold transition-colors"
         >
           {applying ? "Applying..." : "Apply Boost"}
         </button>
@@ -129,27 +133,3 @@ export default function PointsAndBoost({ user, onNavigate }) {
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", background: "var(--color-bg)", margin: "0 auto" },
-  header: { background: "#0B3D2E", padding: "18px 16px" },
-  headerTitle: { color: "#fff", fontFamily: "Georgia, serif", fontSize: 19, fontWeight: 700 },
-
-  pointsCard: { background: "linear-gradient(120deg, #0B3D2E, #155c43)", borderRadius: 16, padding: 20, marginBottom: 16, textAlign: "center" },
-  pointsLabel: { color: "#cfe0d4", fontSize: 12 },
-  pointsValue: { color: "#D4AF37", fontSize: 28, fontWeight: 800, marginTop: 6 },
-
-  infoBox: { background: "#F0F5F0", borderRadius: 12, padding: 14, marginBottom: 22 },
-  infoTitle: { fontWeight: 700, fontSize: 12.5, color: "#0B3D2E", marginBottom: 6 },
-  infoRow: { fontSize: 11.5, color: "#444", marginBottom: 3 },
-
-  sectionTitle: { fontSize: 16, fontFamily: "Georgia, serif", color: "#0B3D2E", marginBottom: 12 },
-
-  boostGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
-  boostCard: { background: "#fff", border: "1.5px solid #eee0c0", borderRadius: 14, padding: 12, cursor: "pointer" },
-  boostCardActive: { borderColor: "#0B3D2E", background: "#F0F5F0" },
-  boostLabel: { fontSize: 12.5, fontWeight: 700, color: "#0B3D2E" },
-  boostCost: { fontSize: 15, fontWeight: 800, color: "#D4AF37", marginTop: 4 },
-  boostDuration: { fontSize: 10, color: "#888", marginTop: 2 },
-  boostDesc: { fontSize: 10, color: "#666", marginTop: 6, lineHeight: 1.4 }
-};
